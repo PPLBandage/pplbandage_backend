@@ -64,8 +64,8 @@ interface SearchQuery{
 
 interface SearchParams{
     fragment: string,
-    take?: number,
-    page?: number
+    take: number,
+    page: number
 }
 
 
@@ -75,7 +75,7 @@ interface TexturesProfile{
 }
 
 interface TextureProfile{
-    mojang: string;
+    mojang: string | undefined;
     eldraxis: string;
 }
 
