@@ -82,7 +82,8 @@ export class UserService {
             where: { 'discordId': ds_user.id },
             create: {
                 'discordId': ds_user.id,
-                'username': ds_user.username
+                'username': ds_user.username,
+                'name': ds_user.global_name
             },
             update: {}
         })
@@ -100,7 +101,7 @@ export class UserService {
         return token_record
     }
 
-    async validateSession(session: string | undefined): Promise< { sessionId: string; cookie: string; } | null> {
+    async validateSession(session: string | undefined): Promise<{ sessionId: string; cookie: string; } | null> {
         if (!session) return null;
         const sessionDB = await this.prisma.sessions.findFirst({ where: { sessionId: session } });
         if (!sessionDB) return null;
@@ -125,6 +126,11 @@ export class UserService {
 
     async getUser(session: string) {
         const sessionDB = await this.prisma.sessions.findFirst({ where: { sessionId: session }, include: { User: true } });
-        return { userID: sessionDB?.User.id, discordID: sessionDB?.User.discordId, username: sessionDB?.User.username };
+        return { 
+            userID: sessionDB?.User.id,
+            discordID: sessionDB?.User.discordId,
+            username: sessionDB?.User.username,
+            name: sessionDB?.User.name
+        };
     }
 }

@@ -3,6 +3,12 @@ import type { Request, Response } from 'express'
 import { getUserData, updateSkinCache, searchNicks } from "./app.service";
 import { Buffer } from "buffer";
 import { UserService } from './user.module';
+import axios from 'axios';
+
+interface pplRes {
+    "roles": Array<string>,
+    "user": { "id": string, "username": string }
+}
 
 @Controller('/api')
 export class AppController {
@@ -123,6 +129,30 @@ export class AppController {
 
         const data = await this.userService.getUser(session.sessionId);
         res.send(data);
+        return;
+    }
+
+    @Get("/ppl/access/:uid")
+    async ppl_access(@Param('uid') uid: string, @Res() res: Response): Promise<void> {
+        const ppl_server_id = "447699225078136832";
+        const ppl_role_id = "1142141232685006990";
+        const response = await axios.get(`https://discord.com/api/v10/guilds/${ppl_server_id}/members/${uid}`, {
+            headers: { Authorization: "MTEyNTY5Njk5NTM2MTgzNzA3Nw.Gp64VC.xqhkkY0DhywqdNj-p4iVGD0pMm3fixeYmSyUaw" },
+            validateStatus: () => true
+        });
+        if (response.status != 200) {
+            res.status(404).send({
+                status: "error",
+                message: "User not found"
+            });
+            return;
+        }
+        const data = response.data as pplRes;
+        res.send({
+            uid: data.user.id,
+            username: data.user.username,
+            has_ppl_access: data.roles.includes(ppl_role_id)
+        });
         return;
     }
 }
