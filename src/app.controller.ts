@@ -1,28 +1,42 @@
-import { Controller, Get, Header, HttpException, HttpStatus, Param, Query, Req, Res, StreamableFile } from '@nestjs/common';
+import { Controller, Get, Header, HttpException, HttpStatus, Param, Query, Req, Res, StreamableFile, Delete, Put, Post, Body } from '@nestjs/common';
 import type { Request, Response } from 'express'
-import { getUserData, updateSkinCache, searchNicks } from "./app.service";
+import { MinecraftService } from "./minecraft.service";
 import { Buffer } from "buffer";
 import { UserService } from './user.module';
 import axios from 'axios';
+import { BandageService } from './bandage.service';
+import { isEmpty } from 'rxjs';
+import * as sharp from 'sharp';
 
-interface pplRes {
-    "roles": Array<string>,
-    "user": { "id": string, "username": string }
+
+const UNAUTHORIZED = {
+    status: "error",
+    message: "UNAUTHORIZED",
+    statusCode: 401
+}
+
+interface CreateBody {
+    base64: string, 
+    title: string, 
+    description: string
 }
 
 @Controller('/api')
 export class AppController {
 
-    constructor(private readonly userService: UserService) { }
+    constructor(private readonly userService: UserService,
+                private readonly bandageService: BandageService,
+                private readonly minecraftService: MinecraftService
+    ) { }
 
     @Get()
-    async root(): Promise<DefaultResponse> {
-        return { status: "success", message: "Welcome to new Eldraxis project!" };
+    async root(@Res({ passthrough: true }) res: Response){
+        res.redirect("/", 301);
     }
 
     @Get("/profile/:name")
     async profile(@Param('name') name: string, @Res({ passthrough: true }) res: Response): Promise<ProfileResponse | DefaultResponse> {
-        const data = await getUserData(name);
+        const data = await this.minecraftService.getUserData(name);
         if (!data) {
             throw new HttpException('Profile not found', HttpStatus.NOT_FOUND);
         }
@@ -49,7 +63,7 @@ export class AppController {
 
     @Get("/skin/:name")
     async skin(@Param('name') name: string, @Query() query: { cape: boolean }, @Res({ passthrough: true }) res: Response): Promise<CapeResponse | void> {
-        const cache = await updateSkinCache(name);
+        const cache = await this.minecraftService.updateSkinCache(name);
         if (!cache) {
             throw new HttpException('Profile not found', HttpStatus.NOT_FOUND);
         }
@@ -72,7 +86,7 @@ export class AppController {
     @Get("/head/:name")
     @Header('Content-Type', 'image/png')
     async head(@Param('name') name: string): Promise<StreamableFile> {
-        const cache = await updateSkinCache(name);
+        const cache = await this.minecraftService.updateSkinCache(name);
         if (!cache) {
             throw new HttpException('Profile not found', HttpStatus.NOT_FOUND);
         }
@@ -82,7 +96,7 @@ export class AppController {
     @Get("/cape/:name")
     @Header('Content-Type', 'image/png')
     async cape(@Param('name') name: string, @Res({ passthrough: true }) res: Response): Promise<StreamableFile> {
-        const cache = await updateSkinCache(name);
+        const cache = await this.minecraftService.updateSkinCache(name);
         if (!cache) {
             throw new HttpException('Profile not found', HttpStatus.NOT_FOUND);
         }
@@ -96,7 +110,7 @@ export class AppController {
 
     @Get("/search/:name")
     async search(@Param('name') name: string, @Query() query: SearchQuery): Promise<Search> {
-        const cache = await searchNicks({ fragment: name, take: parseInt(query.take as string) || 20, page: parseInt(query.page as string) || 0 });
+        const cache = await this.minecraftService.searchNicks({ fragment: name, take: parseInt(query.take as string) || 20, page: parseInt(query.page as string) || 0 });
         if (!cache) {
             throw new HttpException('No content', HttpStatus.NO_CONTENT);
         }
@@ -108,20 +122,26 @@ export class AppController {
     async discord(@Param('code') code: string, @Res({ passthrough: true }) res: Response): Promise<void> {
         const data = await this.userService.login(code);
         if (!data) {
-            throw new HttpException('CouldNotLogin', HttpStatus.BAD_REQUEST);
+            res.status(400).send({status: "error", message: "could not login"});
+            return;
         }
+        if (data.status == "error") {
+            res.status(data.statusCode).send(data);
+            return;
+        }
+
         res.setHeader('Access-Control-Expose-Headers', 'SetCookie');
         const date = new Date((new Date()).getTime() + (Number(process.env.SESSION_TTL) * 1000));
         res.setHeader('SetCookie', `sessionId=${data.sessionId}; Path=/; Expires=${date.toUTCString()}; SameSite=Strict`);
 
-        res.send({ 'sessionId': data.sessionId, 'userId': data.userId });
+        res.send({ 'sessionId': data.sessionId});
     }
 
     @Get("/oauth/users/me")
     async user_profile(@Req() request: Request, @Res() res: Response): Promise<void> {
         const session = await this.userService.validateSession(request.cookies.sessionId);
         if (!session) {
-            res.status(HttpStatus.UNAUTHORIZED).send('UNAUTHORIZED');
+            res.status(HttpStatus.UNAUTHORIZED).send(UNAUTHORIZED);
             return;
         }
         res.setHeader('Access-Control-Expose-Headers', 'SetCookie');
@@ -132,27 +152,105 @@ export class AppController {
         return;
     }
 
-    @Get("/ppl/access/:uid")
-    async ppl_access(@Param('uid') uid: string, @Res() res: Response): Promise<void> {
-        const ppl_server_id = "447699225078136832";
-        const ppl_role_id = "1142141232685006990";
-        const response = await axios.get(`https://discord.com/api/v10/guilds/${ppl_server_id}/members/${uid}`, {
-            headers: { Authorization: "MTEyNTY5Njk5NTM2MTgzNzA3Nw.Gp64VC.xqhkkY0DhywqdNj-p4iVGD0pMm3fixeYmSyUaw" },
-            validateStatus: () => true
-        });
-        if (response.status != 200) {
-            res.status(404).send({
+    @Delete("/users/logout")
+    async logout(@Req() request: Request, @Res() res: Response): Promise<void> {
+        if (!request.cookies.sessionId) {
+            throw new HttpException('NoCookie', 200);
+        }
+
+        this.userService.logout(request.cookies.sessionId);
+        res.status(200).send({"status": "success"});
+    }
+
+    @Get("/bandages")
+    async bandages(@Req() request: Request, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
+        res.status(200).send(await this.bandageService.getBandages(request.cookies.sessionId, parseInt(query.take as string) || 20, parseInt(query.page as string) || 0, query.search,  ));
+    }
+
+    @Put("/star/:id")
+    async setStar(@Param('id') id: string, @Query() query: { set: string }, @Req() request: Request, @Res() res: Response): Promise<void> {
+        const session = await this.userService.validateSession(request.cookies.sessionId);
+        if (!session) {
+            res.status(HttpStatus.UNAUTHORIZED).send(UNAUTHORIZED);
+            return;
+        }
+        if (!query.set || !["true", "false"].includes(query.set)) {
+            res.status(HttpStatus.BAD_REQUEST).send({
                 status: "error",
-                message: "User not found"
+                message: "`Set` query param invalid",
+                statusCode: 400
             });
             return;
         }
-        const data = response.data as pplRes;
-        res.send({
-            uid: data.user.id,
-            username: data.user.username,
-            has_ppl_access: data.roles.includes(ppl_role_id)
-        });
-        return;
+        res.setHeader('Access-Control-Expose-Headers', 'SetCookie');
+        res.setHeader('SetCookie', session.cookie);
+
+        const data = await this.bandageService.setStar(session, query.set === "true", id);
+        res.status(data.statusCode).send(data);
+    }
+
+
+    @Post("/workshop/create")
+    async create_bandage(@Req() request: Request, @Res() res: Response, @Body() body: CreateBody): Promise<void> {
+        const session = await this.userService.validateSession(request.cookies.sessionId);
+        if (!session) {
+            res.status(HttpStatus.UNAUTHORIZED).send(UNAUTHORIZED);
+            return;
+        }
+        
+        res.setHeader('Access-Control-Expose-Headers', 'SetCookie');
+        res.setHeader('SetCookie', session.cookie);
+        if (!body.base64 || !body.title || !body.description) {
+            res.status(HttpStatus.BAD_REQUEST).send({
+                status: "error",
+                message: "Invalid Body",
+                statusCode: 400
+            });
+            return;
+        }
+
+        if (body.title.length > 50) {
+            res.status(HttpStatus.BAD_REQUEST).send({
+                status: "error",
+                message: "Title cannot be longer than 50 symbols",
+                statusCode: 400
+            });
+            return;
+        }
+
+        if (body.description.length > 300) {
+            res.status(HttpStatus.BAD_REQUEST).send({
+                status: "error",
+                message: "Description cannot be longer than 300 symbols",
+                statusCode: 400
+            });
+            return;
+        }
+
+        try {
+            const bandage_buff = Buffer.from(body.base64, 'base64');
+            const bandage_sharp = sharp(bandage_buff);
+            const metadata = await bandage_sharp.metadata();
+            const width = metadata.width as number;
+            const height = metadata.height as number;
+            if (width != 16 || (height < 2 || height > 24 || height % 2 != 0) || metadata.format != 'png'){
+                res.status(HttpStatus.BAD_REQUEST).send({
+                    status: "error",
+                    message: "Invalid bandage size or format!",
+                    statusCode: 400
+                });
+                return;
+            }
+        } catch {
+            res.status(HttpStatus.BAD_REQUEST).send({
+                status: "error",
+                message: "Error while parcing base64",
+                statusCode: 400
+            });
+            return;
+        }
+
+        const data = await this.bandageService.createBandage(body.base64, body.title, body.description, session.sessionId);
+        res.status(data.statusCode).send(data);
     }
 }

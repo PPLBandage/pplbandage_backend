@@ -59,7 +59,8 @@ interface Search{
 
 interface SearchQuery{
     take?: string,
-    page?: string
+    page?: string,
+    search?: string
 }
 
 interface SearchParams{
