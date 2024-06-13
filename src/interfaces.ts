@@ -27,7 +27,6 @@ interface Profile {
 }
 
 interface DefaultResponse {
-    status: string;
     message: string;
 }
 
@@ -60,7 +59,11 @@ interface Search{
 interface SearchQuery{
     take?: string,
     page?: string,
-    search?: string
+    search?: string,
+    for_edit?: string,
+    filters?: string,
+    sort?: string,
+    state?: string
 }
 
 interface SearchParams{
@@ -86,7 +89,6 @@ interface EldraxisCache{
 }
 
 interface ProfileResponse{
-    status: string,
     message: string,
     timestamp: number,
     uuid: string,
@@ -100,7 +102,12 @@ interface SkinAndCape {
 }
 
 interface CapeResponse {
-    status: string,
 	message: string,
 	data: SkinAndCape
+}
+
+interface Session {
+    sessionId: string; 
+    cookie: string; 
+    user_id: number;
 }

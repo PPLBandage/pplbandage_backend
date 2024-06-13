@@ -3,10 +3,13 @@ import * as sharp from 'sharp';
 import { PrismaService } from "./prisma.service";
 import { Injectable } from '@nestjs/common';
 import { Buffer } from "buffer";
+import { UserService } from "./user.module";
 
 @Injectable()
 export class MinecraftService {
-    constructor(private prisma: PrismaService) { }
+    constructor(private prisma: PrismaService,
+                private users: UserService
+    ) { }
 
     async getUserData(str: string): Promise<Profile | null> {
         const regexp = new RegExp('^[0-9a-fA-F]{32}$');
@@ -105,7 +108,7 @@ export class MinecraftService {
             await this.resolveCollisions(nicks);
         }
 
-        if (cache?.default_nick !== fetched_skin_data.name) {
+        if (cache && cache?.default_nick !== fetched_skin_data.name) {
             await this.prisma.minecraft.update({
                 where: { uuid: fetched_skin_data.id },
                 data: {
@@ -178,5 +181,119 @@ export class MinecraftService {
             total_count: count,
             next_page: page + 1
         };
+    }
+
+    async changeValid(session: Session, state: boolean) {
+        const minecraft = await this.prisma.minecraft.findFirst({where: {userId: session.user_id}});
+
+        if (!minecraft) return {
+            statusCode: 400,
+            message: "Minecraft account not connected"
+        };
+
+        const result = await this.prisma.minecraft.update({where: {
+                                    id: minecraft.id
+                                }, data: {
+                                    valid: state
+                                }
+                            })
+        return {statusCode: 200, new_data: result.valid};
+    }
+
+
+    async connect(session: Session, code: string) {
+        const user = await this.prisma.user.findFirst({where: {id: session.user_id}, include: {profile: true}});
+        if (!user) {
+            return {
+                statusCode: 404,
+                message: "User not found"
+            };
+        }
+
+        if (user.profile) {
+            return {
+                statusCode: 400,
+                message: "Account already connected!",
+                message_ru: "Аккаунт уже подключен!"
+            };
+        }
+
+        const user_data = await axios.get(`https://api-mc-oauth.andcool.ru/code/${code}`, {validateStatus: () => true});
+        if (user_data.status !== 200) {
+            return {
+                statusCode: 404,
+                message: "Code not found!",
+                message_ru: "Код не найден!"
+            };
+        }
+
+        const data = user_data.data as {nickname: string, UUID: string};
+        const skin_data = await this.updateSkinCache(data.UUID, true);
+        
+        if (!skin_data) {
+            return {
+                statusCode: 500,
+                message: "Error while finding player data",
+                message_ru: "Не удалось найти и обновить данные о игроке!"
+            };
+        }
+        if (skin_data.userId) {
+            return {
+                statusCode: 400,
+                message: "This account already connected!",
+                message_ru: "Этот аккаунт уже подключен к другой учётной записи!"
+            };
+        }
+
+        await this.prisma.user.update({where: {
+                id: user.id
+            }, data: {
+                profile: {
+                    connect: {
+                        id: skin_data.id
+                    }
+                }
+        }});
+
+        return {
+            statusCode: 200,
+            message: "Success",
+            message_ru: "Аккаунт успешно подключен!",
+            uuid: skin_data.uuid
+        }
+    }
+
+    async disconnect(session: Session) {
+        const user = await this.prisma.user.findFirst({where: {id: session.user_id}, include: {profile: true}});
+        if (!user) {
+            return {
+                statusCode: 404,
+                message: "User not found"
+            }
+        }
+        if (!user.profile) {
+            return {
+                statusCode: 400,
+                message: "Account didn't connected",
+                message_ru: "Аккаунт Minecraft не подключен!"
+            }
+        }
+
+        await this.prisma.user.update({where: {
+            id: user.id
+        }, data: {
+            profile: {
+                disconnect: {
+                    id: user.profile.id
+                }
+            }
+        }});
+
+        return {
+            statusCode: 200,
+            message: "Success",
+            message_ru: "Аккаунт успешно отдключен!",
+        }
+
     }
 }

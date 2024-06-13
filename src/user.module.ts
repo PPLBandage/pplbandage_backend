@@ -42,7 +42,7 @@ interface DiscordUser {
     premium_type: number
 }
 
-interface Session {
+interface SessionToken {
     userId: number,
     iat: number,
     exp: number
@@ -120,7 +120,7 @@ export class UserService {
                     }
                 }
             });
-            return { status: "error", message: "You are not on ppl", statusCode: 403 };
+            return { message: "You are not on ppl", statusCode: 403 };
         }
 
         const user_db = await this.prisma.user.upsert({
@@ -131,7 +131,10 @@ export class UserService {
                 'name': ds_user.global_name
             },
             update: {}
-        })
+        });
+        if (user_db.banned) {
+            return { message: "Can not log in", statusCode: 403 };
+        }
         const sessionId = sign({ userId: user_db.id }, 'ppl_super_secret', { expiresIn: token_ttl });
         const token_record = await this.prisma.sessions.create({
             data: {
@@ -143,16 +146,16 @@ export class UserService {
                 }
             }
         });
-        return { status: "success", message: "logged in", sessionId: token_record.sessionId, statusCode: 200 };
+        return { message: "logged in", sessionId: token_record.sessionId, statusCode: 200 };
     }
 
-    async validateSession(session: string | undefined): Promise<{ sessionId: string; cookie: string; user_id: number } | null> {
+    async validateSession(session: string | undefined): Promise<Session | null> {
         if (!session) return null;
         const sessionDB = await this.prisma.sessions.findUnique({ where: { sessionId: session }, include: { User: true } });
         if (!sessionDB) return null;
 
         try {
-            const decoded = verify(session, 'ppl_super_secret') as Session;
+            const decoded = verify(session, 'ppl_super_secret') as SessionToken;
             const seconds = Math.round(Date.now() / 1000);
             if (decoded.iat + ((decoded.exp - decoded.iat) / 2) < seconds) {
                 const sessionId = sign({ userId: sessionDB.userId }, 'ppl_super_secret', { expiresIn: token_ttl });
@@ -165,6 +168,7 @@ export class UserService {
                 return { sessionId: sessionDB.sessionId, cookie: cookie, user_id: sessionDB.User.id };
             }
         } catch (err) {
+            await this.prisma.sessions.delete({where: {id: sessionDB.id}});
             return null;
         }
     }
@@ -184,12 +188,36 @@ export class UserService {
             discordID: sessionDB?.User.discordId,
             username: sessionDB?.User.username,
             name: sessionDB?.User.name,
-            avatar: `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}?size=80`
+            joined_at: sessionDB?.User.joined_at,
+            avatar_small: `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}?size=80`,
+            avatar: `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}?size=512`
         };
     }
 
-    async logout(session: string) {
-        await this.prisma.sessions.delete({ where: { sessionId: session } });
+    async logout(session: Session) {
+        await this.prisma.sessions.delete({ where: { sessionId: session.sessionId } });
+    }
+
+    async getConnections(session: Session) {
+        const data = await this.prisma.minecraft.findFirst({where: {
+            userId: session.user_id
+        }});
+
+        if (!data) return {
+            statusCode: 200,
+            minecraft: null
+        };
+
+        return {
+            statusCode: 200,
+            minecraft: {
+                nickname: data.default_nick,
+                uuid: data.uuid,
+                expires_at: Number(data.expires) - parseInt(process.env.TTL as string),
+                head: data.data_head,
+                valid: data.valid
+            }
+        }
     }
 }
 
