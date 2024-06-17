@@ -76,7 +76,10 @@ export class AppController {
         return {
             message: "",
             data: {
-                skin: cache.data,
+                skin: {
+                    data: cache.data,
+                    slim: cache.slim
+                },
                 cape: cache.data_cape
             }
         };
@@ -324,6 +327,26 @@ export class AppController {
         res.status(data.statusCode).send(data);
     }
 
+    @Put("/users/me/connections/minecraft/set_autoload")
+    async set_autoload(@Req() request: Request, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
+        const session = await this.userService.validateSession(request.cookies.sessionId);
+        if (!session) {
+            res.status(HttpStatus.UNAUTHORIZED).send(UNAUTHORIZED);
+            return;
+        }
+
+        if (!query.state || !["true", "false"].includes(query.state)) {
+            res.status(HttpStatus.BAD_REQUEST).send({
+                status: "error",
+                message: "`State` query param invalid",
+                statusCode: 400
+            });
+            return;
+        }
+        const data = await this.minecraftService.changeAutoload(session, query.state === "true");
+        res.status(data.statusCode).send(data);
+    }
+
     @Post("/users/me/connections/minecraft/connect/:code")
     async connectMinecraft(@Param('code') code: string, @Req() request: Request, @Res() res: Response): Promise<void> {
         const session = await this.userService.validateSession(request.cookies.sessionId);
@@ -360,6 +383,12 @@ export class AppController {
         res.setHeader('SetCookie', session.cookie);
 
         const data = await this.minecraftService.disconnect(session);
+        res.status(data.statusCode).send(data);
+    }
+
+    @Get("/bandages/:id")
+    async getBandage(@Param('id') id: string, @Req() request: Request, @Res() res: Response): Promise<void> {
+        const data = await this.bandageService.getBandage(id, request.cookies.sessionId);
         res.status(data.statusCode).send(data);
     }
 

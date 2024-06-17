@@ -113,10 +113,10 @@ export class UserService {
 
         const on_ppl = await this.check_ppl(ds_user.id);
         if (!on_ppl) {
-            await this.prisma.sessions.deleteMany({ 
-                where: { 
-                    User: { 
-                        discordId: ds_user.id 
+            await this.prisma.sessions.deleteMany({
+                where: {
+                    User: {
+                        discordId: ds_user.id
                     }
                 }
             });
@@ -151,7 +151,7 @@ export class UserService {
 
     async validateSession(session: string | undefined): Promise<Session | null> {
         if (!session) return null;
-        const sessionDB = await this.prisma.sessions.findUnique({ where: { sessionId: session }, include: { User: true } });
+        const sessionDB = await this.prisma.sessions.findUnique({ where: { sessionId: session }, include: { User: { include: { profile: true } } } });
         if (!sessionDB) return null;
 
         try {
@@ -159,16 +159,16 @@ export class UserService {
             const seconds = Math.round(Date.now() / 1000);
             if (decoded.iat + ((decoded.exp - decoded.iat) / 2) < seconds) {
                 const sessionId = sign({ userId: sessionDB.userId }, 'ppl_super_secret', { expiresIn: token_ttl });
-                const new_tokens = await this.prisma.sessions.update({ where: { id: sessionDB.id }, data: { sessionId: sessionId }, include: { User: true } });
+                const new_tokens = await this.prisma.sessions.update({ where: { id: sessionDB.id }, data: { sessionId: sessionId }, include: { User: { include: { profile: true } } } });
                 const cookie = generateCookie(sessionId, seconds + token_ttl);
 
-                return { sessionId: sessionId, cookie: cookie, user_id: new_tokens.User.id };
+                return { sessionId: sessionId, cookie: cookie, user: new_tokens.User };
             } else {
                 const cookie = generateCookie(session, decoded.exp);
-                return { sessionId: sessionDB.sessionId, cookie: cookie, user_id: sessionDB.User.id };
+                return { sessionId: sessionDB.sessionId, cookie: cookie, user: sessionDB.User };
             }
         } catch (err) {
-            await this.prisma.sessions.delete({where: {id: sessionDB.id}});
+            await this.prisma.sessions.delete({ where: { id: sessionDB.id } });
             return null;
         }
     }
@@ -199,9 +199,12 @@ export class UserService {
     }
 
     async getConnections(session: Session) {
-        const data = await this.prisma.minecraft.findFirst({where: {
-            userId: session.user_id
-        }});
+        const data = await this.prisma.minecraft.findFirst({
+            where: {
+                userId: session.user.id
+            },
+            include: {user: true}
+        });
 
         if (!data) return {
             statusCode: 200,
@@ -215,7 +218,8 @@ export class UserService {
                 uuid: data.uuid,
                 expires_at: Number(data.expires) - parseInt(process.env.TTL as string),
                 head: data.data_head,
-                valid: data.valid
+                valid: data.valid,
+                autoload: data.user?.autoload
             }
         }
     }

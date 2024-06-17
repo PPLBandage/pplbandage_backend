@@ -141,7 +141,8 @@ export class MinecraftService {
                 expires: new Date().getTime() + parseInt(process.env.TTL as string),
                 data: skin_buff.toString("base64"),
                 data_cape: cape_b64,
-                data_head: head.toString("base64")
+                data_head: head.toString("base64"),
+                slim: json_textures.textures.SKIN.metadata?.model === "slim"
             },
             update: {
                 nickname: fetched_skin_data.name.toLowerCase(),
@@ -149,7 +150,8 @@ export class MinecraftService {
                 expires: new Date().getTime() + parseInt(process.env.TTL as string),
                 data: skin_buff.toString("base64"),
                 data_cape: cape_b64,
-                data_head: head.toString("base64")
+                data_head: head.toString("base64"),
+                slim: json_textures.textures.SKIN.metadata?.model === "slim"
             }
         });
         return updated_data;
@@ -184,7 +186,7 @@ export class MinecraftService {
     }
 
     async changeValid(session: Session, state: boolean) {
-        const minecraft = await this.prisma.minecraft.findFirst({where: {userId: session.user_id}});
+        const minecraft = await this.prisma.minecraft.findFirst({where: {userId: session.user.id}});
 
         if (!minecraft) return {
             statusCode: 400,
@@ -201,16 +203,18 @@ export class MinecraftService {
     }
 
 
-    async connect(session: Session, code: string) {
-        const user = await this.prisma.user.findFirst({where: {id: session.user_id}, include: {profile: true}});
-        if (!user) {
-            return {
-                statusCode: 404,
-                message: "User not found"
-            };
-        }
+    async changeAutoload(session: Session, state: boolean) {
+        const result = await this.prisma.user.update({where: {
+                                    id: session.user.id
+                                }, data: {
+                                    autoload: state
+                                }
+                            })
+        return {statusCode: 200, new_data: result.autoload};
+    }
 
-        if (user.profile) {
+    async connect(session: Session, code: string) {
+        if (session.user.profile) {
             return {
                 statusCode: 400,
                 message: "Account already connected!",
@@ -246,14 +250,16 @@ export class MinecraftService {
         }
 
         await this.prisma.user.update({where: {
-                id: user.id
-            }, data: {
-                profile: {
-                    connect: {
-                        id: skin_data.id
+                id: session.user.id
+                }, 
+                data: {
+                    profile: {
+                        connect: {
+                            id: skin_data.id
+                        }
                     }
                 }
-        }});
+            });
 
         return {
             statusCode: 200,
@@ -264,14 +270,7 @@ export class MinecraftService {
     }
 
     async disconnect(session: Session) {
-        const user = await this.prisma.user.findFirst({where: {id: session.user_id}, include: {profile: true}});
-        if (!user) {
-            return {
-                statusCode: 404,
-                message: "User not found"
-            }
-        }
-        if (!user.profile) {
+        if (!session.user.profile) {
             return {
                 statusCode: 400,
                 message: "Account didn't connected",
@@ -280,11 +279,11 @@ export class MinecraftService {
         }
 
         await this.prisma.user.update({where: {
-            id: user.id
+            id: session.user.id
         }, data: {
             profile: {
                 disconnect: {
-                    id: user.profile.id
+                    id: session.user.profile.id
                 }
             }
         }});
