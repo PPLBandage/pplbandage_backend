@@ -1,10 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 import { UserService } from './user.module';
-import { Mutex } from 'async-mutex';
 import { Prisma } from '@prisma/client';
 
-const mutex = new Mutex();
 const moderation_id = [4, 13];
 
 interface BandageSerch {
@@ -198,7 +196,6 @@ export class BandageService {
             };
         }
 
-        const release = await mutex.acquire()
         const new_data = await this.prisma.bandage.update({
             where: {
                 id: bandage.id
@@ -210,7 +207,6 @@ export class BandageService {
                 stars: true
             }
         });
-        release();
         return {
             message: "",
             new_count: new_data.stars.length,
@@ -245,7 +241,7 @@ export class BandageService {
         return {
             message: "",
             external_id: result.externalId,
-            statusCode: 200
+            statusCode: 201
         }
     }
 

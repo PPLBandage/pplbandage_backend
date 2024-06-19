@@ -3,7 +3,6 @@ import { PrismaService } from './prisma.service';
 import { User, Prisma } from '@prisma/client';
 import { sign, verify } from 'jsonwebtoken';
 import axios from 'axios';
-import { title } from 'process';
 
 const discord_url = "https://discord.com/api/v10";
 const token_ttl = Number(process.env.SESSION_TTL);
@@ -216,7 +215,7 @@ export class UserService {
             minecraft: {
                 nickname: data.default_nick,
                 uuid: data.uuid,
-                expires_at: Number(data.expires) - parseInt(process.env.TTL as string),
+                last_cached: Number(data.expires) - parseInt(process.env.TTL as string),
                 head: data.data_head,
                 valid: data.valid,
                 autoload: data.user?.autoload

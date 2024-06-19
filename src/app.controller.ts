@@ -36,10 +36,11 @@ export class AppController {
     }
 
     @Get("/profile/:name")
-    async profile(@Param('name') name: string, @Res({ passthrough: true }) res: Response): Promise<ProfileResponse | DefaultResponse> {
+    async profile(@Param('name') name: string, @Res({ passthrough: true }) res: Response): Promise<ProfileResponse | DefaultResponse | void> {
         const data = await this.minecraftService.getUserData(name);
         if (!data) {
-            throw new HttpException('Profile not found', HttpStatus.NOT_FOUND);
+            res.status(404).send({message: 'Profile not found'});
+            return;
         }
         const textures = atob(data.properties[0].value);
         const data_properties = JSON.parse(textures) as EncodedResponse;
@@ -65,7 +66,8 @@ export class AppController {
     async skin(@Param('name') name: string, @Query() query: { cape: boolean }, @Res({ passthrough: true }) res: Response): Promise<CapeResponse | void> {
         const cache = await this.minecraftService.updateSkinCache(name);
         if (!cache) {
-            throw new HttpException({message: 'Profile not found'}, HttpStatus.NOT_FOUND);
+            res.status(404).send({message: 'Profile not found'});
+            return;
         }
         if (!query.cape) {
             const skin_buff = Buffer.from(cache.data, "base64");
@@ -97,13 +99,15 @@ export class AppController {
 
     @Get("/cape/:name")
     @Header('Content-Type', 'image/png')
-    async cape(@Param('name') name: string, @Res({ passthrough: true }) res: Response): Promise<StreamableFile> {
+    async cape(@Param('name') name: string, @Res({ passthrough: true }) res: Response): Promise<StreamableFile | void> {
         const cache = await this.minecraftService.updateSkinCache(name);
         if (!cache) {
-            throw new HttpException({message: 'Profile not found'}, HttpStatus.NOT_FOUND);
+            res.status(404).send({message: 'Profile not found'});
+            return;
         }
         if (!cache.data_cape) {
-            throw new HttpException({message: 'No cape on this profile'}, HttpStatus.NOT_FOUND);
+            res.status(404).send({message: 'No cape on this profile'});
+            return;
         }
         const skin_buff = Buffer.from(cache.data_cape, "base64");
         return new StreamableFile(skin_buff);
@@ -370,6 +374,34 @@ export class AppController {
         const data = await this.minecraftService.connect(session, code);
         res.status(data.statusCode).send(data);
     }
+
+    @Throttle({ default: { limit: 5, ttl: 60000 } })
+    @Post("/users/me/connections/cache/purge")
+    async skinPurge(@Req() request: Request, @Res({ passthrough: true }) res: Response): Promise<void> {
+        const session = await this.userService.validateSession(request.cookies.sessionId);
+        if (!session) {
+            res.status(HttpStatus.UNAUTHORIZED).send(UNAUTHORIZED);
+            return;
+        }
+
+        if (!session.user.profile) {
+            res.status(400).send({
+                message: "Could not find associated Minecraft account",
+            });
+            return;
+        }
+
+        const cache = await this.minecraftService.updateSkinCache(session.user.profile.uuid, true);
+        if (!cache) {
+            res.status(404).send({message: 'Profile not found'});
+            return;
+        }
+
+        res.status(200).send({
+            message: "Successfully purged",
+        });
+    }
+
 
     @Delete("/users/me/connections/minecraft/disconnect")
     async disconnectMinecraft(@Req() request: Request, @Res() res: Response): Promise<void> {
