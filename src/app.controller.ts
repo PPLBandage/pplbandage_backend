@@ -5,7 +5,7 @@ import { Buffer } from "buffer";
 import { UserService } from './user.module';
 import { BandageService } from './bandage.service';
 import * as sharp from 'sharp';
-import { SkipThrottle, Throttle } from '@nestjs/throttler';
+import { Throttle } from '@nestjs/throttler';
 
 
 const UNAUTHORIZED = {
@@ -14,11 +14,6 @@ const UNAUTHORIZED = {
     statusCode: 401
 }
 
-interface CreateBody {
-    base64: string, 
-    title: string, 
-    description: string
-}
 
 const rate_limit = 5;
 
@@ -154,8 +149,7 @@ export class AppController {
         res.setHeader('SetCookie', session.cookie);
 
         const data = await this.userService.getUser(session.sessionId);
-        res.send(data);
-        return;
+        res.status(data.statusCode).send(data);
     }
 
     @Delete("/users/logout")
@@ -170,7 +164,7 @@ export class AppController {
         res.status(200).send({"status": "success"});
     }
 
-    @Get("/bandages")
+    @Get("/workshop")
     async bandages(@Req() request: Request, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
         res.status(200).send(await this.bandageService.getBandages(request.cookies.sessionId, 
             parseInt(query.take as string) || 20, 
@@ -212,6 +206,7 @@ export class AppController {
         
         res.setHeader('Access-Control-Expose-Headers', 'SetCookie');
         res.setHeader('SetCookie', session.cookie);
+
         if (!body.base64 || !body.title || !body.description) {
             res.status(HttpStatus.BAD_REQUEST).send({
                 message: "Invalid Body",
@@ -250,14 +245,14 @@ export class AppController {
                 return;
             }
         } catch {
-            res.status(HttpStatus.BAD_REQUEST).send({
-                message: "Error while parcing base64",
-                statusCode: 400
+            res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                message: "Error while processing base64",
+                statusCode: 500
             });
             return;
         }
 
-        const data = await this.bandageService.createBandage(body.base64, body.title, body.description, session.sessionId);
+        const data = await this.bandageService.createBandage(body, session);
         res.status(data.statusCode).send(data);
     }
 
@@ -418,10 +413,50 @@ export class AppController {
         res.status(data.statusCode).send(data);
     }
 
-    @Get("/bandages/:id")
+    @Get("/workshop/:id")
     async getBandage(@Param('id') id: string, @Req() request: Request, @Res() res: Response): Promise<void> {
         const data = await this.bandageService.getBandage(id, request.cookies.sessionId);
         res.status(data.statusCode).send(data);
+    }
+
+    @Put("/workshop/:id/edit")
+    async editBandage(@Param('id') id: string, @Req() request: Request, @Res() res: Response, @Body() body: CreateBody) {
+        const session = await this.userService.validateSession(request.cookies.sessionId);
+        if (!session) {
+            res.status(HttpStatus.UNAUTHORIZED).send(UNAUTHORIZED);
+            return;
+        }
+
+        res.setHeader('Access-Control-Expose-Headers', 'SetCookie');
+        res.setHeader('SetCookie', session.cookie);
+
+        if (!body) {
+            res.status(HttpStatus.BAD_REQUEST).send({
+                message: "Invalid Body",
+                statusCode: 400
+            });
+            return;
+        }
+
+        if (body.title?.length > 50) {
+            res.status(HttpStatus.BAD_REQUEST).send({
+                message: "Title cannot be longer than 50 symbols",
+                statusCode: 400
+            });
+            return;
+        }
+
+        if (body.description?.length > 300) {
+            res.status(HttpStatus.BAD_REQUEST).send({
+                message: "Description cannot be longer than 300 symbols",
+                statusCode: 400
+            });
+            return;
+        }
+
+        const data = await this.bandageService.updateBandage(id, body, session);
+        res.status(data.statusCode).send(data);
+
     }
 
 }

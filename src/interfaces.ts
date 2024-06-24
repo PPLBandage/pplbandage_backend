@@ -144,3 +144,10 @@ interface Session {
     cookie: string;
     user: User;
 }
+
+interface CreateBody {
+    base64: string, 
+    title: string, 
+    description: string,
+    categories: number[]
+}

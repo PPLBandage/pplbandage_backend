@@ -68,6 +68,10 @@ export class UserService {
     }
 
     async check_ppl(uid: string) {
+        // Скорее всего это именно та функция, за которой вы сюда пришли,
+        // как видно ниже, бекенд делает запрос только к эндпоинтам /guilds/<guild_id>/members/<member_id> и /users/<user_id>
+        // для получения общих и ОТКРЫТЫХ сведений о члене гильдии.
+        // Больше аккаунт никак не используется. В этом можно убедиться, произведя поиск `process.env.DISCORD_TOKEN` по проекту.
         const response = await axios.get(`${discord_url}/guilds/${pwgood}/members/${uid}`, {
             headers: {
                 Authorization: process.env.DISCORD_TOKEN
@@ -132,7 +136,8 @@ export class UserService {
             update: {}
         });
         if (user_db.banned) {
-            return { message: "Can not log in", statusCode: 403 };
+            await this.prisma.sessions.deleteMany({ where: { userId: user_db.id } });
+            return { message: "Unable to login", statusCode: 403 };
         }
         const sessionId = sign({ userId: user_db.id }, 'ppl_super_secret', { expiresIn: token_ttl });
         const token_record = await this.prisma.sessions.create({
@@ -174,22 +179,36 @@ export class UserService {
 
     async getUser(session: string) {
         const sessionDB = await this.prisma.sessions.findFirst({ where: { sessionId: session }, include: { User: true } });
-        if (!sessionDB) return null;
+        if (!sessionDB) {
+            return { message: "User not found", statusCode: 401 };
+        }
 
-        const response = await axios.get(discord_url + "/users/" + sessionDB.User.discordId, {
+        if (sessionDB.User.banned) {
+            await this.prisma.sessions.deleteMany({ where: { userId: sessionDB.User.id } });
+            return { message: "Unable to login", statusCode: 401 };
+        }
+
+        const response = await axios.get(`${discord_url}/users/${sessionDB.User.discordId}`, {
             headers: {
                 Authorization: process.env.DISCORD_TOKEN
             }
         });
-        const data = response.data as DiscordUser;
+        const response_data = response.data as DiscordUser;
+
+        const new_data = await this.prisma.user.update({
+            where: { id: sessionDB.User.id },
+            data: { username: response_data.username, name: response_data.global_name }
+        });
+
         return {
-            userID: sessionDB?.User.id,
-            discordID: sessionDB?.User.discordId,
-            username: sessionDB?.User.username,
-            name: sessionDB?.User.name,
-            joined_at: sessionDB?.User.joined_at,
-            avatar_small: `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}?size=80`,
-            avatar: `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}?size=512`
+            statusCode: 200,
+            userID: new_data.id,
+            discordID: new_data.discordId,
+            username: new_data.username,
+            name: new_data.name,
+            joined_at: new_data.joined_at,
+            avatar_small: `https://cdn.discordapp.com/avatars/${response_data.id}/${response_data.avatar}?size=80`,
+            avatar: `https://cdn.discordapp.com/avatars/${response_data.id}/${response_data.avatar}?size=512`
         };
     }
 
@@ -202,7 +221,7 @@ export class UserService {
             where: {
                 userId: session.user.id
             },
-            include: {user: true}
+            include: { user: true }
         });
 
         if (!data) return {

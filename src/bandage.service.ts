@@ -4,6 +4,7 @@ import { UserService } from './user.module';
 import { Prisma } from '@prisma/client';
 
 const moderation_id = [4, 13];
+const common_id = 15;
 
 interface BandageSerch {
     title?: {
@@ -77,7 +78,9 @@ interface Bandage {
 
 const generate_response = (data: Bandage[], session: Session | null) => {
     const result = data.map((el) => {
+        if (el.User?.banned) return undefined;
         const categories = el.categories.map((cat) => {
+            if (cat.icon === '/null') return;
             return {
                 id: cat.id,
                 name: cat.name,
@@ -98,10 +101,11 @@ const generate_response = (data: Bandage[], session: Session | null) => {
                 name: el.User?.name,
                 username: el.User?.username
             },
-            categories: categories
+            categories: categories.filter((el) => el !== undefined)
         }
-    })
-    return result;
+    });
+    
+    return result.filter((el) => el !== undefined);
 }
 
 @Injectable()
@@ -160,14 +164,12 @@ export class BandageService {
             }
         }
 
-        const where = {
-            categories: {
-                some: {
-                    only_admins: available ? undefined : false
-                }
-            },
+        const category = available ? undefined : {none: {only_admins: true}};
+
+        const where: Prisma.BandageWhereInput = {
+            categories: category,
             OR: filter_rule,
-            AND: filters_rule
+            AND: filters_rule,
         };
 
         const data = await this.prisma.bandage.findMany({
@@ -215,31 +217,33 @@ export class BandageService {
         }
     }
 
-    async createBandage(base64: string,
-        title: string,
-        description: string,
-        sessionId: string) {
-        const session = await this.users.validateSession(sessionId);
+    async createBandage(body: CreateBody, session: Session) {
+        
+        let categories = [{ id: moderation_id[0] }, { id: common_id} ];
+        if (body.categories !== undefined) {
+            const validated_categories = await this.validateCategories(body.categories, session.user.admin);
+            categories = [...validated_categories.map((el) => {
+                return { id: el };
+            }), ...categories];
+        }
+
         const result = await this.prisma.bandage.create({
             data: {
                 externalId: Math.random().toString(36).substring(2, 8),
-                title: title,
-                description: description,
-                base64: base64,
+                title: body.title,
+                description: body.title,
+                base64: body.base64,
                 User: {
                     connect: {
                         id: session?.user.id
                     }
                 },
                 categories: {
-                    connect: {
-                        id: moderation_id[0]
-                    }
+                    connect: categories
                 }
             }
         });
         return {
-            message: "",
             external_id: result.externalId,
             statusCode: 201
         }
@@ -247,19 +251,19 @@ export class BandageService {
 
     async getCategories(for_edit: boolean, sessionId: string) {
         const session = await this.users.validateSession(sessionId);
-        let admin: boolean | undefined = false;
+        let admin: boolean = false;
         if (session) {
-            if (session.user) admin = session.user.admin ? undefined : false;
+            if (session.user) admin = session.user.admin;
         }
         const categories = await this.prisma.category.findMany({
             where: for_edit ? {
-                reachable: true,
-                only_admins: admin
+                reachable: admin ? undefined : true,
+                only_admins: admin ? undefined : false
             } : {
-                only_admins: admin
+                only_admins: admin ? undefined : false
             }, select: { id: true, name: true, icon: true }
         });
-        return categories;
+        return categories.filter(el => el.icon !== "/null");
     }
 
 
@@ -284,6 +288,9 @@ export class BandageService {
                     some: {
                         id: session.user.id
                     }
+                },
+                User: {
+                    banned: false
                 }
             },
             include: {
@@ -305,11 +312,17 @@ export class BandageService {
             };
         }
         const hidden = Object.values(bandage.categories).some(val => val.only_admins);
-        if (hidden && (session ? (!session.user.admin || session.user.id !== bandage.User?.id) : true)) {
+        if (hidden && (session ? (!session.user.admin && session.user.id !== bandage.User?.id) : true)) {
             return {
                 message: "Bandage not found",
                 statusCode: 404
             };
+        }
+
+        let permissions_level = 0;
+        if (session) {
+            if (session.user.id === bandage.User?.id) permissions_level = 1;
+            if (session.user.admin) permissions_level = 2;
         }
 
         const me_profile = session && session.user.profile && session.user.autoload ? {
@@ -323,7 +336,11 @@ export class BandageService {
                 name: cat.name,
                 icon: cat.icon
             }
-        })
+        });
+
+        let check = null;
+        if (Object.values(bandage.categories).some(val => val.icon.includes("clock.svg"))) check = "under review";
+        if (Object.values(bandage.categories).some(val => val.icon.includes("denied.svg"))) check = "denied";
 
         return {
             statusCode: 200,
@@ -341,10 +358,74 @@ export class BandageService {
                     name: bandage.User?.name,
                     username: bandage.User?.username
                 },
-                categories: categories,
-                me_profile: me_profile
+                categories: categories.filter(el => el.icon !== '/null'),
+                me_profile: me_profile,
+                permissions_level: permissions_level,
+                check_state: check
             }
         }
         
     }
+
+    async updateBandage(id: string, body: CreateBody, session: Session) {
+        const bandage = await this.prisma.bandage.findFirst({where: {externalId: id}, include: {User: true, categories: true, stars: true}});
+
+        if (bandage?.User?.id !== session.user.id && !session.user.admin) {
+            return {
+                statusCode: 403,
+                message: "Forbidden"
+            }
+        }
+
+        let title = undefined;
+        let description = undefined;
+        let categories = undefined;
+
+        if (session.user.admin) {
+            if (body.title) title = body.title;
+            if (body.description) description = body.description;
+        }
+
+        if (body.categories !== undefined) {
+            const validated_categories = await this.validateCategories(body.categories, session.user.admin);
+            if (!session.user.admin) {
+                const bandage_categories = bandage?.categories.map(el => el.id);
+                if (bandage_categories?.includes(moderation_id[0])) validated_categories.push(moderation_id[0]);
+                if (bandage_categories?.includes(moderation_id[1])) validated_categories.push(moderation_id[1]);
+            }
+            categories = validated_categories.map((el) => {
+                return { id: el };
+            });
+        }
+
+        await this.prisma.bandage.update({
+            where: {
+                id: bandage?.id
+            }, 
+            data: {
+                title: title,
+                description: description,
+                categories: {
+                    set: categories
+                }
+            }
+        })
+
+        return {
+            statusCode: 200,
+            message: ""
+        }
+    }
+
+    async validateCategories(categories: number[], admin: boolean) {
+        const reachable_categories = await this.prisma.category.findMany({
+            where: {
+                reachable: admin ? undefined : true
+            }
+        });
+
+        const reachable_ids = reachable_categories.map(el => el.id);
+        return categories.filter((el) => reachable_ids.includes(el));
+    }
+
 }
