@@ -6,6 +6,14 @@ import axios from 'axios';
 
 const discord_url = "https://discord.com/api/v10";
 const token_ttl = Number(process.env.SESSION_TTL);
+const roles = [
+    "1142141232685006990",
+    "958432771519422476",
+    "495989709265436687",
+    "589530176501579780",
+    "987234058478186506"
+];
+const pwgood = "447699225078136832";
 
 interface DiscordResponse {
     token_type: string,
@@ -33,10 +41,15 @@ interface DiscordUser {
     premium_type: number
 }
 
-interface Session {
+interface SessionToken {
     userId: number,
     iat: number,
     exp: number
+}
+
+interface pplRes {
+    "roles": Array<string>,
+    "user": { "id": string, "username": string }
 }
 
 const generateCookie = (session: string, exp: number): string => {
@@ -54,7 +67,30 @@ export class UserService {
         });
     }
 
-    async login(code: string): Promise<{ id: number; sessionId: string; userId: number | null; } | null> {
+    async check_ppl(uid: string) {
+        // Скорее всего это именно та функция, за которой вы сюда пришли,
+        // как видно ниже, бекенд делает запрос только к эндпоинтам /guilds/<guild_id>/members/<member_id> и /users/<user_id>
+        // для получения общих и ОТКРЫТЫХ сведений о члене гильдии.
+        // Больше аккаунт никак не используется. В этом можно убедиться, произведя поиск `process.env.DISCORD_TOKEN` по проекту.
+        const response = await axios.get(`${discord_url}/guilds/${pwgood}/members/${uid}`, {
+            headers: {
+                Authorization: process.env.DISCORD_TOKEN
+            },
+            validateStatus: () => true
+        });
+        if (response.status != 200) {
+            return false;
+        }
+        const data = response.data as pplRes;
+        for (const role of data.roles) {
+            if (roles.includes(role)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    async login(code: string) {
         const discord_tokens = await axios.post(discord_url + "/oauth2/token", {
             'grant_type': 'authorization_code',
             'code': code,
@@ -78,14 +114,31 @@ export class UserService {
         if (discord_user.status != 200) return null;
         const ds_user = discord_user.data as DiscordUser;
 
+        const on_ppl = await this.check_ppl(ds_user.id);
+        if (!on_ppl) {
+            await this.prisma.sessions.deleteMany({
+                where: {
+                    User: {
+                        discordId: ds_user.id
+                    }
+                }
+            });
+            return { message: "You are not on ppl", statusCode: 403 };
+        }
+
         const user_db = await this.prisma.user.upsert({
             where: { 'discordId': ds_user.id },
             create: {
                 'discordId': ds_user.id,
-                'username': ds_user.username
+                'username': ds_user.username,
+                'name': ds_user.global_name
             },
             update: {}
-        })
+        });
+        if (user_db.banned) {
+            await this.prisma.sessions.deleteMany({ where: { userId: user_db.id } });
+            return { message: "Unable to login", statusCode: 403 };
+        }
         const sessionId = sign({ userId: user_db.id }, 'ppl_super_secret', { expiresIn: token_ttl });
         const token_record = await this.prisma.sessions.create({
             data: {
@@ -97,34 +150,90 @@ export class UserService {
                 }
             }
         });
-        return token_record
+        return { message: "logged in", sessionId: token_record.sessionId, statusCode: 200 };
     }
 
-    async validateSession(session: string | undefined): Promise< { sessionId: string; cookie: string; } | null> {
+    async validateSession(session: string | undefined): Promise<Session | null> {
         if (!session) return null;
-        const sessionDB = await this.prisma.sessions.findFirst({ where: { sessionId: session } });
+        const sessionDB = await this.prisma.sessions.findUnique({ where: { sessionId: session }, include: { User: { include: { profile: true } } } });
         if (!sessionDB) return null;
 
         try {
-            const decoded = verify(session, 'ppl_super_secret') as Session;
+            const decoded = verify(session, 'ppl_super_secret') as SessionToken;
             const seconds = Math.round(Date.now() / 1000);
             if (decoded.iat + ((decoded.exp - decoded.iat) / 2) < seconds) {
                 const sessionId = sign({ userId: sessionDB.userId }, 'ppl_super_secret', { expiresIn: token_ttl });
-                await this.prisma.sessions.update({ where: { id: sessionDB.id }, data: { sessionId: sessionId } });
+                const new_tokens = await this.prisma.sessions.update({ where: { id: sessionDB.id }, data: { sessionId: sessionId }, include: { User: { include: { profile: true } } } });
                 const cookie = generateCookie(sessionId, seconds + token_ttl);
 
-                return { sessionId: sessionId, cookie: cookie };
+                return { sessionId: sessionId, cookie: cookie, user: new_tokens.User };
             } else {
                 const cookie = generateCookie(session, decoded.exp);
-                return { sessionId: session, cookie: cookie };
+                return { sessionId: sessionDB.sessionId, cookie: cookie, user: sessionDB.User };
             }
         } catch (err) {
+            await this.prisma.sessions.delete({ where: { id: sessionDB.id } });
             return null;
         }
     }
 
     async getUser(session: string) {
         const sessionDB = await this.prisma.sessions.findFirst({ where: { sessionId: session }, include: { User: true } });
-        return { userID: sessionDB?.User.id, discordID: sessionDB?.User.discordId, username: sessionDB?.User.username };
+        if (!sessionDB) {
+            return { message: "User not found", statusCode: 401 };
+        }
+
+        if (sessionDB.User.banned) {
+            await this.prisma.sessions.deleteMany({ where: { userId: sessionDB.User.id } });
+            return { message: "Unable to login", statusCode: 401 };
+        }
+
+        const response = await axios.get(`${discord_url}/users/${sessionDB.User.discordId}`, {
+            headers: {
+                Authorization: process.env.DISCORD_TOKEN
+            }
+        });
+        const response_data = response.data as DiscordUser;
+        return {
+            statusCode: 200,
+            userID: sessionDB.User.id,
+            discordID: sessionDB.User.discordId,
+            username: sessionDB.User.username,
+            name: sessionDB.User.name,
+            joined_at: sessionDB.User.joined_at,
+            avatar_small: `https://cdn.discordapp.com/avatars/${response_data.id}/${response_data.avatar}?size=80`,
+            avatar: `https://cdn.discordapp.com/avatars/${response_data.id}/${response_data.avatar}?size=512`
+        };
+    }
+
+    async logout(session: Session) {
+        await this.prisma.sessions.delete({ where: { sessionId: session.sessionId } });
+    }
+
+    async getConnections(session: Session) {
+        const data = await this.prisma.minecraft.findFirst({
+            where: {
+                userId: session.user.id
+            },
+            include: { user: true }
+        });
+
+        if (!data) return {
+            statusCode: 200,
+            minecraft: null
+        };
+
+        return {
+            statusCode: 200,
+            minecraft: {
+                nickname: data.default_nick,
+                uuid: data.uuid,
+                last_cached: Number(data.expires) - parseInt(process.env.TTL as string),
+                head: data.data_head,
+                valid: data.valid,
+                autoload: data.user?.autoload
+            }
+        }
     }
 }
+
