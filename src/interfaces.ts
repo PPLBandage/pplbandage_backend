@@ -149,5 +149,6 @@ interface CreateBody {
     base64: string, 
     title: string, 
     description: string,
-    categories: number[]
+    categories: number[],
+    access_level: number
 }

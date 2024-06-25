@@ -5,6 +5,7 @@ import { Prisma } from '@prisma/client';
 
 const moderation_id = [4, 13];
 const common_id = 15;
+const official_id = 0;
 
 interface BandageSerch {
     title?: {
@@ -71,7 +72,7 @@ interface Bandage {
     id: number,
     externalId: string,
     title: string,
-    description: string,
+    description: string | null,
     base64: string,
     creationDate: Date
 }
@@ -154,20 +155,16 @@ export class BandageService {
         const filters_rule = filters_list?.map(el => { return { categories: { some: { id: Number(el) } } }; });
         
         let available = false;
-        if (session) {
-            if (session.user) {
-                if (session.user.admin) {
-                    const data = await this.prisma.category.findMany({ where: { only_admins: true }});
-                    const contains = Object.values(data).some(val => filters_list?.includes(String(val.id)));
-                    available = contains;
-                }
-            }
+        if (session && session.user && session.user.admin) {
+            const data = await this.prisma.category.findMany({ where: { only_admins: true }});
+            available = Object.values(data).some(val => filters_list?.includes(String(val.id)));
         }
 
         const category = available ? undefined : {none: {only_admins: true}};
 
         const where: Prisma.BandageWhereInput = {
             categories: category,
+            access_level: 2,
             OR: filter_rule,
             AND: filters_rule,
         };
@@ -184,7 +181,7 @@ export class BandageService {
             orderBy: constructSort(sort)
         });
 
-        const count = await this.prisma.bandage.count({ where: where })
+        const count = await this.prisma.bandage.count({ where: where });
         const result = generate_response(data, session);
         return { data: result, totalCount: count, next_page: result.length ? page + 1 : page };
     }
@@ -311,8 +308,9 @@ export class BandageService {
                 statusCode: 404
             };
         }
-        const hidden = Object.values(bandage.categories).some(val => val.only_admins);
-        if (hidden && (session ? (!session.user.admin && session.user.id !== bandage.User?.id) : true)) {
+        const hidden = Object.values(bandage.categories).some(val => val.only_admins) || bandage.access_level === 0;
+        const access = session ? (!session.user.admin && session.user.id !== bandage.User?.id) : true;
+        if (hidden && access) {
             return {
                 message: "Bandage not found",
                 statusCode: 404
@@ -322,7 +320,7 @@ export class BandageService {
         let permissions_level = 0;
         if (session) {
             if (session.user.id === bandage.User?.id) permissions_level = 1;
-            if (session.user.admin) permissions_level = 2;
+            if (session.user.admin || (session.user.id === bandage.User?.id && hidden)) permissions_level = 2;
         }
 
         const me_profile = session && session.user.profile && session.user.autoload ? {
@@ -361,6 +359,7 @@ export class BandageService {
                 categories: categories.filter(el => el.icon !== '/null'),
                 me_profile: me_profile,
                 permissions_level: permissions_level,
+                access_level: bandage.access_level,
                 check_state: check
             }
         }
@@ -370,6 +369,13 @@ export class BandageService {
     async updateBandage(id: string, body: CreateBody, session: Session) {
         const bandage = await this.prisma.bandage.findFirst({where: {externalId: id}, include: {User: true, categories: true, stars: true}});
 
+        if (!bandage) {
+            return {
+                statusCode: 404,
+                message: "Not found"
+            }
+        }
+        
         if (bandage?.User?.id !== session.user.id && !session.user.admin) {
             return {
                 statusCode: 403,
@@ -380,10 +386,13 @@ export class BandageService {
         let title = undefined;
         let description = undefined;
         let categories = undefined;
+        let access_level = undefined;
 
-        if (session.user.admin) {
-            if (body.title) title = body.title;
-            if (body.description) description = body.description;
+        const hidden = Object.values(bandage.categories).some(val => val.only_admins);
+
+        if (session.user.admin || hidden) {
+            if (body.title !== undefined) title = body.title;
+            if (body.description !== undefined) description = body.description;
         }
 
         if (body.categories !== undefined) {
@@ -392,10 +401,16 @@ export class BandageService {
                 const bandage_categories = bandage?.categories.map(el => el.id);
                 if (bandage_categories?.includes(moderation_id[0])) validated_categories.push(moderation_id[0]);
                 if (bandage_categories?.includes(moderation_id[1])) validated_categories.push(moderation_id[1]);
+                if (bandage_categories?.includes(official_id)) validated_categories.push(official_id);
             }
             categories = validated_categories.map((el) => {
                 return { id: el };
             });
+        }
+
+        if (body.access_level !== undefined) {
+            const check_al = Number(body.access_level);
+            if (!isNaN(check_al) && check_al >= 0 && check_al <= 2) access_level = check_al;
         }
 
         await this.prisma.bandage.update({
@@ -407,7 +422,8 @@ export class BandageService {
                 description: description,
                 categories: {
                     set: categories
-                }
+                },
+                access_level: access_level
             }
         })
 

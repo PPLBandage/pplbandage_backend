@@ -218,6 +218,7 @@ export class AppController {
         if (body.title.length > 50) {
             res.status(HttpStatus.BAD_REQUEST).send({
                 message: "Title cannot be longer than 50 symbols",
+                message_ru: "Заголовок не может быть длинее 50 символов",
                 statusCode: 400
             });
             return;
@@ -226,6 +227,7 @@ export class AppController {
         if (body.description.length > 300) {
             res.status(HttpStatus.BAD_REQUEST).send({
                 message: "Description cannot be longer than 300 symbols",
+                message_ru: "Описание не может быть длиннее 300 символов",
                 statusCode: 400
             });
             return;
@@ -240,6 +242,7 @@ export class AppController {
             if (width != 16 || (height < 2 || height > 24 || height % 2 != 0) || metadata.format != 'png'){
                 res.status(HttpStatus.BAD_REQUEST).send({
                     message: "Invalid bandage size or format!",
+                    message_ru: "Повязка должна иметь ширину 16 пикселей, высоту от 2 до 24 пикселей и четную высоту",
                     statusCode: 400
                 });
                 return;
