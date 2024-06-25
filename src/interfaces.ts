@@ -2,8 +2,15 @@ interface Texture {
     url: string;
 }
 
+interface TextureWithMetadata {
+    url: string;
+    metadata?: {
+        model: string
+    }
+}
+
 interface Textures {
-    SKIN: Texture;
+    SKIN: TextureWithMetadata;
     CAPE?: Texture;
 }
 
@@ -27,11 +34,10 @@ interface Profile {
 }
 
 interface DefaultResponse {
-    status: string;
     message: string;
 }
 
-interface Cache{
+interface Cache {
     id: number;
     uuid: string;
     data: string;
@@ -43,49 +49,53 @@ interface Cache{
     valid: boolean;
 }
 
-interface SearchUnit{
+interface SearchUnit {
     name: string,
     uuid: string,
     head: string
 }
 
-interface Search{
-    status: string, 
+interface Search {
+    status: string,
     requestedFragment: string
     data: SearchUnit[],
     total_count: number,
     next_page: number
 }
 
-interface SearchQuery{
+interface SearchQuery {
     take?: string,
-    page?: string
+    page?: string,
+    search?: string,
+    for_edit?: string,
+    filters?: string,
+    sort?: string,
+    state?: string
 }
 
-interface SearchParams{
+interface SearchParams {
     fragment: string,
     take: number,
     page: number
 }
 
 
-interface TexturesProfile{
+interface TexturesProfile {
     SKIN: TextureProfile;
     CAPE?: TextureProfile;
 }
 
-interface TextureProfile{
+interface TextureProfile {
     mojang: string | undefined;
     eldraxis: string;
 }
 
-interface EldraxisCache{
+interface EldraxisCache {
     available_in_search: boolean,
     last_cached: number
 }
 
-interface ProfileResponse{
-    status: string,
+interface ProfileResponse {
     message: string,
     timestamp: number,
     uuid: string,
@@ -94,12 +104,51 @@ interface ProfileResponse{
 }
 
 interface SkinAndCape {
-    skin: string,
+    skin: {
+        data: string,
+        slim: boolean
+    },
     cape: string
 }
 
 interface CapeResponse {
-    status: string,
-	message: string,
-	data: SkinAndCape
+    message: string,
+    data: SkinAndCape
+}
+
+interface User {
+    id: number;
+    username: string;
+    name: string;
+    discordId: string;
+    admin: boolean;
+    banned: boolean;
+    joined_at: Date;
+    profile: {
+        id: number;
+        uuid: string;
+        data: string;
+        data_cape: string;
+        data_head: string;
+        nickname: string;
+        expires: bigint;
+        default_nick: string;
+        valid: boolean;
+        userId: number | null;
+    } | null;
+    autoload: boolean;
+}
+
+interface Session {
+    sessionId: string;
+    cookie: string;
+    user: User;
+}
+
+interface CreateBody {
+    base64: string, 
+    title: string, 
+    description: string,
+    categories: number[],
+    access_level: number
 }
