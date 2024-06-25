@@ -152,7 +152,7 @@ export class AppController {
         res.status(data.statusCode).send(data);
     }
 
-    @Delete("/users/logout")
+    @Delete("/users/me")
     async logout(@Req() request: Request, @Res() res: Response): Promise<void> {
         const session = await this.userService.validateSession(request.cookies.sessionId);
         if (!session) {
@@ -164,106 +164,7 @@ export class AppController {
         res.status(200).send({"status": "success"});
     }
 
-    @Get("/workshop")
-    async bandages(@Req() request: Request, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
-        res.status(200).send(await this.bandageService.getBandages(request.cookies.sessionId, 
-            parseInt(query.take as string) || 20, 
-            parseInt(query.page as string) || 0, 
-            query.search, 
-            query.filters,
-            query.sort));
-    }
-
-    @Put("/star/:id")
-    async setStar(@Param('id') id: string, @Query() query: { set: string }, @Req() request: Request, @Res() res: Response): Promise<void> {
-        const session = await this.userService.validateSession(request.cookies.sessionId);
-        if (!session) {
-            res.status(HttpStatus.UNAUTHORIZED).send(UNAUTHORIZED);
-            return;
-        }
-        if (!query.set || !["true", "false"].includes(query.set)) {
-            res.status(HttpStatus.BAD_REQUEST).send({
-                message: "`Set` query param invalid",
-                statusCode: 400
-            });
-            return;
-        }
-        res.setHeader('Access-Control-Expose-Headers', 'SetCookie');
-        res.setHeader('SetCookie', session.cookie);
-
-        const data = await this.bandageService.setStar(session, query.set === "true", id);
-        res.status(data.statusCode).send(data);
-    }
-
-
-    @Post("/workshop/create")
-    async create_bandage(@Req() request: Request, @Res() res: Response, @Body() body: CreateBody): Promise<void> {
-        const session = await this.userService.validateSession(request.cookies.sessionId);
-        if (!session) {
-            res.status(HttpStatus.UNAUTHORIZED).send(UNAUTHORIZED);
-            return;
-        }
-        
-        res.setHeader('Access-Control-Expose-Headers', 'SetCookie');
-        res.setHeader('SetCookie', session.cookie);
-
-        if (!body.base64 || !body.title || !body.description) {
-            res.status(HttpStatus.BAD_REQUEST).send({
-                message: "Invalid Body",
-                statusCode: 400
-            });
-            return;
-        }
-
-        if (body.title.length > 50) {
-            res.status(HttpStatus.BAD_REQUEST).send({
-                message: "Title cannot be longer than 50 symbols",
-                message_ru: "Заголовок не может быть длинее 50 символов",
-                statusCode: 400
-            });
-            return;
-        }
-
-        if (body.description.length > 300) {
-            res.status(HttpStatus.BAD_REQUEST).send({
-                message: "Description cannot be longer than 300 symbols",
-                message_ru: "Описание не может быть длиннее 300 символов",
-                statusCode: 400
-            });
-            return;
-        }
-
-        try {
-            const bandage_buff = Buffer.from(body.base64, 'base64');
-            const bandage_sharp = sharp(bandage_buff);
-            const metadata = await bandage_sharp.metadata();
-            const width = metadata.width as number;
-            const height = metadata.height as number;
-            if (width != 16 || (height < 2 || height > 24 || height % 2 != 0) || metadata.format != 'png'){
-                res.status(HttpStatus.BAD_REQUEST).send({
-                    message: "Invalid bandage size or format!",
-                    message_ru: "Повязка должна иметь ширину 16 пикселей, высоту от 2 до 24 пикселей и четную высоту",
-                    statusCode: 400
-                });
-                return;
-            }
-        } catch {
-            res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                message: "Error while processing base64",
-                statusCode: 500
-            });
-            return;
-        }
-
-        const data = await this.bandageService.createBandage(body, session);
-        res.status(data.statusCode).send(data);
-    }
-
-    @Get("/categories")
-    async categories(@Req() request: Request, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
-        res.status(200).send(await this.bandageService.getCategories(query.for_edit === "true", request.cookies.sessionId));
-    }
-
+    
     @Get("/users/me/works")
     async getWork(@Req() request: Request, @Res() res: Response): Promise<void> {
         const session = await this.userService.validateSession(request.cookies.sessionId);
@@ -374,7 +275,7 @@ export class AppController {
     }
 
     @Throttle({ default: { limit: 5, ttl: 60000 } })
-    @Post("/users/me/connections/cache/purge")
+    @Post("/users/me/connections/minecraft/cache/purge")
     async skinPurge(@Req() request: Request, @Res({ passthrough: true }) res: Response): Promise<void> {
         const session = await this.userService.validateSession(request.cookies.sessionId);
         if (!session) {
@@ -401,7 +302,7 @@ export class AppController {
     }
 
 
-    @Delete("/users/me/connections/minecraft/disconnect")
+    @Delete("/users/me/connections/minecraft")
     async disconnectMinecraft(@Req() request: Request, @Res() res: Response): Promise<void> {
         const session = await this.userService.validateSession(request.cookies.sessionId);
         if (!session) {
@@ -416,13 +317,87 @@ export class AppController {
         res.status(data.statusCode).send(data);
     }
 
+    @Get("/workshop")
+    async bandages(@Req() request: Request, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
+        res.status(200).send(await this.bandageService.getBandages(request.cookies.sessionId, 
+            parseInt(query.take as string) || 20, 
+            parseInt(query.page as string) || 0, 
+            query.search, 
+            query.filters,
+            query.sort));
+    }
+
+
+    @Post("/workshop")
+    async create_bandage(@Req() request: Request, @Res() res: Response, @Body() body: CreateBody): Promise<void> {
+        const session = await this.userService.validateSession(request.cookies.sessionId);
+        if (!session) {
+            res.status(HttpStatus.UNAUTHORIZED).send(UNAUTHORIZED);
+            return;
+        }
+        
+        res.setHeader('Access-Control-Expose-Headers', 'SetCookie');
+        res.setHeader('SetCookie', session.cookie);
+
+        if (!body.base64 || !body.title || !body.description) {
+            res.status(HttpStatus.BAD_REQUEST).send({
+                message: "Invalid Body",
+                statusCode: 400
+            });
+            return;
+        }
+
+        if (body.title.length > 50) {
+            res.status(HttpStatus.BAD_REQUEST).send({
+                message: "Title cannot be longer than 50 symbols",
+                message_ru: "Заголовок не может быть длинее 50 символов",
+                statusCode: 400
+            });
+            return;
+        }
+
+        if (body.description.length > 300) {
+            res.status(HttpStatus.BAD_REQUEST).send({
+                message: "Description cannot be longer than 300 symbols",
+                message_ru: "Описание не может быть длиннее 300 символов",
+                statusCode: 400
+            });
+            return;
+        }
+
+        try {
+            const bandage_buff = Buffer.from(body.base64, 'base64');
+            const bandage_sharp = sharp(bandage_buff);
+            const metadata = await bandage_sharp.metadata();
+            const width = metadata.width as number;
+            const height = metadata.height as number;
+            if (width != 16 || (height < 2 || height > 24 || height % 2 != 0) || metadata.format != 'png'){
+                res.status(HttpStatus.BAD_REQUEST).send({
+                    message: "Invalid bandage size or format!",
+                    message_ru: "Повязка должна иметь ширину 16 пикселей, высоту от 2 до 24 пикселей и четную высоту",
+                    statusCode: 400
+                });
+                return;
+            }
+        } catch {
+            res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                message: "Error while processing base64",
+                statusCode: 500
+            });
+            return;
+        }
+
+        const data = await this.bandageService.createBandage(body, session);
+        res.status(data.statusCode).send(data);
+    }
+
     @Get("/workshop/:id")
     async getBandage(@Param('id') id: string, @Req() request: Request, @Res() res: Response): Promise<void> {
         const data = await this.bandageService.getBandage(id, request.cookies.sessionId);
         res.status(data.statusCode).send(data);
     }
 
-    @Put("/workshop/:id/edit")
+    @Put("/workshop/:id")
     async editBandage(@Param('id') id: string, @Req() request: Request, @Res() res: Response, @Body() body: CreateBody) {
         const session = await this.userService.validateSession(request.cookies.sessionId);
         if (!session) {
@@ -460,6 +435,49 @@ export class AppController {
         const data = await this.bandageService.updateBandage(id, body, session);
         res.status(data.statusCode).send(data);
 
+    }
+
+    @Delete("/workshop/:id")
+    async deleteBandage(@Param('id') id: string, @Req() request: Request, @Res() res: Response) {
+        const session = await this.userService.validateSession(request.cookies.sessionId);
+        if (!session) {
+            res.status(HttpStatus.UNAUTHORIZED).send(UNAUTHORIZED);
+            return;
+        }
+
+        res.setHeader('Access-Control-Expose-Headers', 'SetCookie');
+        res.setHeader('SetCookie', session.cookie);
+
+        const data = await this.bandageService.deleteBandage(session, id);
+        res.status(data.statusCode).send(data);
+
+    }
+
+    @Get("/categories")
+    async categories(@Req() request: Request, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
+        res.status(200).send(await this.bandageService.getCategories(query.for_edit === "true", request.cookies.sessionId));
+    }
+
+
+    @Put("/star/:id")
+    async setStar(@Param('id') id: string, @Query() query: { set: string }, @Req() request: Request, @Res() res: Response): Promise<void> {
+        const session = await this.userService.validateSession(request.cookies.sessionId);
+        if (!session) {
+            res.status(HttpStatus.UNAUTHORIZED).send(UNAUTHORIZED);
+            return;
+        }
+        if (!query.set || !["true", "false"].includes(query.set)) {
+            res.status(HttpStatus.BAD_REQUEST).send({
+                message: "`Set` query param invalid",
+                statusCode: 400
+            });
+            return;
+        }
+        res.setHeader('Access-Control-Expose-Headers', 'SetCookie');
+        res.setHeader('SetCookie', session.cookie);
+
+        const data = await this.bandageService.setStar(session, query.set === "true", id);
+        res.status(data.statusCode).send(data);
     }
 
 }

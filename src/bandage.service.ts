@@ -105,7 +105,7 @@ const generate_response = (data: Bandage[], session: Session | null) => {
             categories: categories.filter((el) => el !== undefined)
         }
     });
-    
+
     return result.filter((el) => el !== undefined);
 }
 
@@ -150,17 +150,17 @@ export class BandageService {
                 }
             ];
         }
-        
+
         const filters_list = filters?.split(',').filter(el => !isNaN(Number(el)) && el != '');
         const filters_rule = filters_list?.map(el => { return { categories: { some: { id: Number(el) } } }; });
-        
+
         let available = false;
         if (session && session.user && session.user.admin) {
-            const data = await this.prisma.category.findMany({ where: { only_admins: true }});
+            const data = await this.prisma.category.findMany({ where: { only_admins: true } });
             available = Object.values(data).some(val => filters_list?.includes(String(val.id)));
         }
 
-        const category = available ? undefined : {none: {only_admins: true}};
+        const category = available ? undefined : { none: { only_admins: true } };
 
         const where: Prisma.BandageWhereInput = {
             categories: category,
@@ -215,8 +215,8 @@ export class BandageService {
     }
 
     async createBandage(body: CreateBody, session: Session) {
-        
-        let categories = [{ id: moderation_id[0] }, { id: common_id} ];
+
+        let categories = [{ id: moderation_id[0] }, { id: common_id }];
         if (body.categories !== undefined) {
             const validated_categories = await this.validateCategories(body.categories, session.user.admin);
             categories = [...validated_categories.map((el) => {
@@ -301,7 +301,7 @@ export class BandageService {
 
     async getBandage(id: string, sessionId: string) {
         const session = await this.users.validateSession(sessionId);
-        const bandage = await this.prisma.bandage.findFirst({where: {externalId: id}, include: {User: true, categories: true, stars: true}});
+        const bandage = await this.prisma.bandage.findFirst({ where: { externalId: id }, include: { User: true, categories: true, stars: true } });
         if (!bandage) {
             return {
                 message: "Bandage not found",
@@ -363,11 +363,11 @@ export class BandageService {
                 check_state: check
             }
         }
-        
+
     }
 
     async updateBandage(id: string, body: CreateBody, session: Session) {
-        const bandage = await this.prisma.bandage.findFirst({where: {externalId: id}, include: {User: true, categories: true, stars: true}});
+        const bandage = await this.prisma.bandage.findFirst({ where: { externalId: id }, include: { User: true, categories: true, stars: true } });
 
         if (!bandage) {
             return {
@@ -375,7 +375,7 @@ export class BandageService {
                 message: "Not found"
             }
         }
-        
+
         if (bandage?.User?.id !== session.user.id && !session.user.admin) {
             return {
                 statusCode: 403,
@@ -416,7 +416,7 @@ export class BandageService {
         await this.prisma.bandage.update({
             where: {
                 id: bandage?.id
-            }, 
+            },
             data: {
                 title: title,
                 description: description,
@@ -444,4 +444,26 @@ export class BandageService {
         return categories.filter((el) => reachable_ids.includes(el));
     }
 
+    async deleteBandage(session: Session, externalId: string) {
+        const bandage = await this.prisma.bandage.findFirst({ where: { externalId: externalId }, include: { User: true } });
+        if (!bandage) {
+            return {
+                statusCode: 404,
+                message: "Not found"
+            };
+        }
+
+        if (!session.user.admin && session.user.id !== bandage.User?.id) {
+            return {
+                statusCode: 403,
+                message: "Forbidden"
+            };
+        }
+
+        await this.prisma.bandage.delete({ where: { id: bandage.id } });
+        return {
+            statusCode: 200,
+            message: "Deleted"
+        }
+    }
 }
