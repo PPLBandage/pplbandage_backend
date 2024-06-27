@@ -3,7 +3,7 @@ import { PrismaService } from './prisma.service';
 import { UserService } from './user.module';
 import { Prisma } from '@prisma/client';
 
-const moderation_id = [4, 13];
+const moderation_id = [4, 13];  // на проверке, отклонено
 const common_id = 15;
 const official_id = 0;
 
@@ -215,13 +215,31 @@ export class BandageService {
     }
 
     async createBandage(body: CreateBody, session: Session) {
-
         let categories = [{ id: moderation_id[0] }, { id: common_id }];
         if (body.categories !== undefined) {
             const validated_categories = await this.validateCategories(body.categories, session.user.admin);
             categories = [...validated_categories.map((el) => {
                 return { id: el };
             }), ...categories];
+        }
+
+        const count = await this.prisma.bandage.count({
+            where: {
+                userId: session.user.id,
+                categories: {
+                    some: {
+                        id: moderation_id[0]
+                    }
+                }
+            }
+        });
+
+        if (count > 5) {
+            return {
+                statusCode: 400,
+                message: "You cannot create more than 5 bandages under review",
+                message_ru: "Вы не можете иметь более 5 повязко на проверке, дождитесь проверки остальных и повторите попытку"
+            }
         }
 
         const result = await this.prisma.bandage.create({

@@ -1,0 +1,69 @@
+datasource db {
+    provider = "sqlite"
+    url      = "file:dataBase.db"
+}
+
+generator db {
+    provider = "prisma-client-js"
+}
+
+model Minecraft {
+    id           Int     @id @default(autoincrement())
+    uuid         String  @unique @default("")
+    data         String  @default("")
+    data_cape    String  @default("")
+    data_head    String  @default("iVBORw0KGgoAAAANSUhEUgAAACQAAAAkCAYAAADhAJiYAAABjUlEQVR4nO2Xu0vDUBTGT15NVdROxkHQ3UHdS0fxMeruUNHBP0EUN0VxcSmIk6OlONihU4fOdXDpoFBfRe1QAjW1pM3DKcEvpEnB5Q73m+6Pc+69Xw6Hk4SIK1qCt1iYG3f/BiwHE2VBBDZtC9iybGBRxHxFloBduI2o9v4tEBHhLgbEDcVJ9hbBngnKcjFhLJkAnkwIwDZhz7QME+Mu9pwn5irEDcVJHhQ429sCVhXsmZHkBHC308YDJHxW/esD+OS2FLixQ0QMVogbipM/PG4OduDtMqqqkPhj4hyRJIzrbR14VpsCfn15jDSynSvyd9lQYs6QP4eCPbO+fwG8kTkFzmbqwMGeyRU14ELlHDh/uBtqiLkKcUNx8ufQVXYZ5pA2PQOJspoCviuXIw/eXEkDN96egOvNFvBRocrn0FBizpA/h4w+fuP2Gjhn8pUq8Or8UuTBx5fXwGvpRWCBlNB9zFWIG4qT30PPn00IOE70j1rp4R5YUgZ+nhMRkdHFHjX7vdA85irEDXH9V7+JdWBxiEfBTAAAAABJRU5ErkJggg==")
+    nickname     String  @default("")
+    expires      BigInt  @default(0)
+    default_nick String  @default("")
+    valid        Boolean @default(true)
+    slim         Boolean @default(false)
+
+    user   User? @relation(fields: [userId], references: [id])
+    userId Int?  @unique
+}
+
+model User {
+    id        Int        @id @default(autoincrement())
+    username  String     @default("")
+    name      String     @default("")
+    discordId String     @unique @default("")
+    sessions  Sessions[]
+    profile   Minecraft?
+    Bandage   Bandage[]  @relation("UserBandages")
+    stars     Bandage[]  @relation("UserStars")
+    admin     Boolean    @default(false)
+    banned    Boolean    @default(false)
+    joined_at DateTime   @default(now())
+    autoload  Boolean    @default(true)
+}
+
+model Sessions {
+    id        Int    @id @default(autoincrement())
+    sessionId String @unique @default("")
+    User      User   @relation(fields: [userId], references: [id])
+    userId    Int
+}
+
+model Bandage {
+    id           Int        @id @default(autoincrement())
+    externalId   String     @unique @default("")
+    title        String     @default("")
+    description  String?    @default("")
+    base64       String     @default("")
+    User         User?      @relation("UserBandages", fields: [userId], references: [id])
+    userId       Int?
+    creationDate DateTime   @default(now())
+    stars        User[]     @relation("UserStars")
+    categories   Category[] @relation("Categories")
+    access_level Int        @default(2)
+}
+
+model Category {
+    id          Int       @id @default(autoincrement())
+    name        String    @default("")
+    icon        String    @default("")
+    bandages    Bandage[] @relation("Categories")
+    reachable   Boolean   @default(true)
+    only_admins Boolean   @default(false)
+}
