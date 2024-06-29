@@ -7,6 +7,7 @@ import { BandageService } from './bandage.service';
 import { MinecraftService } from './minecraft.service';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { AuthGuard } from './auth.guard';
 
 ConfigModule.forRoot();
 
@@ -15,7 +16,7 @@ ConfigModule.forRoot();
 		provide: APP_GUARD,
 		useClass: ThrottlerGuard,
 	  },
-	  UserService, PrismaService, BandageService, MinecraftService],
+	  UserService, PrismaService, BandageService, MinecraftService, AuthGuard],
 	controllers: [AppController],
 	imports: [
 		ThrottlerModule.forRoot([{

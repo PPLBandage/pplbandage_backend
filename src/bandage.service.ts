@@ -115,7 +115,7 @@ const generate_response = (data: Bandage[], session: Session | null) => {
 export class BandageService {
     constructor(private prisma: PrismaService,
         private users: UserService,
-    ) { }
+    ) {}
 
     async getBandages(sessionId: string,
         take: number,
@@ -248,7 +248,7 @@ export class BandageService {
             data: {
                 externalId: Math.random().toString(36).substring(2, 8),
                 title: body.title,
-                description: body.title,
+                description: body.description,
                 base64: body.base64,
                 User: {
                     connect: {
@@ -262,7 +262,7 @@ export class BandageService {
         });
 
         await axios.post(`${discord_url}/channels/${process.env.MODERATION_CHANNEL_ID}/messages`, {
-            content: `New bandage created by ${session.user.name}!\nhttps://pplbandage.ru/workshop/${result.externalId}`
+            content: `New bandage "${result.title}" created by ${session.user.name}!\nhttps://pplbandage.ru/workshop/${result.externalId}`
         }, {
             validateStatus: () => true,
             headers: {
