@@ -9,7 +9,7 @@ import { Throttle } from '@nestjs/throttler';
 import { AuthGuard } from './auth.guard';
 
 
-const UNAUTHORIZED = {
+export const UNAUTHORIZED = {
     status: "error",
     message: "UNAUTHORIZED",
     statusCode: 401
@@ -155,7 +155,7 @@ export class AppController {
             return;
         }
 
-        this.userService.logout(session);
+        await this.userService.logout(session);
         res.status(200).send({"status": "success"});
     }
 
@@ -248,7 +248,6 @@ export class AppController {
             message: "Successfully purged",
         });
     }
-
 
     @Delete("/users/me/connections/minecraft")
     @UseGuards(AuthGuard)
