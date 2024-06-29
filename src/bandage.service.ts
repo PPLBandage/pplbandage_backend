@@ -2,10 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 import { UserService } from './user.module';
 import { Prisma } from '@prisma/client';
+import axios from 'axios';
 
 const moderation_id = [4, 13];  // на проверке, отклонено
 const common_id = 15;
 const official_id = 0;
+const discord_url = "https://discord.com/api/v10";
 
 interface BandageSerch {
     title?: {
@@ -234,7 +236,7 @@ export class BandageService {
             }
         });
 
-        if (count > 5) {
+        if (count >= 5) {
             return {
                 statusCode: 400,
                 message: "You cannot create more than 5 bandages under review",
@@ -258,6 +260,16 @@ export class BandageService {
                 }
             }
         });
+
+        await axios.post(`${discord_url}/channels/${process.env.MODERATION_CHANNEL_ID}/messages`, {
+            content: `New bandage created by ${session.user.name}!\nhttps://pplbandage.ru/workshop/${result.externalId}`
+        }, {
+            validateStatus: () => true,
+            headers: {
+                Authorization: `Bot ${process.env.BOT_TOKEN}`
+            }
+        });
+
         return {
             external_id: result.externalId,
             statusCode: 201

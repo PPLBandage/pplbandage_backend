@@ -328,6 +328,7 @@ export class AppController {
     }
 
 
+    @Throttle({ default: { limit: 1, ttl: 60000 } })
     @Post("/workshop")
     async create_bandage(@Req() request: Request, @Res() res: Response, @Body() body: CreateBody): Promise<void> {
         const session = await this.userService.validateSession(request.cookies.sessionId);
@@ -339,7 +340,7 @@ export class AppController {
         res.setHeader('Access-Control-Expose-Headers', 'SetCookie');
         res.setHeader('SetCookie', session.cookie);
 
-        if (!body.base64 || !body.title || !body.description) {
+        if (!body.base64 || !body.title) {
             res.status(HttpStatus.BAD_REQUEST).send({
                 message: "Invalid Body",
                 statusCode: 400
