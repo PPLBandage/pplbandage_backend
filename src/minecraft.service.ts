@@ -177,7 +177,7 @@ export class MinecraftService {
         });
         if (!count) return null;
         return {
-            status: "sucess",
+            status: "success",
             requestedFragment: fragment,
             data: records_list,
             total_count: count,
@@ -291,7 +291,7 @@ export class MinecraftService {
         return {
             statusCode: 200,
             message: "Success",
-            message_ru: "Аккаунт успешно отдключен!",
+            message_ru: "Аккаунт успешно отключен!",
         }
 
     }

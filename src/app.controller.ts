@@ -282,7 +282,7 @@ export class AppController {
         if (body.title.length > 50) {
             res.status(HttpStatus.BAD_REQUEST).send({
                 message: "Title cannot be longer than 50 symbols",
-                message_ru: "Заголовок не может быть длинее 50 символов",
+                message_ru: "Заголовок не может быть длиннее 50 символов",
                 statusCode: 400
             });
             return;

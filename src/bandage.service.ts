@@ -9,7 +9,7 @@ const common_id = 15;
 const official_id = 0;
 const discord_url = "https://discord.com/api/v10";
 
-interface BandageSerch {
+interface BandageSearch {
     title?: {
         contains: string;
     },
@@ -125,7 +125,7 @@ export class BandageService {
         sort?: string) {
 
         const session = await this.users.validateSession(sessionId);
-        let filter_rule: BandageSerch[] | undefined = undefined;
+        let filter_rule: BandageSearch[] | undefined = undefined;
         if (search) {
             filter_rule = [
                 {
@@ -240,7 +240,7 @@ export class BandageService {
             return {
                 statusCode: 400,
                 message: "You cannot create more than 5 bandages under review",
-                message_ru: "Вы не можете иметь более 5 повязко на проверке, дождитесь проверки остальных и повторите попытку"
+                message_ru: "Вы не можете иметь более 5 повязок на проверке, дождитесь проверки остальных и повторите попытку"
             }
         }
 
