@@ -1,5 +1,6 @@
 # Eldraxis.js
-[![Made with Prisma](http://made-with.prisma.io/indigo.svg)](https://prisma.io)
+[![Made with Prisma](http://made-with.prisma.io/indigo.svg)](https://prisma.io)<br/>
+[![Made for pepeland](https://andcool.ru/static/badges/made-for-ppl.svg)](https://pepeland.net)
 ### **Порт [оригинального Eldraxis](https://github.com/Andcool-Systems/Eldraxis) на nest.js.**
 
 ## Бенчмарки
