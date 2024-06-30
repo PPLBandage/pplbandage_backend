@@ -1,4 +1,5 @@
 # Eldraxis.js
+[![Made with Prisma](http://made-with.prisma.io/indigo.svg)](https://prisma.io)
 ### **Порт [оригинального Eldraxis](https://github.com/Andcool-Systems/Eldraxis) на nest.js.**
 
 ## Бенчмарки
