@@ -39,10 +39,11 @@ model User {
 }
 
 model Sessions {
-    id        Int    @id @default(autoincrement())
-    sessionId String @unique @default("")
-    User      User   @relation(fields: [userId], references: [id])
-    userId    Int
+    id         Int    @id @default(autoincrement())
+    sessionId  String @unique @default("")
+    User_Agent String @default("")
+    User       User   @relation(fields: [userId], references: [id])
+    userId     Int
 }
 
 model Bandage {

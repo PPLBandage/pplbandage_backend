@@ -91,7 +91,7 @@ export class UserService {
         return false;
     }
 
-    async login(code: string) {
+    async login(code: string, user_agent: string) {
         const discord_tokens = await axios.post(discord_url + "/oauth2/token", {
             'grant_type': 'authorization_code',
             'code': code,
@@ -144,6 +144,7 @@ export class UserService {
         const token_record = await this.prisma.sessions.create({
             data: {
                 'sessionId': sessionId,
+                'User_Agent': user_agent,
                 'User': {
                     'connect': {
                         'id': user_db.id
@@ -154,10 +155,15 @@ export class UserService {
         return { message: "logged in", sessionId: token_record.sessionId, statusCode: 200 };
     }
 
-    async validateSession(session: string | undefined): Promise<Session | null> {
+    async validateSession(session: string | undefined, user_agent: string): Promise<Session | null> {
         if (!session) return null;
         const sessionDB = await this.prisma.sessions.findUnique({ where: { sessionId: session }, include: { User: { include: { profile: true } } } });
         if (!sessionDB) return null;
+
+        if (sessionDB.User_Agent !== user_agent) {
+            await this.prisma.sessions.delete({ where: { id: sessionDB.id } });
+            return null;
+        }
 
         try {
             const decoded = verify(session, 'ppl_super_secret') as SessionToken;

@@ -122,8 +122,9 @@ export class AppController {
 
 
     @Get("/oauth/discord/:code")
-    async discord(@Param('code') code: string, @Res({ passthrough: true }) res: Response): Promise<void> {
-        const data = await this.userService.login(code);
+    async discord(@Param('code') code: string, @Req() request: Request, @Res({ passthrough: true }) res: Response): Promise<void> {
+        const user_agent = request.headers['user-agent'] as string;
+        const data = await this.userService.login(code, user_agent);
         if (!data) {
             res.status(400).send({status: "error", message: "could not login"});
             return;
@@ -149,7 +150,8 @@ export class AppController {
 
     @Delete("/users/me")
     async logout(@Req() request: Request, @Res() res: Response): Promise<void> {
-        const session = await this.userService.validateSession(request.cookies.sessionId);
+        const user_agent = request.headers['user-agent'];
+        const session = await this.userService.validateSession(request.cookies.sessionId, user_agent as string);
         if (!session) {
             res.status(HttpStatus.UNAUTHORIZED).send(UNAUTHORIZED);
             return;
@@ -258,9 +260,11 @@ export class AppController {
 
     @Get("/workshop")
     async bandages(@Req() request: Request, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
+        const user_agent = request.headers['user-agent'] as string;
         res.status(200).send(await this.bandageService.getBandages(request.cookies.sessionId, 
             parseInt(query.take as string) || 20, 
-            parseInt(query.page as string) || 0, 
+            parseInt(query.page as string) || 0,
+            user_agent, 
             query.search, 
             query.filters,
             query.sort));
@@ -325,7 +329,8 @@ export class AppController {
 
     @Get("/workshop/:id")
     async getBandage(@Param('id') id: string, @Req() request: Request, @Res() res: Response): Promise<void> {
-        const data = await this.bandageService.getBandage(id, request.cookies.sessionId);
+        const user_agent = request.headers['user-agent'] as string;
+        const data = await this.bandageService.getBandage(id, request.cookies.sessionId, user_agent);
         res.status(data.statusCode).send(data);
     }
 
@@ -371,7 +376,8 @@ export class AppController {
 
     @Get("/categories")
     async categories(@Req() request: Request, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
-        res.status(200).send(await this.bandageService.getCategories(query.for_edit === "true", request.cookies.sessionId));
+        const user_agent = request.headers['user-agent'] as string;
+        res.status(200).send(await this.bandageService.getCategories(query.for_edit === "true", request.cookies.sessionId, user_agent));
     }
 
 
