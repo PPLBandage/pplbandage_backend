@@ -6,7 +6,7 @@ import * as morgan from 'morgan';
 
 async function bootstrap() {
 	const app = await NestFactory.create<NestExpressApplication>(AppModule);
-	const allowedOrigins = ['https://pplbandage.ru', 'http://192.168.0.53'];
+	const allowedOrigins = ['https://pplbandage.ru', 'http://192.168.0.53', 'https://dev.andcool.ru'];
 
 	app.enableCors({
 		origin: (origin, callback) => {

@@ -5,7 +5,7 @@ import { Buffer } from "buffer";
 import { UserService } from './user.module';
 import { BandageService } from './bandage.service';
 import * as sharp from 'sharp';
-import { Throttle } from '@nestjs/throttler';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { AuthGuard } from './auth.guard';
 
 
@@ -328,6 +328,7 @@ export class AppController {
     }
 
     @Get("/workshop/:id")
+    @SkipThrottle()
     async getBandage(@Param('id') id: string, @Req() request: Request, @Res() res: Response): Promise<void> {
         const user_agent = request.headers['user-agent'] as string;
         const data = await this.bandageService.getBandage(id, request.cookies.sessionId, user_agent);
