@@ -208,8 +208,7 @@ export class UserService {
             username: sessionDB.User.username,
             name: sessionDB.User.name,
             joined_at: sessionDB.User.joined_at,
-            avatar_small: `https://cdn.discordapp.com/avatars/${response_data.id}/${response_data.avatar}?size=80`,
-            avatar: `https://cdn.discordapp.com/avatars/${response_data.id}/${response_data.avatar}?size=512`
+            avatar: `https://cdn.discordapp.com/avatars/${response_data.id}/${response_data.avatar}`
         };
     }
 
