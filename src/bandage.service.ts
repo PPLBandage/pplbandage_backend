@@ -3,6 +3,7 @@ import { PrismaService } from './prisma.service';
 import { UserService } from './user.module';
 import { Prisma } from '@prisma/client';
 import axios from 'axios';
+import * as sharp from 'sharp';
 
 const moderation_id = [4, 13];  // на проверке, отклонено
 const common_id = 15;
@@ -77,6 +78,15 @@ interface Bandage {
     description: string | null,
     base64: string,
     creationDate: Date
+}
+
+function componentToHex(c: number) {
+    var hex = c.toString(16);
+    return hex.length == 1 ? "0" + hex : hex;
+  }
+  
+function rgbToHex(r: number, g: number, b: number) {
+    return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
 }
 
 const generate_response = (data: Bandage[], session: Session | null) => {
@@ -371,6 +381,10 @@ export class BandageService {
         if (Object.values(bandage.categories).some(val => val.icon.includes("clock.svg"))) check = "under review";
         if (Object.values(bandage.categories).some(val => val.icon.includes("denied.svg"))) check = "denied";
 
+        const buff = Buffer.from(bandage.base64, 'base64');
+        const { data, info } = await sharp(buff).resize(1, 1, {fit: 'inside',}).extract({ left: 0, top: 0, width: 1, height: 1 }).raw().toBuffer({ resolveWithObject: true });
+        const [r, g, b, a] = data;
+
         return {
             statusCode: 200,
             data: {
@@ -379,6 +393,7 @@ export class BandageService {
                 title: bandage.title,
                 description: bandage.description,
                 base64: bandage.base64,
+                average_og_color: rgbToHex(r, g, b),
                 creation_date: bandage.creationDate,
                 stars_count: bandage.stars.length,
                 starred: Object.values(bandage.stars).some(val => val.id == session?.user.id),

@@ -330,9 +330,33 @@ export class AppController {
     @Get("/workshop/:id")
     @SkipThrottle()
     async getBandage(@Param('id') id: string, @Req() request: Request, @Res() res: Response): Promise<void> {
+        if (request.headers['unique-access'] !== process.env.WORKSHOP_TOKEN) {
+            res.redirect(307, `/workshop/${id}`);
+            return;
+        } 
         const user_agent = request.headers['user-agent'] as string;
         const data = await this.bandageService.getBandage(id, request.cookies.sessionId, user_agent);
         res.status(data.statusCode).send(data);
+    }
+
+    @Get("/workshop/:id/as_image")
+    @Header('Content-Type', 'image/png')
+    async getBandageImage(@Param('id') id: string, @Req() request: Request, @Res({ passthrough: true }) res: Response): Promise<StreamableFile | void> {
+        const user_agent = request.headers['user-agent'] as string;
+        const data = await this.bandageService.getBandage(id, request.cookies.sessionId, user_agent);
+        if (data.statusCode !== 200 || !data.data?.base64) {
+            res.status(data.statusCode).send(data);
+            return;
+        }
+        const bandage_buff = Buffer.from(data.data.base64, "base64");
+
+        const sharp_obj = sharp(bandage_buff);
+        const metadata = await sharp_obj.metadata();
+        const width = (metadata.width as number) * 16;
+        const height = (metadata.height as number) * 16;
+        sharp.kernel.nearest
+        const buffer = await sharp_obj.resize(width, height, { kernel: sharp.kernel.nearest }).toBuffer();
+        return new StreamableFile(buffer);
     }
 
     @Put("/workshop/:id")
