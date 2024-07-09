@@ -1,4 +1,4 @@
-import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { UserService } from './user.module';
 import { Response } from 'express';
 import { UNAUTHORIZED } from './app.controller';
