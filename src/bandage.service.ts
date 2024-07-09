@@ -382,7 +382,7 @@ export class BandageService {
         if (Object.values(bandage.categories).some(val => val.icon.includes("denied.svg"))) check = "denied";
 
         const buff = Buffer.from(bandage.base64, 'base64');
-        const { data, info } = await sharp(buff).resize(1, 1, {fit: 'inside',}).extract({ left: 0, top: 0, width: 1, height: 1 }).raw().toBuffer({ resolveWithObject: true });
+        const { data, info } = await sharp(buff).resize(1, 1, { fit: 'inside' }).extract({ left: 0, top: 0, width: 1, height: 1 }).raw().toBuffer({ resolveWithObject: true });
         const [r, g, b, a] = data;
 
         return {
@@ -422,7 +422,7 @@ export class BandageService {
             }
         }
 
-        if (bandage?.User?.id !== session.user.id && !session.user.admin) {
+        if (bandage.User?.id !== session.user.id && !session.user.admin) {
             return {
                 statusCode: 403,
                 message: "Forbidden"
