@@ -168,7 +168,9 @@ export class BandageService {
         const filters_rule = filters_list?.map(el => { return { categories: { some: { id: Number(el) } } }; });
 
         let available = false;
+        let admin = false;
         if (session && session.user && session.user.admin) {
+            admin = true;
             const data = await this.prisma.category.findMany({ where: { only_admins: true } });
             available = Object.values(data).some(val => filters_list?.includes(String(val.id)));
         }
@@ -177,7 +179,7 @@ export class BandageService {
 
         const where: Prisma.BandageWhereInput = {
             categories: category,
-            access_level: 2,
+            access_level: !admin ? 2 : undefined,
             OR: filter_rule,
             AND: filters_rule,
         };
