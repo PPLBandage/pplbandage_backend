@@ -67,4 +67,5 @@ model Category {
     bandages    Bandage[] @relation("Categories")
     reachable   Boolean   @default(true)
     only_admins Boolean   @default(false)
+    order       Int       @default(0)
 }

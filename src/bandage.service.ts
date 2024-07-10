@@ -301,7 +301,8 @@ export class BandageService {
                 only_admins: admin ? undefined : false
             } : {
                 only_admins: admin ? undefined : false
-            }, select: { id: true, name: true, icon: true }
+            }, select: { id: true, name: true, icon: true },
+            orderBy: { order: 'asc' }
         });
         return categories.filter(el => el.icon !== "/null");
     }
