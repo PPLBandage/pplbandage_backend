@@ -68,14 +68,10 @@ export class UserService {
         });
     }
 
-    async check_ppl(uid: string) {
-        // Скорее всего это именно та функция, за которой вы сюда пришли,
-        // как видно ниже, бекенд делает запрос только к эндпоинтам /guilds/<guild_id>/members/<member_id> и /users/<user_id>
-        // для получения общих и ОТКРЫТЫХ сведений о члене гильдии.
-        // Больше аккаунт никак не используется. В этом можно убедиться, произведя поиск `process.env.DISCORD_TOKEN` по проекту.
-        const response = await axios.get(`${discord_url}/guilds/${pwgood}/members/${uid}`, {
+    async check_ppl(token: string) {
+        const response = await axios.get(`${discord_url}/users/@me/guilds/${pwgood}/member`, {
             headers: {
-                Authorization: process.env.DISCORD_TOKEN
+                Authorization: token
             },
             validateStatus: () => true
         });
@@ -115,7 +111,7 @@ export class UserService {
         if (discord_user.status != 200) return null;
         const ds_user = discord_user.data as DiscordUser;
 
-        const on_ppl = await this.check_ppl(ds_user.id);
+        const on_ppl = await this.check_ppl(`${data.token_type} ${data.access_token}`);
         if (!on_ppl) {
             await this.prisma.sessions.deleteMany({
                 where: {
@@ -197,7 +193,7 @@ export class UserService {
 
         const response = await axios.get(`${discord_url}/users/${sessionDB.User.discordId}`, {
             headers: {
-                Authorization: process.env.DISCORD_TOKEN
+                Authorization: `Bot ${process.env.BOT_TOKEN}`
             }
         });
         const response_data = response.data as DiscordUser;
