@@ -128,7 +128,7 @@ export class UserService {
             create: {
                 'discordId': ds_user.id,
                 'username': ds_user.username,
-                'name': ds_user.global_name
+                'name': ds_user.global_name || ds_user.username
             },
             update: {}
         });
