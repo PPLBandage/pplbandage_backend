@@ -1,17 +1,13 @@
-interface Texture {
-    url: string;
-}
-
-interface TextureWithMetadata {
-    url: string;
-    metadata?: {
-        model: string
-    }
-}
-
 interface Textures {
-    SKIN: TextureWithMetadata;
-    CAPE?: Texture;
+    SKIN: {
+        url: string;
+        metadata?: {
+            model: string;
+        }
+    };
+    CAPE?: {
+        url: string;
+    };
 }
 
 interface EncodedResponse {
@@ -116,6 +112,14 @@ interface CapeResponse {
     data: SkinAndCape
 }
 
+interface Notifications {
+    id?: number,
+    content: string,
+    author: string,
+    type: number,
+    creation_date: Date
+}
+
 interface User {
     id: number;
     username: string;
@@ -137,6 +141,7 @@ interface User {
         userId: number | null;
     } | null;
     autoload: boolean;
+    notifications: Notifications[];
 }
 
 interface Session {
@@ -146,8 +151,8 @@ interface Session {
 }
 
 interface CreateBody {
-    base64: string, 
-    title: string, 
+    base64: string,
+    title: string,
     description: string,
     categories: number[],
     access_level: number

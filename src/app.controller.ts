@@ -7,6 +7,7 @@ import { BandageService } from './bandage.service';
 import * as sharp from 'sharp';
 import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { AuthGuard } from './auth.guard';
+import { NotificationService } from './notifications.service';
 
 
 export const UNAUTHORIZED = {
@@ -24,17 +25,22 @@ export class AppController {
 
     constructor(private readonly userService: UserService,
                 private readonly bandageService: BandageService,
-                private readonly minecraftService: MinecraftService
+                private readonly minecraftService: MinecraftService,
+                private readonly notificationService: NotificationService
     ) { }
 
     @Get()
-    async root(@Res({ passthrough: true }) res: Response){
+    async root(@Res({ passthrough: true }) res: Response) {
+        /* main route */
+        
         res.redirect(301, "/");
     }
 
     
     @Get("/skin/:name")
     async skin(@Param('name') name: string, @Query() query: { cape: boolean }, @Res({ passthrough: true }) res: Response): Promise<CapeResponse | void> {
+        /* get minecraft skin by nickname / UUID */
+
         const cache = await this.minecraftService.updateSkinCache(name);
         if (!cache) {
             res.status(404).send({message: 'Profile not found'});
@@ -61,6 +67,8 @@ export class AppController {
     @Get("/head/:name")
     @Header('Content-Type', 'image/png')
     async head(@Param('name') name: string): Promise<StreamableFile> {
+        /* get minecraft head by nickname / UUID */
+
         const cache = await this.minecraftService.updateSkinCache(name);
         if (!cache) {
             throw new HttpException({message: 'Profile not found'}, HttpStatus.NOT_FOUND);
@@ -71,6 +79,8 @@ export class AppController {
     @Get("/cape/:name")
     @Header('Content-Type', 'image/png')
     async cape(@Param('name') name: string, @Res({ passthrough: true }) res: Response): Promise<StreamableFile | void> {
+        /* get minecraft cape by nickname / UUID */
+        
         const cache = await this.minecraftService.updateSkinCache(name);
         if (!cache) {
             res.status(404).send({message: 'Profile not found'});
@@ -87,6 +97,8 @@ export class AppController {
 
     @Get("/search/:name")
     async search(@Param('name') name: string, @Query() query: SearchQuery): Promise<Search> {
+        /* search nicknames by requested fragment */
+        
         const cache = await this.minecraftService.searchNicks({ fragment: name, take: parseInt(query.take as string) || 20, page: parseInt(query.page as string) || 0 });
         if (!cache) {
             throw new HttpException({message: 'No content'}, HttpStatus.NO_CONTENT);
@@ -97,6 +109,8 @@ export class AppController {
 
     @Get("/oauth/discord/:code")
     async discord(@Param('code') code: string, @Req() request: Request, @Res({ passthrough: true }) res: Response): Promise<void> {
+        /* create session for discord user */
+        
         const user_agent = request.headers['user-agent'] as string;
         const data = await this.userService.login(code, user_agent);
         if (!data) {
@@ -118,12 +132,16 @@ export class AppController {
     @Get("/users/me")
     @UseGuards(AuthGuard)
     async user_profile(@Req() request: RequestSession, @Res() res: Response): Promise<void> {
+        /* get user data. associated with session */
+
         const data = await this.userService.getUser(request.session.sessionId);
         res.status(data.statusCode).send(data);
     }
 
     @Delete("/users/me")
     async logout(@Req() request: Request, @Res() res: Response): Promise<void> {
+        /* log out user */
+
         const user_agent = request.headers['user-agent'];
         const session = await this.userService.validateSession(request.cookies.sessionId, user_agent as string);
         if (!session) {
@@ -139,27 +157,44 @@ export class AppController {
     @Get("/users/me/works")
     @UseGuards(AuthGuard)
     async getWork(@Req() request: RequestSession, @Res() res: Response): Promise<void> {
-        const data = await this.bandageService.getWork(request.session);
+        /* get user's works */
+
+        const data = await this.userService.getWork(request.session);
         res.status(data.statusCode).send(data.data);
     }
 
     @Get("/users/me/stars")
     @UseGuards(AuthGuard)
     async getStars(@Req() request: RequestSession, @Res() res: Response): Promise<void> {
-        const data = await this.bandageService.getStars(request.session);
+        /* get user's stars */
+
+        const data = await this.userService.getStars(request.session);
         res.status(data.statusCode).send(data.data);
     }
 
     @Get("/users/me/connections")
     @UseGuards(AuthGuard)
     async minecraft(@Req() request: RequestSession, @Res() res: Response): Promise<void> {
+        /* get user's connections */
+
         const data = await this.userService.getConnections(request.session);
         res.status(data.statusCode).send(data);
     }
 
+    @Get("/users/me/notifications")
+    @UseGuards(AuthGuard)
+    async getNotifications(@Req() request: RequestSession, @Res() res: Response): Promise<void> {
+        /* get user's connections */
+
+        const data = this.notificationService.get(request.session);
+        res.send(data);
+    }
+
     @Put("/users/me/connections/minecraft/set_valid")
     @UseGuards(AuthGuard)
-    async set_valid(@Req() request: RequestSession, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
+    async set_valid(@Req() request: RequestSession, @Res() res: Response, @Query() query: SearchQuery): Promise<void> { 
+        /* set displaying nickname in search */
+
         if (!query.state || !["true", "false"].includes(query.state)) {
             res.status(HttpStatus.BAD_REQUEST).send({
                 status: "error",
@@ -175,6 +210,8 @@ export class AppController {
     @Put("/users/me/connections/minecraft/set_autoload")
     @UseGuards(AuthGuard)
     async set_autoload(@Req() request: RequestSession, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
+        /* set skin autoload in editor */
+        
         if (!query.state || !["true", "false"].includes(query.state)) {
             res.status(HttpStatus.BAD_REQUEST).send({
                 status: "error",
@@ -190,6 +227,8 @@ export class AppController {
     @Post("/users/me/connections/minecraft/connect/:code")
     @UseGuards(AuthGuard)
     async connectMinecraft(@Param('code') code: string, @Req() request: RequestSession, @Res() res: Response): Promise<void> {
+        /* connect minecraft profile to account */
+        
         if (code.length != 6) {
             res.status(HttpStatus.BAD_REQUEST).send({
                 status: "error",
@@ -207,6 +246,8 @@ export class AppController {
     @Post("/users/me/connections/minecraft/cache/purge")
     @UseGuards(AuthGuard)
     async skinPurge(@Req() request: RequestSession, @Res({ passthrough: true }) res: Response): Promise<void> {
+        /* purge minecraft skin cache, associated with session's account */
+
         if (!request.session.user.profile) {
             res.status(400).send({
                 message: "Could not find associated Minecraft account",
@@ -228,12 +269,15 @@ export class AppController {
     @Delete("/users/me/connections/minecraft")
     @UseGuards(AuthGuard)
     async disconnectMinecraft(@Req() request: RequestSession, @Res() res: Response): Promise<void> {
+        /* disconnect minecraft profile */
         const data = await this.minecraftService.disconnect(request.session);
         res.status(data.statusCode).send(data);
     }
 
     @Get("/workshop")
     async bandages(@Req() request: Request, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
+        /* get list of works */
+
         const user_agent = request.headers['user-agent'] as string;
         res.status(200).send(await this.bandageService.getBandages(request.cookies.sessionId, 
             parseInt(query.take as string) || 20, 
@@ -249,7 +293,9 @@ export class AppController {
     @Post("/workshop")
     @UseGuards(AuthGuard)
     async create_bandage(@Req() request: RequestSession, @Res() res: Response, @Body() body: CreateBody): Promise<void> {
-       if (!body.base64 || !body.title) {
+        /* create work */
+        
+        if (!body.base64 || !body.title) {
             res.status(HttpStatus.BAD_REQUEST).send({
                 message: "Invalid Body",
                 statusCode: 400
@@ -304,6 +350,8 @@ export class AppController {
     @Get("/workshop/:id")
     @SkipThrottle()
     async getBandage(@Param('id') id: string, @Req() request: Request, @Res() res: Response): Promise<void> {
+        /* get bandage by external id (internal endpoint) */
+
         if (request.headers['unique-access'] !== process.env.WORKSHOP_TOKEN) {
             res.redirect(307, `/workshop/${id}`);
             return;
@@ -316,6 +364,8 @@ export class AppController {
     @Get("/workshop/:id/as_image")
     @Header('Content-Type', 'image/png')
     async getBandageImage(@Param('id') id: string, @Req() request: Request, @Res({ passthrough: true }) res: Response): Promise<StreamableFile | void> {
+        /* get bandage image render (for OpenGraph) */
+        
         const user_agent = request.headers['user-agent'] as string;
         const data = await this.bandageService.getBandage(id, request.cookies.sessionId, user_agent);
         if (data.statusCode !== 200 || !data.data?.base64) {
@@ -336,6 +386,8 @@ export class AppController {
     @Put("/workshop/:id")
     @UseGuards(AuthGuard)
     async editBandage(@Param('id') id: string, @Req() request: RequestSession, @Res() res: Response, @Body() body: CreateBody) {
+        /* edit bandage info */
+        
         if (!body) {
             res.status(HttpStatus.BAD_REQUEST).send({
                 message: "Invalid Body",
@@ -368,6 +420,8 @@ export class AppController {
     @Delete("/workshop/:id")
     @UseGuards(AuthGuard)
     async deleteBandage(@Param('id') id: string, @Req() request: RequestSession, @Res() res: Response) {
+        /* delete bandage by external id */
+
         const data = await this.bandageService.deleteBandage(request.session, id);
         res.status(data.statusCode).send(data);
 
@@ -375,6 +429,8 @@ export class AppController {
 
     @Get("/categories")
     async categories(@Req() request: Request, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
+        /* get list of categories */
+        
         const user_agent = request.headers['user-agent'] as string;
         res.status(200).send(await this.bandageService.getCategories(query.for_edit === "true", request.cookies.sessionId, user_agent));
     }
@@ -383,6 +439,8 @@ export class AppController {
     @Put("/star/:id")
     @UseGuards(AuthGuard)
     async setStar(@Param('id') id: string, @Query() query: { set: string }, @Req() request: RequestSession, @Res() res: Response): Promise<void> {
+        /* set star to work by work external id */
+        
         if (!query.set || !["true", "false"].includes(query.set)) {
             res.status(HttpStatus.BAD_REQUEST).send({
                 message: "`Set` query param invalid",

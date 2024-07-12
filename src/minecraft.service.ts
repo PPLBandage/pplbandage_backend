@@ -7,11 +7,12 @@ import { UserService } from "./user.module";
 
 @Injectable()
 export class MinecraftService {
-    constructor(private prisma: PrismaService,
-                private users: UserService
+    constructor(private prisma: PrismaService
     ) { }
 
     async getUserData(str: string): Promise<Profile | null> {
+        /* get user profile by nickname an UUID (this function duplicate function below, idk) */
+
         const regexp = new RegExp('^[0-9a-fA-F]{32}$');
         let uuid = str.replace('-', '');
         if (!regexp.test(uuid)) {
@@ -30,6 +31,8 @@ export class MinecraftService {
 
 
     async getUUID(str: string): Promise<string | null> {
+        /* get UUID by nickname or validate existing */
+
         const regexp = new RegExp('^[0-9a-fA-F]{32}$');
         let uuid = str.replace('-', '');
         if (!regexp.test(uuid)) {
@@ -44,6 +47,8 @@ export class MinecraftService {
 
 
     async generateHead(skinBuffer: Buffer): Promise<Buffer> {
+        /* generate head from buffer */
+
         const head = sharp({
             create: {
                 width: 36,
@@ -71,6 +76,8 @@ export class MinecraftService {
 
 
     async resolveCollisions(prof: any[]) {
+        /* resolve nicknames collisions in data base */
+
         for (const record of prof) {
             const data = await this.getUserData(record?.uuid);
             if (!data) {
@@ -89,6 +96,8 @@ export class MinecraftService {
 
 
     async updateSkinCache(nickname: string, ignore_cache: boolean = false) {
+        /* update skin data in data base */
+
         const uuid = await this.getUUID(nickname);
         if (!uuid) {
             return null;
@@ -159,6 +168,8 @@ export class MinecraftService {
 
 
     async searchNicks({ fragment, take, page }: SearchParams): Promise<Search | null> {
+        /* search nicks in data base by provided fragment */
+
         if (fragment.length < 3) {
             return null;
         }
@@ -186,6 +197,8 @@ export class MinecraftService {
     }
 
     async changeValid(session: Session, state: boolean) {
+        /* switch displaying nick in search */
+
         const minecraft = await this.prisma.minecraft.findFirst({where: {userId: session.user.id}});
 
         if (!minecraft) return {
@@ -204,6 +217,8 @@ export class MinecraftService {
 
 
     async changeAutoload(session: Session, state: boolean) {
+        /* switch skin autoload in editor */
+
         const result = await this.prisma.user.update({where: {
                                     id: session.user.id
                                 }, data: {
@@ -214,6 +229,8 @@ export class MinecraftService {
     }
 
     async connect(session: Session, code: string) {
+        /* connect minecraft account to a user profile */
+
         if (session.user.profile) {
             return {
                 statusCode: 400,
@@ -270,6 +287,8 @@ export class MinecraftService {
     }
 
     async disconnect(session: Session) {
+        /* disconnect minecraft account */
+
         if (!session.user.profile) {
             return {
                 statusCode: 400,

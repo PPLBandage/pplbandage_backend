@@ -4,9 +4,9 @@ import { UserService } from './user.module';
 import { Prisma } from '@prisma/client';
 import axios from 'axios';
 import * as sharp from 'sharp';
+import { generate_response } from './app.service';
 
 const moderation_id = [4, 13];  // на проверке, отклонено
-const common_id = 15;
 const official_id = 0;
 const discord_url = "https://discord.com/api/v10";
 
@@ -28,103 +28,38 @@ interface BandageSearch {
 }
 
 const constructSort = (sort?: string): Prisma.BandageOrderByWithRelationInput => {
+    /* generate sort rule */
+
     switch (sort) {
         case "popular_up":
-            return {
-                stars: {
-                    _count: 'desc'
-                }
-            };
+            return { stars: { _count: 'desc' } };
         case "date_up":
-            return {
-                creationDate: 'desc'
-            };
+            return { creationDate: 'desc' };
         case "name_up":
-            return {
-                title: 'asc'
-            }
+            return { title: 'asc' }
         default:
-            return {}
+            return {};
     }
 }
 
-interface Bandage {
-    User: {
-        id: number;
-        username: string;
-        name: string;
-        discordId: string;
-        admin: boolean;
-        banned: boolean;
-        joined_at: Date;
-    } | null;
-    stars: {
-        id: number;
-        username: string;
-        name: string;
-        discordId: string;
-        admin: boolean;
-        banned: boolean;
-        joined_at: Date;
-    }[];
-    categories: {
-        id: number,
-        name: string,
-        icon: string
-    }[];
-    id: number,
-    externalId: string,
-    title: string,
-    description: string | null,
-    base64: string,
-    creationDate: Date
-}
+const componentToHex = (c: number) => {
+    /* convert decimal to hex */
 
-function componentToHex(c: number) {
     var hex = c.toString(16);
     return hex.length == 1 ? "0" + hex : hex;
-  }
-  
-function rgbToHex(r: number, g: number, b: number) {
+}
+
+const rgbToHex = (r: number, g: number, b: number) => {
+    /* convert RGB to HEX */
+
     return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
 }
 
-const generate_response = (data: Bandage[], session: Session | null) => {
-    const result = data.map((el) => {
-        if (el.User?.banned) return undefined;
-        const categories = el.categories.map((cat) => {
-            if (cat.icon === '/null') return;
-            return {
-                id: cat.id,
-                name: cat.name,
-                icon: cat.icon
-            }
-        })
-        return {
-            id: el.id,
-            external_id: el.externalId,
-            title: el.title,
-            description: el.description,
-            base64: el.base64,
-            creation_date: el.creationDate,
-            stars_count: el.stars.length,
-            starred: Object.values(el.stars).some(val => val.id == session?.user.id),
-            author: {
-                id: el.User?.id,
-                name: el.User?.name,
-                username: el.User?.username
-            },
-            categories: categories.filter((el) => el !== undefined)
-        }
-    });
-
-    return result.filter((el) => el !== undefined);
-}
 
 @Injectable()
 export class BandageService {
     constructor(private prisma: PrismaService,
-        private users: UserService,
+                private users: UserService,
     ) {}
 
     async getBandages(sessionId: string,
@@ -135,10 +70,12 @@ export class BandageService {
         filters?: string,
         sort?: string) {
         
-        const session = await this.users.validateSession(sessionId, user_agent);
-        let filter_rule: BandageSearch[] | undefined = undefined;
+        /* get workshop list */
+        
+        const session = await this.users.validateSession(sessionId, user_agent);  // validate user session
+        let search_rule: BandageSearch[] | undefined = undefined;
         if (search) {
-            filter_rule = [
+            search_rule = [
                 { title: { contains: search } },
                 { description: { contains: search } },
                 { externalId: { contains: search } },
@@ -162,7 +99,7 @@ export class BandageService {
         const where: Prisma.BandageWhereInput = {
             categories: category,
             access_level: !admin ? 2 : undefined,
-            OR: filter_rule,
+            OR: search_rule,
             AND: filters_rule,
         };
 
@@ -184,6 +121,8 @@ export class BandageService {
     }
 
     async setStar(session: Session, set: boolean, id: string) {
+        /* set star to bandage by external id */
+
         const bandage = await this.prisma.bandage.findFirst({ where: { externalId: id } });
         if (!bandage) {
             return {
@@ -193,18 +132,12 @@ export class BandageService {
         }
 
         const new_data = await this.prisma.bandage.update({
-            where: {
-                id: bandage.id
-            },
-            data: {
-                stars: set ? { connect: { id: session.user.id } } : { disconnect: { id: session.user.id } }
-            },
-            include: {
-                stars: true
-            }
+            where: { id: bandage.id },
+            data: { stars: set ? { connect: { id: session.user.id } } : { disconnect: { id: session.user.id } } },
+            include: { stars: true }
         });
+
         return {
-            message: "",
             new_count: new_data.stars.length,
             action_set: set,
             statusCode: 200
@@ -212,7 +145,9 @@ export class BandageService {
     }
 
     async createBandage(body: CreateBody, session: Session) {
-        let categories = [{ id: moderation_id[0] }, { id: common_id }];
+        /* create bandage */
+
+        let categories = [{ id: moderation_id[0] }];  // default categories
         if (body.categories !== undefined) {
             const validated_categories = await this.validateCategories(body.categories, session.user.admin);
             categories = [...validated_categories.map((el) => {
@@ -223,13 +158,9 @@ export class BandageService {
         const count = await this.prisma.bandage.count({
             where: {
                 userId: session.user.id,
-                categories: {
-                    some: {
-                        id: moderation_id[0]
-                    }
-                }
+                categories: { some: { id: moderation_id[0] } }
             }
-        });
+        });  // get count of under review works
 
         if (count >= 5) {
             return {
@@ -272,11 +203,14 @@ export class BandageService {
     }
 
     async getCategories(for_edit: boolean, sessionId: string, user_agent: string) {
+        /* get list of categories */
+
         const session = await this.users.validateSession(sessionId, user_agent);
         let admin: boolean = false;
-        if (session) {
-            if (session.user) admin = session.user.admin;
+        if (session && session.user) {
+            admin = session.user.admin;
         }
+
         const categories = await this.prisma.category.findMany({
             where: for_edit ? {
                 reachable: admin ? undefined : true,
@@ -286,46 +220,12 @@ export class BandageService {
             }, select: { id: true, name: true, icon: true },
             orderBy: { order: 'asc' }
         });
-        return categories.filter(el => el.icon !== "/null");
-    }
-
-
-    async getWork(session: Session) {
-        const result = await this.prisma.bandage.findMany({
-            where: {
-                userId: session.user.id
-            },
-            include: {
-                stars: true,
-                categories: true,
-                User: true
-            }
-        });
-        return { statusCode: 200, data: generate_response(result, session) };
-    }
-
-    async getStars(session: Session) {
-        const result = await this.prisma.bandage.findMany({
-            where: {
-                stars: {
-                    some: {
-                        id: session.user.id
-                    }
-                },
-                User: {
-                    banned: false
-                }
-            },
-            include: {
-                stars: true,
-                categories: true,
-                User: true
-            }
-        });
-        return { statusCode: 200, data: generate_response(result, session) };
+        return categories;
     }
 
     async getBandage(id: string, sessionId: string, user_agent: string) {
+        /* get bandage by external id */
+
         const session = await this.users.validateSession(sessionId, user_agent);
         const bandage = await this.prisma.bandage.findFirst({ where: { externalId: id }, include: { User: true, categories: true, stars: true } });
         if (!bandage) {
@@ -387,7 +287,7 @@ export class BandageService {
                     name: bandage.User?.name,
                     username: bandage.User?.username
                 },
-                categories: categories.filter(el => el.icon !== '/null'),
+                categories: categories,
                 me_profile: me_profile,
                 permissions_level: permissions_level,
                 access_level: bandage.access_level,
@@ -398,6 +298,8 @@ export class BandageService {
     }
 
     async updateBandage(id: string, body: CreateBody, session: Session) {
+        /* update bandage info */
+
         const bandage = await this.prisma.bandage.findFirst({ where: { externalId: id }, include: { User: true, categories: true, stars: true } });
 
         if (!bandage) {
@@ -462,6 +364,8 @@ export class BandageService {
     }
 
     async validateCategories(categories: number[], admin: boolean) {
+        /* filter categories that available for user */
+
         const reachable_categories = await this.prisma.category.findMany({
             where: {
                 reachable: admin ? undefined : true
@@ -473,6 +377,8 @@ export class BandageService {
     }
 
     async deleteBandage(session: Session, externalId: string) {
+        /* delete bandage */
+
         const bandage = await this.prisma.bandage.findFirst({ where: { externalId: externalId }, include: { User: true } });
         if (!bandage) {
             return {
