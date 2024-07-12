@@ -32,33 +32,7 @@ export class AppController {
         res.redirect(301, "/");
     }
 
-    @Get("/profile/:name")
-    async profile(@Param('name') name: string, @Res({ passthrough: true }) res: Response): Promise<ProfileResponse | DefaultResponse | void> {
-        const data = await this.minecraftService.getUserData(name);
-        if (!data) {
-            res.status(404).send({message: 'Profile not found'});
-            return;
-        }
-        const textures = atob(data.properties[0].value);
-        const data_properties = JSON.parse(textures) as EncodedResponse;
-        return {
-            message: "",
-            timestamp: data_properties.timestamp,
-            uuid: data.id,
-            nickname: data.name,
-            textures: {
-                SKIN: {
-                    mojang: data_properties.textures.SKIN.url,
-                    eldraxis: `https://new-eldraxis.andcool.ru/skin/${data.id}`
-                },
-                CAPE: {
-                    mojang: data_properties.textures.CAPE?.url,
-                    eldraxis: `https://new-eldraxis.andcool.ru/cape/${data.id}`
-                }
-            }
-        };
-    }
-
+    
     @Get("/skin/:name")
     async skin(@Param('name') name: string, @Query() query: { cape: boolean }, @Res({ passthrough: true }) res: Response): Promise<CapeResponse | void> {
         const cache = await this.minecraftService.updateSkinCache(name);

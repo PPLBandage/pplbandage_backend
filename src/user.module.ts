@@ -49,8 +49,11 @@ interface SessionToken {
 }
 
 interface pplRes {
-    "roles": Array<string>,
-    "user": { "id": string, "username": string }
+    roles: Array<string>,
+    user: { 
+        id: string, 
+        username: string 
+    }
 }
 
 const generateCookie = (session: string, exp: number): string => {
@@ -204,7 +207,7 @@ export class UserService {
             username: sessionDB.User.username,
             name: sessionDB.User.name,
             joined_at: sessionDB.User.joined_at,
-            avatar: `https://cdn.discordapp.com/avatars/${response_data.id}/${response_data.avatar}`,
+            avatar: response_data.avatar ? `https://cdn.discordapp.com/avatars/${response_data.id}/${response_data.avatar}` : `/static/favicon.ico`,
             banner_color: response_data.banner_color
         };
     }

@@ -139,28 +139,10 @@ export class BandageService {
         let filter_rule: BandageSearch[] | undefined = undefined;
         if (search) {
             filter_rule = [
-                {
-                    title: {
-                        contains: search
-                    }
-                },
-                {
-                    description: {
-                        contains: search
-                    }
-                },
-                {
-                    externalId: {
-                        contains: search
-                    }
-                },
-                {
-                    User: {
-                        name: {
-                            contains: search
-                        }
-                    }
-                }
+                { title: { contains: search } },
+                { description: { contains: search } },
+                { externalId: { contains: search } },
+                { User: { name: { contains: search } } }
             ];
         }
 
@@ -286,7 +268,7 @@ export class BandageService {
         return {
             external_id: result.externalId,
             statusCode: 201
-        }
+        };
     }
 
     async getCategories(for_edit: boolean, sessionId: string, user_agent: string) {
@@ -319,7 +301,7 @@ export class BandageService {
                 User: true
             }
         });
-        return { statusCode: 200, data: generate_response(result, session) }
+        return { statusCode: 200, data: generate_response(result, session) };
     }
 
     async getStars(session: Session) {
@@ -340,7 +322,7 @@ export class BandageService {
                 User: true
             }
         });
-        return { statusCode: 200, data: generate_response(result, session) }
+        return { statusCode: 200, data: generate_response(result, session) };
     }
 
     async getBandage(id: string, sessionId: string, user_agent: string) {
@@ -474,12 +456,9 @@ export class BandageService {
                 },
                 access_level: access_level
             }
-        })
+        });
 
-        return {
-            statusCode: 200,
-            message: ""
-        }
+        return { statusCode: 200 };
     }
 
     async validateCategories(categories: number[], admin: boolean) {
