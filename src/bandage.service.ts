@@ -5,6 +5,7 @@ import { Prisma } from '@prisma/client';
 import axios from 'axios';
 import * as sharp from 'sharp';
 import { generate_response } from './app.service';
+import { NotificationService } from './notifications.service';
 
 const moderation_id = [4, 13];  // на проверке, отклонено
 const official_id = 0;
@@ -59,8 +60,9 @@ const rgbToHex = (r: number, g: number, b: number) => {
 @Injectable()
 export class BandageService {
     constructor(private prisma: PrismaService,
-                private users: UserService,
-    ) {}
+        private users: UserService,
+        private notifications: NotificationService
+    ) { }
 
     async getBandages(sessionId: string,
         take: number,
@@ -69,9 +71,9 @@ export class BandageService {
         search?: string,
         filters?: string,
         sort?: string) {
-        
+
         /* get workshop list */
-        
+
         const session = await this.users.validateSession(sessionId, user_agent);  // validate user session
         let search_rule: BandageSearch[] | undefined = undefined;
         if (search) {
@@ -194,6 +196,10 @@ export class BandageService {
             headers: {
                 Authorization: `Bot ${process.env.BOT_TOKEN}`
             }
+        });
+
+        this.notifications.createNotification(session.user.id, {
+            content: `Повязка <a href="/workshop/${result.externalId}"><b>${result.title}</b></a> создана и отправлена на проверку!`
         });
 
         return {
@@ -330,15 +336,29 @@ export class BandageService {
 
         if (body.categories !== undefined) {
             const validated_categories = await this.validateCategories(body.categories, session.user.admin);
+            const bandage_categories = bandage?.categories.map(el => el.id);
             if (!session.user.admin) {
-                const bandage_categories = bandage?.categories.map(el => el.id);
                 if (bandage_categories?.includes(moderation_id[0])) validated_categories.push(moderation_id[0]);
                 if (bandage_categories?.includes(moderation_id[1])) validated_categories.push(moderation_id[1]);
                 if (bandage_categories?.includes(official_id)) validated_categories.push(official_id);
             }
-            categories = validated_categories.map((el) => {
-                return { id: el };
-            });
+
+            const difference = bandage_categories.filter((element) => !validated_categories.includes(element));
+            const difference_after = validated_categories.filter((element) => !bandage_categories.includes(element));
+            if (difference_after.includes(moderation_id[1])) {
+                this.notifications.createNotification(bandage.userId as number, {
+                    content: `Повязка <a href="/workshop/${bandage.externalId}"><b>${bandage.title}</b></a> была отклонена. Пожалуйста, свяжитесь с <a href="/contacts"><b>администрацией</b></a> для уточнения причин.`,
+                    type: 2
+                });
+            }
+
+            else if (moderation_id.some(element => difference.includes(element))) {
+                this.notifications.createNotification(bandage.userId as number, {
+                    content: `Повязка <a href="/workshop/${bandage.externalId}"><b>${bandage.title}</b></a> успешно прошла проверку и теперь доступна остальным в <a href="/workshop"><b>мастерской</b></a>!`,
+                    type: 1
+                });
+            }
+            categories = validated_categories.map((el) => { return { id: el }; });
         }
 
         if (body.access_level !== undefined) {

@@ -204,15 +204,23 @@ export class UserService {
             }
         });
         const response_data = response.data as DiscordUser;
+        const updated_user = await this.prisma.user.update({
+            where: { id: sessionDB.User.id },
+            data: {
+                username: response_data.username,
+                name: response_data.global_name || response_data.username
+            }
+        })
         return {
             statusCode: 200,
             userID: sessionDB.User.id,
             discordID: sessionDB.User.discordId,
-            username: sessionDB.User.username,
-            name: sessionDB.User.name,
+            username: updated_user.username,
+            name: updated_user.name,
             joined_at: sessionDB.User.joined_at,
             avatar: response_data.avatar ? `https://cdn.discordapp.com/avatars/${response_data.id}/${response_data.avatar}` : `/static/favicon.ico`,
-            banner_color: response_data.banner_color
+            banner_color: response_data.banner_color,
+            has_unreaded_notifications: sessionDB.User.has_unreaded_notifications
         };
     }
 

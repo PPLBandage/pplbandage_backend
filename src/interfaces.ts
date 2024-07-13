@@ -115,9 +115,9 @@ interface CapeResponse {
 interface Notifications {
     id?: number,
     content: string,
-    author: string,
-    type: number,
-    creation_date: Date
+    author?: string,
+    type?: number,
+    creation_date?: Date
 }
 
 interface User {

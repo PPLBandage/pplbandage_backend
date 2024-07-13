@@ -183,10 +183,10 @@ export class AppController {
 
     @Get("/users/me/notifications")
     @UseGuards(AuthGuard)
-    async getNotifications(@Req() request: RequestSession, @Res() res: Response): Promise<void> {
+    async getNotifications(@Req() request: RequestSession, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
         /* get user's connections */
 
-        const data = this.notificationService.get(request.session);
+        const data = await this.notificationService.get(request.session, parseInt(query.take as string) || 5, parseInt(query.page as string) || 0);
         res.send(data);
     }
 
