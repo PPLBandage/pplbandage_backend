@@ -8,15 +8,18 @@ import { MinecraftService } from './minecraft.service';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './auth.guard';
+import { NotificationService } from './notifications.service';
 
 ConfigModule.forRoot();
 
 @Module({
-	providers: [{
-		provide: APP_GUARD,
-		useClass: ThrottlerGuard,
-	  },
-	  UserService, PrismaService, BandageService, MinecraftService, AuthGuard],
+	providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }, 
+		UserService, 
+		PrismaService, 
+		BandageService, 
+		MinecraftService, 
+		AuthGuard, 
+		NotificationService],
 	controllers: [AppController],
 	imports: [
 		ThrottlerModule.forRoot([{

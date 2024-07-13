@@ -24,18 +24,20 @@ model Minecraft {
 }
 
 model User {
-    id        Int        @id @default(autoincrement())
-    username  String     @default("")
-    name      String     @default("")
-    discordId String     @unique @default("")
-    sessions  Sessions[]
-    profile   Minecraft?
-    Bandage   Bandage[]  @relation("UserBandages")
-    stars     Bandage[]  @relation("UserStars")
-    admin     Boolean    @default(false)
-    banned    Boolean    @default(false)
-    joined_at DateTime   @default(now())
-    autoload  Boolean    @default(true)
+    id                         Int             @id @default(autoincrement())
+    username                   String          @default("")
+    name                       String          @default("")
+    discordId                  String          @unique @default("")
+    sessions                   Sessions[]
+    profile                    Minecraft?
+    Bandage                    Bandage[]       @relation("UserBandages")
+    stars                      Bandage[]       @relation("UserStars")
+    admin                      Boolean         @default(false)
+    banned                     Boolean         @default(false)
+    joined_at                  DateTime        @default(now())
+    autoload                   Boolean         @default(true)
+    notifications              Notifications[] @relation("Notifications")
+    has_unreaded_notifications Boolean         @default(false)
 }
 
 model Sessions {
@@ -68,4 +70,13 @@ model Category {
     reachable   Boolean   @default(true)
     only_admins Boolean   @default(false)
     order       Int       @default(0)
+}
+
+model Notifications {
+    id            Int      @id @default(autoincrement())
+    users         User[]   @relation("Notifications")
+    content       String   @default("")
+    author        String   @default("Система")
+    type          Int      @default(0)
+    creation_date DateTime @default(now())
 }

@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
-import { User, Prisma } from '@prisma/client';
 import { sign, verify } from 'jsonwebtoken';
 import axios from 'axios';
+import { generate_response } from './app.service';
 
 const discord_url = "https://discord.com/api/v10";
 const token_ttl = Number(process.env.SESSION_TTL);
@@ -13,8 +13,8 @@ const roles = [
     "589530176501579780",
     "987234058478186506",
     "1123363907692666910"
-];
-const pwgood = "447699225078136832";
+];  // list of pwgood roles
+const pwgood = "447699225078136832";  // pwgood server id
 
 interface DiscordResponse {
     token_type: string,
@@ -33,7 +33,7 @@ interface DiscordUser {
     flags: number,
     banner: string | null,
     accent_color: number,
-    global_name: string,
+    global_name: string | null,
     avatar_decoration_data: number | null,
     banner_color: string | null,
     clan: string | null,
@@ -49,11 +49,16 @@ interface SessionToken {
 }
 
 interface pplRes {
-    "roles": Array<string>,
-    "user": { "id": string, "username": string }
+    roles: Array<string>,
+    user: {
+        id: string,
+        username: string
+    }
 }
 
 const generateCookie = (session: string, exp: number): string => {
+    /* generate cookie string */
+
     const date = new Date(exp * 1000);
     return `sessionId=${session}; Path=/; Expires=${date.toUTCString()}; SameSite=Strict`;
 }
@@ -62,13 +67,9 @@ const generateCookie = (session: string, exp: number): string => {
 export class UserService {
     constructor(private prisma: PrismaService) { }
 
-    async user(userWhereUniqueInput: Prisma.UserWhereUniqueInput): Promise<User | null> {
-        return this.prisma.user.findUnique({
-            where: userWhereUniqueInput,
-        });
-    }
-
     async check_ppl(token: string) {
+        /* check user on pwgood server */
+
         const response = await axios.get(`${discord_url}/users/@me/guilds/${pwgood}/member`, {
             headers: {
                 Authorization: token
@@ -88,6 +89,8 @@ export class UserService {
     }
 
     async login(code: string, user_agent: string) {
+        /* log in by code */
+
         const discord_tokens = await axios.post(discord_url + "/oauth2/token", {
             'grant_type': 'authorization_code',
             'code': code,
@@ -152,8 +155,10 @@ export class UserService {
     }
 
     async validateSession(session: string | undefined, user_agent: string): Promise<Session | null> {
+        /* validate and update user session */
+
         if (!session) return null;
-        const sessionDB = await this.prisma.sessions.findUnique({ where: { sessionId: session }, include: { User: { include: { profile: true } } } });
+        const sessionDB = await this.prisma.sessions.findUnique({ where: { sessionId: session }, include: { User: { include: { profile: true, notifications: true } } } });
         if (!sessionDB) return null;
 
         if (sessionDB.User_Agent !== user_agent) {
@@ -166,7 +171,7 @@ export class UserService {
             const seconds = Math.round(Date.now() / 1000);
             if (decoded.iat + ((decoded.exp - decoded.iat) / 2) < seconds) {
                 const sessionId = sign({ userId: sessionDB.userId }, 'ppl_super_secret', { expiresIn: token_ttl });
-                const new_tokens = await this.prisma.sessions.update({ where: { id: sessionDB.id }, data: { sessionId: sessionId }, include: { User: { include: { profile: true } } } });
+                const new_tokens = await this.prisma.sessions.update({ where: { id: sessionDB.id }, data: { sessionId: sessionId }, include: { User: { include: { profile: true, notifications: true } } } });
                 const cookie = generateCookie(sessionId, seconds + token_ttl);
 
                 return { sessionId: sessionId, cookie: cookie, user: new_tokens.User };
@@ -181,6 +186,8 @@ export class UserService {
     }
 
     async getUser(session: string) {
+        /* get user, associated with session */
+
         const sessionDB = await this.prisma.sessions.findFirst({ where: { sessionId: session }, include: { User: true } });
         if (!sessionDB) {
             return { message: "User not found", statusCode: 401 };
@@ -188,7 +195,7 @@ export class UserService {
 
         if (sessionDB.User.banned) {
             await this.prisma.sessions.deleteMany({ where: { userId: sessionDB.User.id } });
-            return { message: "Unable to login", statusCode: 401 };
+            return { message: "Unable to get user", statusCode: 401 };
         }
 
         const response = await axios.get(`${discord_url}/users/${sessionDB.User.discordId}`, {
@@ -197,27 +204,37 @@ export class UserService {
             }
         });
         const response_data = response.data as DiscordUser;
+        const updated_user = await this.prisma.user.update({
+            where: { id: sessionDB.User.id },
+            data: {
+                username: response_data.username,
+                name: response_data.global_name || response_data.username
+            }
+        })
         return {
             statusCode: 200,
             userID: sessionDB.User.id,
             discordID: sessionDB.User.discordId,
-            username: sessionDB.User.username,
-            name: sessionDB.User.name,
+            username: updated_user.username,
+            name: updated_user.name,
             joined_at: sessionDB.User.joined_at,
             avatar: response_data.avatar ? `https://cdn.discordapp.com/avatars/${response_data.id}/${response_data.avatar}` : `/static/favicon.ico`,
-            banner_color: response_data.banner_color
+            banner_color: response_data.banner_color,
+            has_unreaded_notifications: sessionDB.User.has_unreaded_notifications
         };
     }
 
     async logout(session: Session) {
+        /* user log out */
+
         await this.prisma.sessions.delete({ where: { sessionId: session.sessionId } });
     }
 
     async getConnections(session: Session) {
+        /* get user's associated accounts */
+
         const data = await this.prisma.minecraft.findFirst({
-            where: {
-                userId: session.user.id
-            },
+            where: { userId: session.user.id },
             include: { user: true }
         });
 
@@ -237,6 +254,45 @@ export class UserService {
                 autoload: data.user?.autoload
             }
         }
+    }
+
+    async getWork(session: Session) {
+        /* get list of user's works */
+
+        const result = await this.prisma.bandage.findMany({
+            where: {
+                userId: session.user.id
+            },
+            include: {
+                stars: true,
+                categories: true,
+                User: true
+            }
+        });
+        return { statusCode: 200, data: generate_response(result, session) };
+    }
+
+    async getStars(session: Session) {
+        /* get user's favorite (stars) */
+
+        const result = await this.prisma.bandage.findMany({
+            where: {
+                stars: {
+                    some: {
+                        id: session.user.id
+                    }
+                },
+                User: {
+                    banned: false
+                }
+            },
+            include: {
+                stars: true,
+                categories: true,
+                User: true
+            }
+        });
+        return { statusCode: 200, data: generate_response(result, session) };
     }
 }
 
