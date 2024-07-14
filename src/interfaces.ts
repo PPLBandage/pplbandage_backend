@@ -108,7 +108,6 @@ interface SkinAndCape {
 }
 
 interface CapeResponse {
-    message: string,
     data: SkinAndCape
 }
 

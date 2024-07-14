@@ -199,33 +199,35 @@ export class MinecraftService {
     async changeValid(session: Session, state: boolean) {
         /* switch displaying nick in search */
 
-        const minecraft = await this.prisma.minecraft.findFirst({where: {userId: session.user.id}});
+        const minecraft = await this.prisma.minecraft.findFirst({ where: { userId: session.user.id } });
 
         if (!minecraft) return {
             statusCode: 400,
             message: "Minecraft account not connected"
         };
 
-        const result = await this.prisma.minecraft.update({where: {
-                                    id: minecraft.id
-                                }, data: {
-                                    valid: state
-                                }
-                            })
-        return {statusCode: 200, new_data: result.valid};
+        const result = await this.prisma.minecraft.update({
+            where: {
+                id: minecraft.id
+            }, data: {
+                valid: state
+            }
+        })
+        return { statusCode: 200, new_data: result.valid };
     }
 
 
     async changeAutoload(session: Session, state: boolean) {
         /* switch skin autoload in editor */
 
-        const result = await this.prisma.user.update({where: {
-                                    id: session.user.id
-                                }, data: {
-                                    autoload: state
-                                }
-                            })
-        return {statusCode: 200, new_data: result.autoload};
+        const result = await this.prisma.user.update({
+            where: {
+                id: session.user.id
+            }, data: {
+                autoload: state
+            }
+        })
+        return { statusCode: 200, new_data: result.autoload };
     }
 
     async connect(session: Session, code: string) {
@@ -239,7 +241,7 @@ export class MinecraftService {
             };
         }
 
-        const user_data = await axios.get(`https://api-mc-oauth.andcool.ru/code/${code}`, {validateStatus: () => true});
+        const user_data = await axios.get(`https://api-mc-oauth.andcool.ru/code/${code}`, { validateStatus: () => true });
         if (user_data.status !== 200) {
             return {
                 statusCode: 404,
@@ -248,9 +250,9 @@ export class MinecraftService {
             };
         }
 
-        const data = user_data.data as {nickname: string, UUID: string};
+        const data = user_data.data as { nickname: string, UUID: string };
         const skin_data = await this.updateSkinCache(data.UUID, true);
-        
+
         if (!skin_data) {
             return {
                 statusCode: 500,
@@ -266,17 +268,18 @@ export class MinecraftService {
             };
         }
 
-        await this.prisma.user.update({where: {
+        await this.prisma.user.update({
+            where: {
                 id: session.user.id
-                }, 
-                data: {
-                    profile: {
-                        connect: {
-                            id: skin_data.id
-                        }
+            },
+            data: {
+                profile: {
+                    connect: {
+                        id: skin_data.id
                     }
                 }
-            });
+            }
+        });
 
         return {
             statusCode: 200,
@@ -297,15 +300,17 @@ export class MinecraftService {
             }
         }
 
-        await this.prisma.user.update({where: {
-            id: session.user.id
-        }, data: {
-            profile: {
-                disconnect: {
-                    id: session.user.profile.id
+        await this.prisma.user.update({
+            where: {
+                id: session.user.id
+            }, data: {
+                profile: {
+                    disconnect: {
+                        id: session.user.profile.id
+                    }
                 }
             }
-        }});
+        });
 
         return {
             statusCode: 200,

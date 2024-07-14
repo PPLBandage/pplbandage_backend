@@ -24,7 +24,7 @@ export class NotificationService {
         });
 
         const count = await this.prisma.notifications.count({ where: { users: { some: { id: session.user.id } } } });
-        return { data: notifications, total_count: count};
+        return { data: notifications, total_count: count };
     }
 
     async createNotification(userId: number, notification: Notifications) {

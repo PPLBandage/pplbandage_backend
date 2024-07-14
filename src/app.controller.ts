@@ -22,28 +22,27 @@ interface RequestSession extends Request {
 
 @Controller('/api')
 export class AppController {
-
     constructor(private readonly userService: UserService,
-                private readonly bandageService: BandageService,
-                private readonly minecraftService: MinecraftService,
-                private readonly notificationService: NotificationService
+        private readonly bandageService: BandageService,
+        private readonly minecraftService: MinecraftService,
+        private readonly notificationService: NotificationService
     ) { }
 
     @Get()
     async root(@Res({ passthrough: true }) res: Response) {
         /* main route */
-        
+
         res.redirect(301, "/");
     }
 
-    
+
     @Get("/skin/:name")
     async skin(@Param('name') name: string, @Query() query: { cape: boolean }, @Res({ passthrough: true }) res: Response): Promise<CapeResponse | void> {
         /* get minecraft skin by nickname / UUID */
 
         const cache = await this.minecraftService.updateSkinCache(name);
         if (!cache) {
-            res.status(404).send({message: 'Profile not found'});
+            res.status(404).send({ message: 'Profile not found' });
             return;
         }
         if (!query.cape) {
@@ -53,7 +52,6 @@ export class AppController {
             return;
         }
         return {
-            message: "",
             data: {
                 skin: {
                     data: cache.data,
@@ -71,7 +69,7 @@ export class AppController {
 
         const cache = await this.minecraftService.updateSkinCache(name);
         if (!cache) {
-            throw new HttpException({message: 'Profile not found'}, HttpStatus.NOT_FOUND);
+            throw new HttpException({ message: 'Profile not found' }, HttpStatus.NOT_FOUND);
         }
         return new StreamableFile(Buffer.from(cache.data_head, "base64"));
     }
@@ -80,14 +78,14 @@ export class AppController {
     @Header('Content-Type', 'image/png')
     async cape(@Param('name') name: string, @Res({ passthrough: true }) res: Response): Promise<StreamableFile | void> {
         /* get minecraft cape by nickname / UUID */
-        
+
         const cache = await this.minecraftService.updateSkinCache(name);
         if (!cache) {
-            res.status(404).send({message: 'Profile not found'});
+            res.status(404).send({ message: 'Profile not found' });
             return;
         }
         if (!cache.data_cape) {
-            res.status(404).send({message: 'No cape on this profile'});
+            res.status(404).send({ message: 'No cape on this profile' });
             return;
         }
         const skin_buff = Buffer.from(cache.data_cape, "base64");
@@ -98,10 +96,10 @@ export class AppController {
     @Get("/search/:name")
     async search(@Param('name') name: string, @Query() query: SearchQuery): Promise<Search> {
         /* search nicknames by requested fragment */
-        
+
         const cache = await this.minecraftService.searchNicks({ fragment: name, take: parseInt(query.take as string) || 20, page: parseInt(query.page as string) || 0 });
         if (!cache) {
-            throw new HttpException({message: 'No content'}, HttpStatus.NO_CONTENT);
+            throw new HttpException({ message: 'No content' }, HttpStatus.NO_CONTENT);
         }
         return cache;
     }
@@ -110,11 +108,11 @@ export class AppController {
     @Get("/oauth/discord/:code")
     async discord(@Param('code') code: string, @Req() request: Request, @Res({ passthrough: true }) res: Response): Promise<void> {
         /* create session for discord user */
-        
+
         const user_agent = request.headers['user-agent'] as string;
         const data = await this.userService.login(code, user_agent);
         if (!data) {
-            res.status(400).send({status: "error", message: "could not login"});
+            res.status(400).send({ status: "error", message: "could not login" });
             return;
         }
         if (data.statusCode !== 200) {
@@ -150,10 +148,10 @@ export class AppController {
         }
 
         await this.userService.logout(session);
-        res.status(200).send({"status": "success"});
+        res.status(200).send({ "status": "success" });
     }
 
-    
+
     @Get("/users/me/works")
     @UseGuards(AuthGuard)
     async getWork(@Req() request: RequestSession, @Res() res: Response): Promise<void> {
@@ -192,7 +190,7 @@ export class AppController {
 
     @Put("/users/me/connections/minecraft/set_valid")
     @UseGuards(AuthGuard)
-    async set_valid(@Req() request: RequestSession, @Res() res: Response, @Query() query: SearchQuery): Promise<void> { 
+    async set_valid(@Req() request: RequestSession, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
         /* set displaying nickname in search */
 
         if (!query.state || !["true", "false"].includes(query.state)) {
@@ -211,7 +209,7 @@ export class AppController {
     @UseGuards(AuthGuard)
     async set_autoload(@Req() request: RequestSession, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
         /* set skin autoload in editor */
-        
+
         if (!query.state || !["true", "false"].includes(query.state)) {
             res.status(HttpStatus.BAD_REQUEST).send({
                 status: "error",
@@ -228,7 +226,7 @@ export class AppController {
     @UseGuards(AuthGuard)
     async connectMinecraft(@Param('code') code: string, @Req() request: RequestSession, @Res() res: Response): Promise<void> {
         /* connect minecraft profile to account */
-        
+
         if (code.length != 6) {
             res.status(HttpStatus.BAD_REQUEST).send({
                 status: "error",
@@ -257,7 +255,7 @@ export class AppController {
 
         const cache = await this.minecraftService.updateSkinCache(request.session.user.profile.uuid, true);
         if (!cache) {
-            res.status(404).send({message: 'Profile not found'});
+            res.status(404).send({ message: 'Profile not found' });
             return;
         }
 
@@ -279,11 +277,11 @@ export class AppController {
         /* get list of works */
 
         const user_agent = request.headers['user-agent'] as string;
-        res.status(200).send(await this.bandageService.getBandages(request.cookies.sessionId, 
-            parseInt(query.take as string) || 20, 
+        res.status(200).send(await this.bandageService.getBandages(request.cookies.sessionId,
+            parseInt(query.take as string) || 20,
             parseInt(query.page as string) || 0,
-            user_agent, 
-            query.search, 
+            user_agent,
+            query.search,
             query.filters,
             query.sort));
     }
@@ -294,7 +292,7 @@ export class AppController {
     @UseGuards(AuthGuard)
     async create_bandage(@Req() request: RequestSession, @Res() res: Response, @Body() body: CreateBody): Promise<void> {
         /* create work */
-        
+
         if (!body.base64 || !body.title) {
             res.status(HttpStatus.BAD_REQUEST).send({
                 message: "Invalid Body",
@@ -327,7 +325,7 @@ export class AppController {
             const metadata = await bandage_sharp.metadata();
             const width = metadata.width as number;
             const height = metadata.height as number;
-            if (width != 16 || (height < 2 || height > 24 || height % 2 != 0) || metadata.format != 'png'){
+            if (width != 16 || (height < 2 || height > 24 || height % 2 != 0) || metadata.format != 'png') {
                 res.status(HttpStatus.BAD_REQUEST).send({
                     message: "Invalid bandage size or format!",
                     message_ru: "Повязка должна иметь ширину 16 пикселей, высоту от 2 до 24 пикселей и четную высоту",
@@ -355,7 +353,7 @@ export class AppController {
         if (request.headers['unique-access'] !== process.env.WORKSHOP_TOKEN) {
             res.redirect(307, `/workshop/${id}`);
             return;
-        } 
+        }
         const user_agent = request.headers['user-agent'] as string;
         const data = await this.bandageService.getBandage(id, request.cookies.sessionId, user_agent);
         res.status(data.statusCode).send(data);
@@ -365,7 +363,7 @@ export class AppController {
     @Header('Content-Type', 'image/png')
     async getBandageImage(@Param('id') id: string, @Req() request: Request, @Res({ passthrough: true }) res: Response): Promise<StreamableFile | void> {
         /* get bandage image render (for OpenGraph) */
-        
+
         const user_agent = request.headers['user-agent'] as string;
         const data = await this.bandageService.getBandage(id, request.cookies.sessionId, user_agent);
         if (data.statusCode !== 200 || !data.data?.base64) {
@@ -387,7 +385,7 @@ export class AppController {
     @UseGuards(AuthGuard)
     async editBandage(@Param('id') id: string, @Req() request: RequestSession, @Res() res: Response, @Body() body: CreateBody) {
         /* edit bandage info */
-        
+
         if (!body) {
             res.status(HttpStatus.BAD_REQUEST).send({
                 message: "Invalid Body",
@@ -430,7 +428,7 @@ export class AppController {
     @Get("/categories")
     async categories(@Req() request: Request, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
         /* get list of categories */
-        
+
         const user_agent = request.headers['user-agent'] as string;
         res.status(200).send(await this.bandageService.getCategories(query.for_edit === "true", request.cookies.sessionId, user_agent));
     }
@@ -440,7 +438,7 @@ export class AppController {
     @UseGuards(AuthGuard)
     async setStar(@Param('id') id: string, @Query() query: { set: string }, @Req() request: RequestSession, @Res() res: Response): Promise<void> {
         /* set star to work by work external id */
-        
+
         if (!query.set || !["true", "false"].includes(query.set)) {
             res.status(HttpStatus.BAD_REQUEST).send({
                 message: "`Set` query param invalid",
