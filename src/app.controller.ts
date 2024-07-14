@@ -351,7 +351,7 @@ export class AppController {
         /* get bandage by external id (internal endpoint) */
 
         if (request.headers['unique-access'] !== process.env.WORKSHOP_TOKEN) {
-            res.redirect(307, `/workshop/${id}`);
+            res.status(403).send({message: 'Forbidden', statusCode: 403});
             return;
         }
         const user_agent = request.headers['user-agent'] as string;
@@ -432,7 +432,6 @@ export class AppController {
         const user_agent = request.headers['user-agent'] as string;
         res.status(200).send(await this.bandageService.getCategories(query.for_edit === "true", request.cookies.sessionId, user_agent));
     }
-
 
     @Put("/star/:id")
     @UseGuards(AuthGuard)
