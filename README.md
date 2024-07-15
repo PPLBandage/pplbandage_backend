@@ -1,21 +1,77 @@
-# Eldraxis.js
-[![Made with Prisma](http://made-with.prisma.io/indigo.svg)](https://prisma.io)<br/>
+# PPLBandage Backend
+[![Made with Prisma](https://made-with.prisma.io/indigo.svg)](https://prisma.io)<br/>
 [![Made for pepeland](https://andcool.ru/static/badges/made-for-ppl.svg)](https://pepeland.net)
-### **Порт [оригинального Eldraxis](https://github.com/Andcool-Systems/Eldraxis) на nest.js.**
 
-## Бенчмарки
-|              | Eldraxis | Eldraxis.js |
-|--------------|----------|-------------|
-| /skin        | ~700ms   | ~168ms      |
-| /skin/*uuid* | ~400ms   | ~120ms      |
-| /head        | ~600ms   | ~170ms      |
-| /cape        | ~800ms   | ~110ms      |
-| /head3d      | ~700ms   | -           |
-| /search      | ~200ms   | ~80ms       |
-| /profile     | ~800ms   | ~154ms      |
 
->[!NOTE]
-> Все бенчмарки проведены на моём ПК и стоит учитывать поправку на скорость моего интернета.  
-> Во всех тестах был использован кэш скинов и примерно равные условия. Если передавать в `/skin` не никнейм, а UUID, то времени на обработку будет затрачено чуть меньше, так как не делается лишний запрос к серверам Mojang.
+# API Documentation
+## Public API Description
+### Minecraft Skin API
 
-*Скорее всего это я криворукий и не умею программировать, но проект был доработан и ускорен 4 раза, что неплохо*
+`GET /skin/{nickname}?cape=<bool>`
+Retrieve a skin by nickname.
+
+> Query parameter `cape` determines the format of the returned skin.
+The default value of the parameter is `false`. With this value, the response `Content-Type` header will be `image/png`. In this case, the endpoint will return only the skin as an image.
+If the parameter cape is set to `true,` the endpoint will have a `text/json` `Content-Type` header, and the response will contain images of the skin and cape in base64 format.
+
+```JSON
+{
+  "status": "success",
+  "data": {
+    "skin": {
+        "data": "<base64 encoded skin>",
+        "slim": "<boolean skin type>"
+    },
+    "cape": "<base64 encoded cape>"
+  }
+}
+```
+
+> [!NOTE]
+> If your account does not have a cape, the cape field in the server response will be an empty string.
+
+---
+`GET /head/{nickname}`  
+Returns image of minecraft skin head by nickname.  
+
+`Content-Type: image/png`  
+> [!NOTE]
+> The request is subject to caching
+
+---
+`GET /cape/{nickname}`  
+Returns image of minecraft account cape by nickname.  
+
+`Content-Type: image/png`  
+> [!NOTE]
+> The request is subject to caching 
+
+---
+
+`GET /search/{nickname-fragment}?take=<take>&page=<page>`  
+This endpoint will return all cached entries whose nickname contains the given fragment.
+
+> The `take` parameter specifies the maximum number of nicknames returned in the search (default is 20).  
+> The `page` parameter determines which page will be sent when requesting nicknames. Calculated by the formula `skip = take * page`.
+
+If no nicknames containing the given fragment are found, the HTTP status code will be `204`.
+
+#### Example Response
+```json
+{
+  "status": "success",
+  "requestedFragment": "AndcoolSystems",
+  "data": [
+    {
+      "name": "AndcoolSystems",
+      "head": "<base64 encoded skin head>"
+    }
+  ],
+  "total_count": 1,
+  "next_page": 1
+}
+```
+> The `total_count` field contains the total number of records found, regardless of the `take` and `page` parameters.  
+> The `next_page` field contains the number of the next page.
+
+
