@@ -185,6 +185,15 @@ export class UserService {
         }
     }
 
+    async getCurrentData(user_id: string) {
+        const response = await axios.get(`${discord_url}/users/${user_id}`, {
+            headers: {
+                Authorization: `Bot ${process.env.BOT_TOKEN}`
+            }
+        });
+        return response.data as DiscordUser;
+    }
+
     async getUser(session: string) {
         /* get user, associated with session */
 
@@ -198,12 +207,9 @@ export class UserService {
             return { message: "Unable to get user", statusCode: 401 };
         }
 
-        const response = await axios.get(`${discord_url}/users/${sessionDB.User.discordId}`, {
-            headers: {
-                Authorization: `Bot ${process.env.BOT_TOKEN}`
-            }
-        });
-        const response_data = response.data as DiscordUser;
+        
+        const response_data = await this.getCurrentData(sessionDB.User.discordId);
+
         const updated_user = await this.prisma.user.update({
             where: { id: sessionDB.User.id },
             data: {
@@ -233,19 +239,16 @@ export class UserService {
     async getConnections(session: Session) {
         /* get user's associated accounts */
 
+        var minecraft = null;
+        var discord = null;
+
         const data = await this.prisma.minecraft.findFirst({
             where: { userId: session.user.id },
             include: { user: true }
         });
 
-        if (!data) return {
-            statusCode: 200,
-            minecraft: null
-        };
-
-        return {
-            statusCode: 200,
-            minecraft: {
+        if (data) {
+            minecraft = {
                 nickname: data.default_nick,
                 uuid: data.uuid,
                 last_cached: Number(data.expires) - parseInt(process.env.TTL as string),
@@ -253,6 +256,23 @@ export class UserService {
                 valid: data.valid,
                 autoload: data.user?.autoload
             }
+        }
+
+        if (session.user) {
+            const current_discord = await this.getCurrentData(session.user.discordId);
+            discord = {
+                user_id: session.user.discordId,
+                username: session.user.username,
+                name: session.user.name,
+                connected_at: session.user.joined_at,
+                avatar: current_discord.avatar ? `https://cdn.discordapp.com/avatars/${current_discord.id}/${current_discord.avatar}` : null
+            }
+        }
+
+        return {
+            statusCode: 200,
+            discord: discord,
+            minecraft: minecraft
         }
     }
 
