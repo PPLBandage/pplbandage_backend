@@ -63,19 +63,19 @@ export class AppController {
     }
 
     @Get("/head/:name")
-    @Header('Content-Type', 'image/png')
-    async head(@Param('name') name: string): Promise<StreamableFile> {
+    async head(@Param('name') name: string, @Res({ passthrough: true }) res: Response): Promise<StreamableFile> {
         /* get minecraft head by nickname / UUID */
 
         const cache = await this.minecraftService.updateSkinCache(name);
         if (!cache) {
             throw new HttpException({ message: 'Profile not found' }, HttpStatus.NOT_FOUND);
         }
+
+        res.setHeader('Content-Type', 'image/png');
         return new StreamableFile(Buffer.from(cache.data_head, "base64"));
     }
 
     @Get("/cape/:name")
-    @Header('Content-Type', 'image/png')
     async cape(@Param('name') name: string, @Res({ passthrough: true }) res: Response): Promise<StreamableFile | void> {
         /* get minecraft cape by nickname / UUID */
 
@@ -89,6 +89,7 @@ export class AppController {
             return;
         }
         const skin_buff = Buffer.from(cache.data_cape, "base64");
+        res.setHeader('Content-Type', 'image/png');
         return new StreamableFile(skin_buff);
     }
 
@@ -351,7 +352,7 @@ export class AppController {
         /* get bandage by external id (internal endpoint) */
 
         if (request.headers['unique-access'] !== process.env.WORKSHOP_TOKEN) {
-            res.status(403).send({message: 'Forbidden', statusCode: 403});
+            res.status(403).send({ message: 'Forbidden', statusCode: 403 });
             return;
         }
         const user_agent = request.headers['user-agent'] as string;
@@ -360,9 +361,16 @@ export class AppController {
     }
 
     @Get("/workshop/:id/as_image")
-    @Header('Content-Type', 'image/png')
-    async getBandageImage(@Param('id') id: string, @Req() request: Request, @Res({ passthrough: true }) res: Response): Promise<StreamableFile | void> {
+    async getBandageImage(@Param('id') id: string, @Req() request: Request, @Res({ passthrough: true }) res: Response, @Query() query: { width: number }): Promise<StreamableFile | void> {
         /* get bandage image render (for OpenGraph) */
+        
+        if (isNaN(Number(query.width)) || query.width < 16 || query.width > 1000) {
+            res.status(400).send({
+                status: 'error',
+                message: 'Width cannot be less than 16 an higher than 1000'
+            });
+            return;
+        }
 
         const user_agent = request.headers['user-agent'] as string;
         const data = await this.bandageService.getBandage(id, request.cookies.sessionId, user_agent);
@@ -374,10 +382,13 @@ export class AppController {
 
         const sharp_obj = sharp(bandage_buff);
         const metadata = await sharp_obj.metadata();
-        const width = (metadata.width as number) * 16;
-        const height = (metadata.height as number) * 16;
-        sharp.kernel.nearest
+
+        const factor = (query?.width || 256) / (metadata.width as number);
+        const width = (metadata.width as number) * factor;
+        const height = (metadata.height as number) * factor;
         const buffer = await sharp_obj.resize(width, height, { kernel: sharp.kernel.nearest }).toBuffer();
+
+        res.setHeader('Content-Type', 'image/png');
         return new StreamableFile(buffer);
     }
 
@@ -448,5 +459,4 @@ export class AppController {
         const data = await this.bandageService.setStar(request.session, query.set === "true", id);
         res.status(data.statusCode).send(data);
     }
-
 }
