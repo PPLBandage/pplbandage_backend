@@ -197,7 +197,7 @@ export class AppController {
         if (!query.state || !["true", "false"].includes(query.state)) {
             res.status(HttpStatus.BAD_REQUEST).send({
                 status: "error",
-                message: "`State` query param invalid",
+                message: "`state` query param invalid",
                 statusCode: 400
             });
             return;
@@ -256,7 +256,9 @@ export class AppController {
 
         const cache = await this.minecraftService.updateSkinCache(request.session.user.profile.uuid, true);
         if (!cache) {
-            res.status(404).send({ message: 'Profile not found' });
+            res.status(404).send({ 
+                message: 'Profile not found'
+            });
             return;
         }
 
