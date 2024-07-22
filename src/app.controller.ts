@@ -369,7 +369,7 @@ export class AppController {
         if (isNaN(Number(query.width)) || query.width < 16 || query.width > 1000) {
             res.status(400).send({
                 status: 'error',
-                message: 'Width cannot be less than 16 an higher than 1000'
+                message: '`width` cannot be less than 16 an higher than 1000'
             });
             return;
         }
