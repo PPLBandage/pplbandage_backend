@@ -256,7 +256,7 @@ export class AppController {
 
         const cache = await this.minecraftService.updateSkinCache(request.session.user.profile.uuid, true);
         if (!cache) {
-            res.status(404).send({ 
+            res.status(404).send({
                 message: 'Profile not found'
             });
             return;
@@ -322,26 +322,26 @@ export class AppController {
             return;
         }
 
-        try {
-            const bandage_buff = Buffer.from(body.base64, 'base64');
-            const bandage_sharp = sharp(bandage_buff);
-            const metadata = await bandage_sharp.metadata();
-            const width = metadata.width as number;
-            const height = metadata.height as number;
-            if (width != 16 || (height < 2 || height > 24 || height % 2 != 0) || metadata.format != 'png') {
-                res.status(HttpStatus.BAD_REQUEST).send({
-                    message: "Invalid bandage size or format!",
-                    message_ru: "Повязка должна иметь ширину 16 пикселей, высоту от 2 до 24 пикселей и четную высоту",
+        const validate_result = await this.bandageService.validateBandage(body.base64);
+        if (validate_result.statusCode !== 200) {
+            res.status(validate_result.statusCode).send(validate_result.data);
+            return;
+        }
+
+        if (body.split_type === true) {
+            if (!body.base64_slim) {
+                res.status(400).send({
+                    message: "Invalid Body",
                     statusCode: 400
                 });
                 return;
             }
-        } catch {
-            res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                message: "Error while processing base64",
-                statusCode: 500
-            });
-            return;
+
+            const validate_result_slim = await this.bandageService.validateBandage(body.base64_slim, validate_result.data.height as number);
+            if (validate_result.statusCode !== 200) {
+                res.status(validate_result_slim.statusCode).send(validate_result_slim.data);
+                return;
+            }
         }
 
         const data = await this.bandageService.createBandage(body, request.session);
@@ -365,7 +365,7 @@ export class AppController {
     @Get("/workshop/:id/as_image")
     async getBandageImage(@Param('id') id: string, @Req() request: Request, @Res({ passthrough: true }) res: Response, @Query() query: { width: number }): Promise<StreamableFile | void> {
         /* get bandage image render (for OpenGraph) */
-        
+
         if (isNaN(Number(query.width)) || query.width < 16 || query.width > 1000) {
             res.status(400).send({
                 status: 'error',

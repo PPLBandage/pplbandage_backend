@@ -151,8 +151,10 @@ interface Session {
 
 interface CreateBody {
     base64: string,
+    base64_slim?: string,
     title: string,
     description: string,
     categories: number[],
-    access_level: number
+    access_level: number,
+    split_type?: boolean
 }

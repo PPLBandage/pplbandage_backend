@@ -207,7 +207,7 @@ export class UserService {
             return { message: "Unable to get user", statusCode: 401 };
         }
 
-        
+
         const response_data = await this.getCurrentData(sessionDB.User.discordId);
 
         const updated_user = await this.prisma.user.update({

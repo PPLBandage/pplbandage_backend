@@ -54,6 +54,8 @@ model Bandage {
     title        String     @default("")
     description  String?    @default("")
     base64       String     @default("")
+    base64_slim  String     @default("")
+    split_type   Boolean    @default(false)
     User         User?      @relation("UserBandages", fields: [userId], references: [id])
     userId       Int?
     creationDate DateTime   @default(now())

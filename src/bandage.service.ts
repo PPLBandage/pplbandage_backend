@@ -178,6 +178,8 @@ export class BandageService {
                 title: body.title,
                 description: body.description,
                 base64: body.base64,
+                base64_slim: body.base64_slim || '',
+                split_type: body.split_type || false,
                 User: {
                     connect: {
                         id: session?.user.id
@@ -190,7 +192,7 @@ export class BandageService {
         });
 
         await axios.post(`${discord_url}/channels/${process.env.MODERATION_CHANNEL_ID}/messages`, {
-            content: `New bandage "${result.title}" created by ${session.user.name}!\nhttps://pplbandage.ru/workshop/${result.externalId}`
+            content: `<@&${process.env.MENTION_ROLE_ID}> New bandage "${result.title}" created by ${session.user.name}!\nhttps://pplbandage.ru/workshop/${result.externalId}`
         }, {
             validateStatus: () => true,
             headers: {
@@ -284,6 +286,8 @@ export class BandageService {
                 title: bandage.title,
                 description: bandage.description,
                 base64: bandage.base64,
+                base64_slim: bandage.split_type ? bandage.base64_slim : undefined,
+                split_type: bandage.split_type,
                 average_og_color: rgbToHex(r, g, b),
                 creation_date: bandage.creationDate,
                 stars_count: bandage.stars.length,
@@ -419,5 +423,51 @@ export class BandageService {
             statusCode: 200,
             message: "Deleted"
         }
+    }
+
+    async validateBandage(base64: string, heightInit?: number) {
+        let height = null;
+        try {
+            const bandage_buff = Buffer.from(base64, 'base64');
+            const bandage_sharp = sharp(bandage_buff);
+            const metadata = await bandage_sharp.metadata();
+            const width = metadata.width as number;
+            height = metadata.height as number;
+
+            if (width != 16 || (height < 2 || height > 24 || height % 2 != 0) || metadata.format != 'png') {
+                return {
+                    statusCode: 400,
+                    data: {
+                        message: "Invalid bandage size or format!",
+                        message_ru: "Повязка должна иметь ширину 16 пикселей, высоту от 2 до 24 пикселей и четную высоту"
+                    }
+                };
+            }
+
+            if (heightInit != undefined && height !== heightInit) {
+                return {
+                    statusCode: 400,
+                    data: {
+                        message: "The second bandage should be the same height as the first",
+                        message_ru: "Вторая повязка должна иметь такую ​​же высоту, как и первая"
+                    }
+                };
+            }
+        } catch {
+            return {
+                statusCode: 500,
+                data: {
+                    message: "Error while processing base64",
+                    message_ru: "Произошла ошибка при обработке base64"
+                }
+            };
+        }
+
+        return {
+            statusCode: 200,
+            data: {
+                height: height
+            }
+        };
     }
 }

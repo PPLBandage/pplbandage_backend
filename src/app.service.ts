@@ -28,7 +28,8 @@ interface Bandage {
     title: string,
     description: string | null,
     base64: string,
-    creationDate: Date
+    creationDate: Date,
+    split_type: boolean
 }
 
 export const generate_response = (data: Bandage[], session: Session | null) => {
@@ -49,6 +50,7 @@ export const generate_response = (data: Bandage[], session: Session | null) => {
             title: el.title,
             description: el.description,
             base64: el.base64,
+            split_type: el.split_type,
             creation_date: el.creationDate,
             stars_count: el.stars.length,
             starred: Object.values(el.stars).some(val => val.id == session?.user.id),
