@@ -1,0 +1,36 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches:
+      - main  # Укажите ветку, изменения в которой будут инициировать деплой
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install SSH and SCP
+        run: sudo apt-get update && sudo apt-get install -y openssh-client
+
+      - name: Copy files via SCP
+        env:
+          SSHPASS: ${{ secrets.ROOT_SSH_PASSWORD }}
+        run: |
+          sudo apt-get install -y sshpass
+          sshpass -e scp -o StrictHostKeyChecking=no -r ./* root@your_server:/root/eldraxis
+
+      - name: Execute remote commands
+        env:
+          SSHPASS: ${{ secrets.ROOT_SSH_PASSWORD }}
+        run: |
+          sshpass -e ssh -o StrictHostKeyChecking=no root@your_server << 'EOF'
+            cd /root/eldraxis
+            systemctl stop eldraxis
+            npx prisma db push
+            npm run build
+            systemctl start eldraxis
+          EOF
