@@ -321,5 +321,39 @@ export class UserService {
         });
         return { statusCode: 200, data: generate_response(result, session) };
     }
+
+    async getUserByNickname(username: string, session: Session | null) {
+        const user = await this.prisma.user.findFirst({ where: { username: username }, include: { Bandage: true } });
+
+        if (!user) {
+            return {
+                statusCode: 404,
+                message: 'User not found'
+            }
+        }
+
+        const current_discord = await this.getCurrentData(user.discordId);
+        const bandages = await this.prisma.bandage.findMany({ where: { userId: user.id, access_level: 2 }, include: { categories: true, stars: true, User: true } });
+
+        if (bandages.length === 0) {
+            return {
+                statusCode: 404,
+                message: 'User not found'
+            }
+        }
+
+        return {
+            statusCode: 200,
+            userID: user.id,
+            discordID: user.discordId,
+            username: user.username,
+            name: user.name,
+            joined_at: user.joined_at,
+            avatar: current_discord.avatar ? `https://cdn.discordapp.com/avatars/${current_discord.id}/${current_discord.avatar}` : `/static/favicon.ico`,
+            banner_color: current_discord.banner_color,
+            works: generate_response(bandages, session),
+            is_self: user.id == session?.user?.id
+        }
+    }
 }
 

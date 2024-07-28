@@ -128,16 +128,16 @@ export class AppController {
         res.send(data);
     }
 
-    @Get("/users/me")
+    @Get("/user/me")
     @UseGuards(AuthGuard)
-    async user_profile(@Req() request: RequestSession, @Res() res: Response): Promise<void> {
+    async me_profile(@Req() request: RequestSession, @Res() res: Response): Promise<void> {
         /* get user data. associated with session */
 
         const data = await this.userService.getUser(request.session.sessionId);
         res.status(data.statusCode).send(data);
     }
 
-    @Delete("/users/me")
+    @Delete("/user/me")
     async logout(@Req() request: Request, @Res() res: Response): Promise<void> {
         /* log out user */
 
@@ -153,7 +153,7 @@ export class AppController {
     }
 
 
-    @Get("/users/me/works")
+    @Get("/user/me/works")
     @UseGuards(AuthGuard)
     async getWork(@Req() request: RequestSession, @Res() res: Response): Promise<void> {
         /* get user's works */
@@ -162,7 +162,7 @@ export class AppController {
         res.status(data.statusCode).send(data.data);
     }
 
-    @Get("/users/me/stars")
+    @Get("/user/me/stars")
     @UseGuards(AuthGuard)
     async getStars(@Req() request: RequestSession, @Res() res: Response): Promise<void> {
         /* get user's stars */
@@ -171,7 +171,7 @@ export class AppController {
         res.status(data.statusCode).send(data.data);
     }
 
-    @Get("/users/me/connections")
+    @Get("/user/me/connections")
     @UseGuards(AuthGuard)
     async minecraft(@Req() request: RequestSession, @Res() res: Response): Promise<void> {
         /* get user's connections */
@@ -180,7 +180,7 @@ export class AppController {
         res.status(data.statusCode).send(data);
     }
 
-    @Get("/users/me/notifications")
+    @Get("/user/me/notifications")
     @UseGuards(AuthGuard)
     async getNotifications(@Req() request: RequestSession, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
         /* get user's connections */
@@ -189,7 +189,7 @@ export class AppController {
         res.send(data);
     }
 
-    @Put("/users/me/connections/minecraft/set_valid")
+    @Put("/user/me/connections/minecraft/set_valid")
     @UseGuards(AuthGuard)
     async set_valid(@Req() request: RequestSession, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
         /* set displaying nickname in search */
@@ -206,7 +206,7 @@ export class AppController {
         res.status(data.statusCode).send(data);
     }
 
-    @Put("/users/me/connections/minecraft/set_autoload")
+    @Put("/user/me/connections/minecraft/set_autoload")
     @UseGuards(AuthGuard)
     async set_autoload(@Req() request: RequestSession, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
         /* set skin autoload in editor */
@@ -223,7 +223,7 @@ export class AppController {
         res.status(data.statusCode).send(data);
     }
 
-    @Post("/users/me/connections/minecraft/connect/:code")
+    @Post("/user/me/connections/minecraft/connect/:code")
     @UseGuards(AuthGuard)
     async connectMinecraft(@Param('code') code: string, @Req() request: RequestSession, @Res() res: Response): Promise<void> {
         /* connect minecraft profile to account */
@@ -242,7 +242,7 @@ export class AppController {
     }
 
     @Throttle({ default: { limit: 5, ttl: 60000 } })
-    @Post("/users/me/connections/minecraft/cache/purge")
+    @Post("/user/me/connections/minecraft/cache/purge")
     @UseGuards(AuthGuard)
     async skinPurge(@Req() request: RequestSession, @Res({ passthrough: true }) res: Response): Promise<void> {
         /* purge minecraft skin cache, associated with session's account */
@@ -267,11 +267,20 @@ export class AppController {
         });
     }
 
-    @Delete("/users/me/connections/minecraft")
+    @Delete("/user/me/connections/minecraft")
     @UseGuards(AuthGuard)
     async disconnectMinecraft(@Req() request: RequestSession, @Res() res: Response): Promise<void> {
         /* disconnect minecraft profile */
         const data = await this.minecraftService.disconnect(request.session);
+        res.status(data.statusCode).send(data);
+    }
+
+    @Get("/users/:username")
+    async user_profile(@Param('username') username: string, @Req() request: Request, @Res() res: Response): Promise<void> {
+        /* get user data by nickname */
+
+        const session = await this.userService.validateSession(request.cookies.sessionId, request.headers['user-agent'] as string);
+        const data = await this.userService.getUserByNickname(username, session);
         res.status(data.statusCode).send(data);
     }
 
@@ -288,7 +297,6 @@ export class AppController {
             query.filters,
             query.sort));
     }
-
 
     @Throttle({ default: { limit: 5, ttl: 60000 } })
     @Post("/workshop")
