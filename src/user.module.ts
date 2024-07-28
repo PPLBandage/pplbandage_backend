@@ -213,7 +213,6 @@ export class UserService {
         const updated_user = await this.prisma.user.update({
             where: { id: sessionDB.User.id },
             data: {
-                username: response_data.username,
                 name: response_data.global_name || response_data.username
             }
         });
