@@ -324,7 +324,7 @@ export class UserService {
     async getUserByNickname(username: string, session: Session | null) {
         const user = await this.prisma.user.findFirst({ where: { username: username }, include: { Bandage: true } });
 
-        if (!user) {
+        if (!user || user.banned) {
             return {
                 statusCode: 404,
                 message: 'User not found'
