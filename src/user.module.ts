@@ -7,6 +7,7 @@ import { generate_response } from './app.service';
 const discord_url = "https://discord.com/api/v10";
 const token_ttl = Number(process.env.SESSION_TTL);
 const roles = [
+    "1267437920755908689",
     "1142141232685006990",
     "958432771519422476",
     "495989709265436687",
