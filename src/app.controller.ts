@@ -20,6 +20,7 @@ interface RequestSession extends Request {
     session: Session
 }
 
+
 @Controller('/api')
 export class AppController {
     constructor(private readonly userService: UserService,
@@ -106,7 +107,7 @@ export class AppController {
     }
 
 
-    @Get("/oauth/discord/:code")
+    @Post("/oauth/discord/:code")
     async discord(@Param('code') code: string, @Req() request: Request, @Res({ passthrough: true }) res: Response): Promise<void> {
         /* create session for discord user */
 
@@ -126,6 +127,13 @@ export class AppController {
         res.setHeader('SetCookie', `sessionId=${data.sessionId}; Path=/; Expires=${date.toUTCString()}; SameSite=Strict`);
 
         res.send(data);
+    }
+
+    @Get("/oauth/roles")
+    async roles(@Req() request: RequestSession, @Res() res: Response): Promise<void> {
+        /* get roles for registration */
+
+        res.send(await this.userService.getRoles());
     }
 
     @Get("/user/me")

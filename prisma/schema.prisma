@@ -82,3 +82,10 @@ model Notifications {
     type          Int      @default(0)
     creation_date DateTime @default(now())
 }
+
+model Roles {
+    id    Int    @id @default(autoincrement())
+    ds_id String @default("")
+    title String @default("")
+    color Int    @default(0)
+}

@@ -6,15 +6,6 @@ import { generate_response } from './app.service';
 
 const discord_url = "https://discord.com/api/v10";
 const token_ttl = Number(process.env.SESSION_TTL);
-const roles = [
-    "1267437920755908689",
-    "1142141232685006990",
-    "958432771519422476",
-    "495989709265436687",
-    "589530176501579780",
-    "987234058478186506",
-    "1123363907692666910"
-];  // list of pwgood roles
 const pwgood = "447699225078136832";  // pwgood server id
 
 interface DiscordResponse {
@@ -68,6 +59,10 @@ const generateCookie = (session: string, exp: number): string => {
 export class UserService {
     constructor(private prisma: PrismaService) { }
 
+    async getRoles() {
+        return await this.prisma.roles.findMany();
+    }
+
     async check_ppl(token: string) {
         /* check user on pwgood server */
 
@@ -81,6 +76,7 @@ export class UserService {
             return false;
         }
         const data = response.data as pplRes;
+        const roles = (await this.getRoles()).map((role) => role.ds_id);
         for (const role of data.roles) {
             if (roles.includes(role)) {
                 return true;
