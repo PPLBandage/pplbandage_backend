@@ -13,14 +13,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install SSH and SCP
-        run: sudo apt-get update && sudo apt-get install -y openssh-client
-
       - name: Copy files via SCP
         env:
           SSHPASS: ${{ secrets.ROOT_SSH_PASSWORD }}
         run: |
-          sudo apt-get install -y sshpass
           sshpass -e scp -o StrictHostKeyChecking=no -r ./* root@194.169.160.97:/root/eldraxis
 
       - name: Execute remote commands
