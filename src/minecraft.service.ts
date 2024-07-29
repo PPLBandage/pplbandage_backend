@@ -177,9 +177,9 @@ export class MinecraftService {
         const cache = await this.prisma.minecraft.findMany({
             where: filter_rule,
             orderBy: { default_nick: "asc" },
-            take: take, skip: take * page
+            take: Math.min(take, 100), skip: take * page
         });
-        if (!cache) {
+        if (!cache || cache.length === 0) {
             return null;
         }
         const count: number = await this.prisma.minecraft.count({ where: filter_rule });
