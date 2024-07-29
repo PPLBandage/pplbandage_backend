@@ -60,7 +60,7 @@ export class UserService {
     constructor(private prisma: PrismaService) { }
 
     async getRoles() {
-        return await this.prisma.roles.findMany();
+        return (await this.prisma.roles.findMany()).reverse();
     }
 
     async check_ppl(token: string) {
