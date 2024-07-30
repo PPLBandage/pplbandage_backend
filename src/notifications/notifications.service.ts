@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from './prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 /*
 @types:
@@ -43,14 +43,16 @@ export class NotificationService {
 
     async createNotificationEveryone(notification: Notifications) {
         const notification_db = await this.prisma.notifications.create({ data: notification });
-
         const users = await this.prisma.user.findMany();
+
         users.forEach((user) => {
-            this.prisma.notifications.update({
-                where: { id: notification_db.id },
-                data: { users: { connect: { id: user.id } } }
+            this.prisma.user.update({
+                where: { id: user.id },
+                data: {
+                    has_unreaded_notifications: true,
+                    notifications: { connect: { id: notification_db.id } }
+                }
             });
-            this.prisma.user.update({ where: { id: user.id }, data: { has_unreaded_notifications: true } });
         });
         return notification_db;
     }

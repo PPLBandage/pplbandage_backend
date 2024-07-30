@@ -1,31 +1,21 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from './prisma.service';
-import { UserService } from './user.module';
+import { PrismaService } from '../prisma/prisma.service';
+import { UserService } from '../user/user.module';
 import { Prisma } from '@prisma/client';
 import axios from 'axios';
 import * as sharp from 'sharp';
-import { generate_response } from './app.service';
-import { NotificationService } from './notifications.service';
+import { generate_response } from '../app.service';
+import { NotificationService } from '../notifications/notifications.service';
 
 const moderation_id = [4, 13];  // на проверке, отклонено
 const official_id = 0;
 const discord_url = "https://discord.com/api/v10";
 
 interface BandageSearch {
-    title?: {
-        contains: string;
-    },
-    description?: {
-        contains: string;
-    },
-    externalId?: {
-        contains: string;
-    },
-    User?: {
-        name: {
-            contains: string
-        }
-    }
+    title?: { contains: string },
+    description?: { contains: string },
+    externalId?: { contains: string; },
+    User?: { name: { contains: string } }
 }
 
 const constructSort = (sort?: string): Prisma.BandageOrderByWithRelationInput => {

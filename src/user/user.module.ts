@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from './prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { sign, verify } from 'jsonwebtoken';
 import axios from 'axios';
-import { generate_response } from './app.service';
+import { generate_response } from '../app.service';
 
 const discord_url = "https://discord.com/api/v10";
 const pwgood = "447699225078136832";  // pwgood server id

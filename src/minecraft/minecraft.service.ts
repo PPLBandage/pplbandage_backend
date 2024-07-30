@@ -1,14 +1,12 @@
 import axios from "axios";
 import * as sharp from 'sharp';
-import { PrismaService } from "./prisma.service";
+import { PrismaService } from "../prisma/prisma.service";
 import { Injectable } from '@nestjs/common';
 import { Buffer } from "buffer";
-import { UserService } from "./user.module";
 
 @Injectable()
 export class MinecraftService {
-    constructor(private prisma: PrismaService
-    ) { }
+    constructor(private prisma: PrismaService) { }
 
     async getUserData(str: string): Promise<Profile | null> {
         /* get user profile by nickname an UUID (this function duplicate function below, idk) */

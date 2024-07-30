@@ -1,11 +1,11 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
+import { RootModule } from './root/root.module';
 import * as cookieParser from 'cookie-parser';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import * as morgan from 'morgan';
 
 async function bootstrap() {
-	const app = await NestFactory.create<NestExpressApplication>(AppModule);
+	const app = await NestFactory.create<NestExpressApplication>(RootModule);
 	const allowedOrigins = ['https://pplbandage.ru', 'http://192.168.0.53', 'https://dev.andcool.ru'];
 
 	app.enableCors({
