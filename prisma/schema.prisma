@@ -38,6 +38,7 @@ model User {
     autoload                   Boolean         @default(true)
     notifications              Notifications[] @relation("Notifications")
     has_unreaded_notifications Boolean         @default(false)
+    profile_theme              Int             @default(0)
 }
 
 model Sessions {

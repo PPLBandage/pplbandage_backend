@@ -5,7 +5,6 @@ import axios from 'axios';
 import { generate_response } from './app.service';
 
 const discord_url = "https://discord.com/api/v10";
-const token_ttl = Number(process.env.SESSION_TTL);
 const pwgood = "447699225078136832";  // pwgood server id
 
 interface DiscordResponse {
@@ -136,7 +135,8 @@ export class UserService {
             await this.prisma.sessions.deleteMany({ where: { userId: user_db.id } });
             return { message: "Unable to login", statusCode: 403 };
         }
-        const sessionId = sign({ userId: user_db.id }, 'ppl_super_secret', { expiresIn: token_ttl });
+
+        const sessionId = sign({ userId: user_db.id }, 'ppl_super_secret', { expiresIn: Number(process.env.SESSION_TTL) });
         const token_record = await this.prisma.sessions.create({
             data: {
                 'sessionId': sessionId,
@@ -167,9 +167,9 @@ export class UserService {
             const decoded = verify(session, 'ppl_super_secret') as SessionToken;
             const seconds = Math.round(Date.now() / 1000);
             if (decoded.iat + ((decoded.exp - decoded.iat) / 2) < seconds) {
-                const sessionId = sign({ userId: sessionDB.userId }, 'ppl_super_secret', { expiresIn: token_ttl });
+                const sessionId = sign({ userId: sessionDB.userId }, 'ppl_super_secret', { expiresIn: Number(process.env.SESSION_TTL) });
                 const new_tokens = await this.prisma.sessions.update({ where: { id: sessionDB.id }, data: { sessionId: sessionId }, include: { User: { include: { profile: true, notifications: true } } } });
-                const cookie = generateCookie(sessionId, seconds + token_ttl);
+                const cookie = generateCookie(sessionId, seconds + Number(process.env.SESSION_TTL));
 
                 return { sessionId: sessionId, cookie: cookie, user: new_tokens.User };
             } else {
@@ -229,7 +229,8 @@ export class UserService {
             avatar: response_data.avatar ? `https://cdn.discordapp.com/avatars/${response_data.id}/${response_data.avatar}` : `/static/favicon.ico`,
             banner_color: response_data.banner_color,
             has_unreaded_notifications: sessionDB.User.has_unreaded_notifications,
-            permissions: permissions
+            permissions: permissions,
+            profile_theme: sessionDB.User.profile_theme
         };
     }
 
@@ -348,8 +349,13 @@ export class UserService {
             avatar: current_discord.avatar ? `https://cdn.discordapp.com/avatars/${current_discord.id}/${current_discord.avatar}` : `/static/favicon.ico`,
             banner_color: current_discord.banner_color,
             works: generate_response(bandages, session),
-            is_self: user.id == session?.user?.id
+            is_self: user.id == session?.user?.id,
+            profile_theme: user.profile_theme
         }
+    }
+
+    async setProfileTheme(session: Session, theme: number) {
+        await this.prisma.user.update({ where: { id: session.user.id }, data: { profile_theme: theme } });
     }
 }
 

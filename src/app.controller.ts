@@ -197,6 +197,26 @@ export class AppController {
         res.send(data);
     }
 
+    @Post("/user/me/profile_theme")
+    @UseGuards(AuthGuard)
+    async profile_theme(@Req() request: RequestSession, @Res() res: Response, @Body() body: { theme: string }): Promise<void> {
+        /* update profile theme */
+
+        const theme = Number(body.theme);
+        if (isNaN(theme) || theme < 0 || theme > 2) {
+            res.status(400).send({
+                status: 'error',
+                message: 'invalid profile theme'
+            })
+        }
+
+        await this.userService.setProfileTheme(request.session, theme);
+        res.status(201).send({
+            status: 'success',
+            new_theme: theme
+        })
+    }
+
     @Put("/user/me/connections/minecraft/set_valid")
     @UseGuards(AuthGuard)
     async set_valid(@Req() request: RequestSession, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
