@@ -54,6 +54,10 @@ export class BandageService {
         private notifications: NotificationService
     ) { }
 
+    async getBandagesCount() {
+        return await this.prisma.bandage.count();
+    }
+
     async getBandages(sessionId: string,
         take: number,
         page: number,

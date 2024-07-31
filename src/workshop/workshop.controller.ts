@@ -177,4 +177,15 @@ export class WorkshopController {
         const user_agent = request.headers['user-agent'] as string;
         res.status(200).send(await this.bandageService.getCategories(query.for_edit === "true", request.cookies.sessionId, user_agent));
     }
+
+    @Get('/workshop/count/badge')
+    async getCount(@Res() res: Response) {
+        const count = await this.bandageService.getBandagesCount();
+        res.status(200).send({
+            "schemaVersion": 1,
+            "label": 'Bandages Count',
+            "message": count,
+            "color": 'green'
+        });
+    }
 }

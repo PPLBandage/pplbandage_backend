@@ -26,7 +26,6 @@ interface Profile {
     id: string;
     name: string;
     properties: Properties[];
-    profileActions: any[];
 }
 
 interface DefaultResponse {
@@ -73,30 +72,6 @@ interface SearchParams {
     fragment: string,
     take: number,
     page: number
-}
-
-
-interface TexturesProfile {
-    SKIN: TextureProfile;
-    CAPE?: TextureProfile;
-}
-
-interface TextureProfile {
-    mojang: string | undefined;
-    eldraxis: string;
-}
-
-interface EldraxisCache {
-    available_in_search: boolean,
-    last_cached: number
-}
-
-interface ProfileResponse {
-    message: string,
-    timestamp: number,
-    uuid: string,
-    nickname: string,
-    textures: TexturesProfile,
 }
 
 interface SkinAndCape {

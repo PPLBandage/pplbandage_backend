@@ -3,6 +3,7 @@ import * as sharp from 'sharp';
 import { PrismaService } from "../prisma/prisma.service";
 import { Injectable } from '@nestjs/common';
 import { Buffer } from "buffer";
+import { Prisma } from "@prisma/client";
 
 @Injectable()
 export class MinecraftService {
@@ -73,7 +74,7 @@ export class MinecraftService {
     }
 
 
-    async resolveCollisions(prof: any[]) {
+    async resolveCollisions(prof: { uuid: string }[]) {
         /* resolve nicknames collisions in data base */
 
         for (const record of prof) {
@@ -110,10 +111,6 @@ export class MinecraftService {
         if (!fetched_skin_data) {
             return null;
         }
-        const nicks = await this.prisma.minecraft.findMany({ where: { default_nick: fetched_skin_data?.name } });
-        if (nicks.length > 1) {
-            await this.resolveCollisions(nicks);
-        }
 
         if (cache && cache?.default_nick !== fetched_skin_data.name) {
             await this.prisma.minecraft.update({
@@ -124,6 +121,12 @@ export class MinecraftService {
                 }
             })
         }
+
+        const nicks = await this.prisma.minecraft.findMany({ where: { nickname: fetched_skin_data?.name.toLowerCase() } });
+        if (nicks.length > 1) {
+            await this.resolveCollisions(nicks);
+        }
+
         const textures = atob(fetched_skin_data.properties[0].value);
         const json_textures = JSON.parse(textures) as EncodedResponse;
         const skin_response = await axios.get(json_textures.textures.SKIN.url, {
@@ -315,6 +318,5 @@ export class MinecraftService {
             message: "Success",
             message_ru: "Аккаунт успешно отключен!",
         }
-
     }
 }
