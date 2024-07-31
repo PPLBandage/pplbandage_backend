@@ -184,7 +184,7 @@ export class WorkshopController {
         res.status(200).send({
             "schemaVersion": 1,
             "label": 'Bandages Count',
-            "message": count,
+            "message": count.toString(),
             "color": 'green'
         });
     }
