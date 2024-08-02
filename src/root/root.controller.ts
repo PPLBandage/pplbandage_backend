@@ -1,4 +1,5 @@
 import { Controller, Get, Res } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import type { Response } from 'express'
 
 
@@ -21,7 +22,10 @@ export class RootController {
     }
 
     @Get('/ping')
+    @SkipThrottle()
     async ping(@Res({ passthrough: true }) res: Response) {
+        /* ping route */
+
         res.status(200).send({
             statusCode: 200,
             message: 'pong'
