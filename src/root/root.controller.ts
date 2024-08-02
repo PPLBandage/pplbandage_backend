@@ -19,4 +19,12 @@ export class RootController {
 
         res.redirect(301, "/");
     }
+
+    @Get('/ping')
+    async ping(@Res({ passthrough: true }) res: Response) {
+        res.status(200).send({
+            statusCode: 200,
+            message: 'pong'
+        })
+    }
 }
