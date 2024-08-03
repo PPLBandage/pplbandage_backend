@@ -15,6 +15,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Update keys
+        run: |
+          ssh-keygen -R 194.169.160.97
+
       - name: Copy files via SCP
         env:
           SSHPASS: ${{ secrets.ROOT_SSH_PASSWORD }}
