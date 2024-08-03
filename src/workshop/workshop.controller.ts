@@ -94,7 +94,7 @@ export class WorkshopController {
         res.status(data.statusCode).send(data);
     }
 
-    @Get("/workshop/:id/as_image")
+    @Get(["/workshop/:id/as_image", "/workshop/:id/og"])
     async getBandageImage(@Param('id') id: string, @Req() request: Request, @Res({ passthrough: true }) res: Response, @Query() query: { width: number }): Promise<StreamableFile | void> {
         /* get bandage image render (for OpenGraph) */
 
@@ -117,13 +117,41 @@ export class WorkshopController {
         const sharp_obj = sharp(bandage_buff);
         const metadata = await sharp_obj.metadata();
 
-        const factor = (query?.width || 256) / (metadata.width as number);
-        const width = (metadata.width as number) * factor;
-        const height = (metadata.height as number) * factor;
-        const buffer = await sharp_obj.resize(width, height, { kernel: sharp.kernel.nearest }).toBuffer();
+        const original_width = metadata.width as number;
+        const original_height = metadata.height as number;
+
+        const factor = (query?.width || 256) / original_width;
+        const width = original_width * factor;
+        const height = original_height * factor;
+
+        const bandage = sharp({
+            create: {
+                width: width,
+                height: height / 2,
+                channels: 4,
+                background: { r: 0, g: 0, b: 0, alpha: 0 }
+            }
+        }).png();
+
+        const firstLayer = await sharp(bandage_buff)
+            .extract({ left: 0, top: (original_height / 2), width: original_width, height: original_height / 2 })
+            .resize(width, height / 2, { kernel: sharp.kernel.nearest })
+            .png()
+            .toBuffer();
+
+        const secondLayer = await sharp(bandage_buff)
+            .extract({ left: 0, top: 0, width: original_width, height: original_height / 2 })
+            .resize(width, height / 2, { kernel: sharp.kernel.nearest })
+            .png()
+            .toBuffer();
+
+        bandage.composite([
+            { input: firstLayer, top: 0, left: 0, blend: 'over' },
+            { input: secondLayer, top: 0, left: 0, blend: 'over' }
+        ]);
 
         res.setHeader('Content-Type', 'image/png');
-        return new StreamableFile(buffer);
+        return new StreamableFile(await bandage.toBuffer());
     }
 
     @Put("/workshop/:id")
