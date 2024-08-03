@@ -17,19 +17,19 @@ jobs:
 
       - name: Update keys
         run: |
-          ssh-keygen -R 194.169.160.97
+          ssh-keygen -R ${{ secrets.SERVER_IP }}
 
       - name: Copy files via SCP
         env:
           SSHPASS: ${{ secrets.ROOT_SSH_PASSWORD }}
         run: |
-          sshpass -e scp -o StrictHostKeyChecking=no -r ./* root@194.169.160.97:/root/eldraxis
+          sshpass -e scp -o StrictHostKeyChecking=no -r ./* root@${{ secrets.SERVER_IP }}:/root/eldraxis
 
       - name: Execute remote commands
         env:
           SSHPASS: ${{ secrets.ROOT_SSH_PASSWORD }}
         run: |
-          sshpass -e ssh -o StrictHostKeyChecking=no root@194.169.160.97 << 'EOF'
+          sshpass -e ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
             cd /root/eldraxis
             systemctl stop eldraxis
             npx prisma db push

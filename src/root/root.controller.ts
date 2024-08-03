@@ -20,7 +20,7 @@ export class RootController {
     async root(@Res({ passthrough: true }) res: Response) {
         /* main route */
 
-        res.redirect(301, "/");
+        res.redirect(308, "/");
     }
 
     @Get('/ping')
@@ -57,7 +57,7 @@ export class RootController {
         const bandages = await this.prisma.bandage.findMany({ where: { access_level: 2 } });
         urls = urls.concat(bandages.map((bandage) => ({
             loc: `https://pplbandage.ru/workshop/${bandage.externalId}`,
-            priority: 0.5
+            priority: 0.6
         })));
 
         const users = await this.prisma.user.findMany({ where: { Bandage: { some: {} } } });
@@ -66,7 +66,6 @@ export class RootController {
             priority: 0.5
         })));
 
-        const sitemap = generateSitemap(urls);
-        return sitemap;
+        return generateSitemap(urls);
     }
 }
