@@ -114,9 +114,7 @@ export class WorkshopController {
             return;
         }
         const bandage_buff = Buffer.from(data.data.base64, "base64");
-
         const metadata = await sharp(bandage_buff).metadata();
-
         const original_width = metadata.width as number;
         const original_height = metadata.height as number;
 
