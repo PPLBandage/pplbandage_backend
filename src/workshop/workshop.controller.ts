@@ -98,7 +98,8 @@ export class WorkshopController {
     async getBandageImage(@Param('id') id: string, @Req() request: Request, @Res({ passthrough: true }) res: Response, @Query() query: { width: number }): Promise<StreamableFile | void> {
         /* get bandage image render (for OpenGraph) */
 
-        if (isNaN(Number(query.width)) || query.width < 16 || query.width > 1000) {
+        const requested_width = Number(query.width) || 512;
+        if (isNaN(requested_width) || requested_width < 16 || requested_width > 1000) {
             res.status(400).send({
                 status: 'error',
                 message: '`width` cannot be less than 16 an higher than 1000'
@@ -114,13 +115,12 @@ export class WorkshopController {
         }
         const bandage_buff = Buffer.from(data.data.base64, "base64");
 
-        const sharp_obj = sharp(bandage_buff);
-        const metadata = await sharp_obj.metadata();
+        const metadata = await sharp(bandage_buff).metadata();
 
         const original_width = metadata.width as number;
         const original_height = metadata.height as number;
 
-        const factor = (query?.width || 256) / original_width;
+        const factor = requested_width / original_width;
         const width = original_width * factor;
         const height = original_height * factor;
 
