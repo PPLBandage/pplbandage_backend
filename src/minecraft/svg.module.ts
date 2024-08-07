@@ -6,10 +6,11 @@ export const generateSvg = async (image: sharp.Sharp, pixel_width: number) => {
         .toBuffer({ resolveWithObject: true });
 
     const pixels = [];
+    const coef = 0.875;
     for (let x = 8; x < 16; x++) {
         for (let y = 8; y < 16; y++) {
             const pixelIndex = (y * info.width + x) * info.channels;
-            pixels.push(`<rect x="${(x - 8) * (pixel_width * 0.865) + (pixel_width / 2)}" y="${(y - 8) * (pixel_width * 0.865) + (pixel_width / 2)}" width="${pixel_width}" height="${pixel_width}" fill="rgba(${data[pixelIndex]}, ${data[pixelIndex + 1]}, ${data[pixelIndex + 2]}, ${data[pixelIndex + 3]})" />`);
+            pixels.push(`<rect x="${(x - 8) * (pixel_width * coef) + (pixel_width / 2)}" y="${(y - 8) * (pixel_width * coef) + (pixel_width / 2)}" width="${pixel_width * coef + 1}" height="${pixel_width * coef + 1}" fill="rgba(${data[pixelIndex]}, ${data[pixelIndex + 1]}, ${data[pixelIndex + 2]}, ${data[pixelIndex + 3]})" />`);
         }
     }
 
