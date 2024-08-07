@@ -17,6 +17,7 @@ export const generateSvg = async (image: sharp.Sharp, pixel_width: number) => {
     for (let x = 40; x < 48; x++) {
         for (let y = 8; y < 16; y++) {
             const pixelIndex = (y * info.width + x) * info.channels;
+            if (data[pixelIndex + 3] === 0) continue;
             pixels.push(`<rect x="${(x - 40) * pixel_width}" y="${(y - 8) * pixel_width}" width="${pixel_width}" height="${pixel_width}" fill="rgba(${data[pixelIndex]}, ${data[pixelIndex + 1]}, ${data[pixelIndex + 2]}, ${data[pixelIndex + 3]})" />`);
         }
     }
