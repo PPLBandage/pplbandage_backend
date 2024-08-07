@@ -49,7 +49,7 @@ export class RootController {
             { loc: 'https://pplbandage.ru/me', priority: 0.5 },
             { loc: 'https://pplbandage.ru/me/stars', priority: 0.5 },
             { loc: 'https://pplbandage.ru/me/notifications', priority: 0.5 },
-            { loc: 'https://pplbandage.ru/me/connections', priority: 0.5 },
+            { loc: 'https://pplbandage.ru/me/settings', priority: 0.5 },
             { loc: 'https://pplbandage.ru/tos', priority: 0.5 },
             { loc: 'https://pplbandage.ru/contacts', priority: 0.5 }
         ]
@@ -60,7 +60,7 @@ export class RootController {
             priority: 0.6
         })));
 
-        const users = await this.prisma.user.findMany({ where: { Bandage: { some: {} } } });
+        const users = await this.prisma.user.findMany({ where: { Bandage: { some: {} }, UserSettings: { banned: false } } });
         urls = urls.concat(users.map((user) => ({
             loc: `https://pplbandage.ru/users/${user.username}`,
             priority: 0.5

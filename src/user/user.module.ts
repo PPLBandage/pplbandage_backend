@@ -123,15 +123,17 @@ export class UserService {
         }
 
         const user_db = await this.prisma.user.upsert({
-            where: { 'discordId': ds_user.id },
+            where: { discordId: ds_user.id },
             create: {
-                'discordId': ds_user.id,
-                'username': ds_user.username,
-                'name': ds_user.global_name || ds_user.username
+                discordId: ds_user.id,
+                username: ds_user.username,
+                name: ds_user.global_name || ds_user.username,
+                UserSettings: { create: {} }
             },
-            update: {}
+            update: {},
+            include: { UserSettings: true }
         });
-        if (user_db.banned) {
+        if (user_db.UserSettings?.banned) {
             await this.prisma.sessions.deleteMany({ where: { userId: user_db.id } });
             return { message: "Unable to login", statusCode: 403 };
         }
@@ -139,11 +141,11 @@ export class UserService {
         const sessionId = sign({ userId: user_db.id }, 'ppl_super_secret', { expiresIn: Number(process.env.SESSION_TTL) });
         const token_record = await this.prisma.sessions.create({
             data: {
-                'sessionId': sessionId,
-                'User_Agent': user_agent,
-                'User': {
-                    'connect': {
-                        'id': user_db.id
+                sessionId: sessionId,
+                User_Agent: user_agent,
+                User: {
+                    connect: {
+                        id: user_db.id
                     }
                 }
             }
@@ -155,7 +157,10 @@ export class UserService {
         /* validate and update user session */
 
         if (!session) return null;
-        const sessionDB = await this.prisma.sessions.findUnique({ where: { sessionId: session }, include: { User: { include: { profile: true, notifications: true } } } });
+        const sessionDB = await this.prisma.sessions.findUnique({
+            where: { sessionId: session },
+            include: { User: { include: { profile: true, notifications: true, UserSettings: true } } }
+        });
         if (!sessionDB) return null;
 
         if (sessionDB.User_Agent !== user_agent) {
@@ -168,7 +173,14 @@ export class UserService {
             const seconds = Math.round(Date.now() / 1000);
             if (decoded.iat + ((decoded.exp - decoded.iat) / 2) < seconds) {
                 const sessionId = sign({ userId: sessionDB.userId }, 'ppl_super_secret', { expiresIn: Number(process.env.SESSION_TTL) });
-                const new_tokens = await this.prisma.sessions.update({ where: { id: sessionDB.id }, data: { sessionId: sessionId }, include: { User: { include: { profile: true, notifications: true } } } });
+                const new_tokens = await this.prisma.sessions.update({
+                    where: { id: sessionDB.id },
+                    data: { sessionId: sessionId },
+                    include: {
+                        User: { include: { profile: true, notifications: true, UserSettings: true } }
+                    }
+                });
+
                 const cookie = generateCookie(sessionId, seconds + Number(process.env.SESSION_TTL));
 
                 return { sessionId: sessionId, cookie: cookie, user: new_tokens.User };
@@ -194,12 +206,15 @@ export class UserService {
     async getUser(session: string) {
         /* get user, associated with session */
 
-        const sessionDB = await this.prisma.sessions.findFirst({ where: { sessionId: session }, include: { User: true } });
+        const sessionDB = await this.prisma.sessions.findFirst({
+            where: { sessionId: session },
+            include: { User: { include: { UserSettings: true } } }
+        });
         if (!sessionDB) {
             return { message: "User not found", statusCode: 401 };
         }
 
-        if (sessionDB.User.banned) {
+        if (sessionDB.User.UserSettings?.banned) {
             await this.prisma.sessions.deleteMany({ where: { userId: sessionDB.User.id } });
             return { message: "Unable to get user", statusCode: 401 };
         }
@@ -215,7 +230,7 @@ export class UserService {
         });
 
         let permissions = ['default'];
-        if (sessionDB.User.admin) {
+        if (sessionDB.User.UserSettings?.admin) {
             permissions.push('admin');
         }
 
@@ -230,7 +245,7 @@ export class UserService {
             banner_color: response_data.banner_color,
             has_unreaded_notifications: sessionDB.User.has_unreaded_notifications,
             permissions: permissions,
-            profile_theme: sessionDB.User.profile_theme
+            profile_theme: sessionDB.User.UserSettings?.profile_theme
         };
     }
 
@@ -240,7 +255,7 @@ export class UserService {
         await this.prisma.sessions.delete({ where: { sessionId: session.sessionId } });
     }
 
-    async getConnections(session: Session) {
+    async getUserSettings(session: Session) {
         /* get user's associated accounts */
 
         var minecraft = null;
@@ -248,7 +263,7 @@ export class UserService {
 
         const data = await this.prisma.minecraft.findFirst({
             where: { userId: session.user.id },
-            include: { user: true }
+            include: { user: { include: { UserSettings: true } } }
         });
 
         if (data) {
@@ -258,7 +273,7 @@ export class UserService {
                 last_cached: Number(data.expires) - parseInt(process.env.TTL as string),
                 head: data.data_head,
                 valid: data.valid,
-                autoload: data.user?.autoload
+                autoload: data.user?.UserSettings?.autoload
             }
         }
 
@@ -275,8 +290,11 @@ export class UserService {
 
         return {
             statusCode: 200,
-            discord: discord,
-            minecraft: minecraft
+            public_profile: session.user.UserSettings?.public_profile,
+            connections: {
+                discord: discord,
+                minecraft: minecraft
+            }
         }
     }
 
@@ -290,7 +308,7 @@ export class UserService {
             include: {
                 stars: true,
                 categories: true,
-                User: true
+                User: { include: { UserSettings: true } }
             }
         });
         return { statusCode: 200, data: generate_response(result, session) };
@@ -302,27 +320,26 @@ export class UserService {
         const result = await this.prisma.bandage.findMany({
             where: {
                 stars: {
-                    some: {
-                        id: session.user.id
-                    }
+                    some: { id: session.user.id }
                 },
-                User: {
-                    banned: false
-                }
+                User: { UserSettings: { banned: false } }
             },
             include: {
                 stars: true,
                 categories: true,
-                User: true
+                User: { include: { UserSettings: true } }
             }
         });
         return { statusCode: 200, data: generate_response(result, session) };
     }
 
     async getUserByNickname(username: string, session: Session | null) {
-        const user = await this.prisma.user.findFirst({ where: { username: username }, include: { Bandage: true } });
+        const user = await this.prisma.user.findFirst({
+            where: { username: username },
+            include: { Bandage: true, UserSettings: true }
+        });
 
-        if (!user || user.banned) {
+        if (!user || user.UserSettings?.banned || !user.UserSettings?.public_profile) {
             return {
                 statusCode: 404,
                 message: 'User not found'
@@ -330,7 +347,10 @@ export class UserService {
         }
 
         const current_discord = await this.getCurrentData(user.discordId);
-        const bandages = await this.prisma.bandage.findMany({ where: { userId: user.id, access_level: 2 }, include: { categories: true, stars: true, User: true } });
+        const bandages = await this.prisma.bandage.findMany({
+            where: { userId: user.id, access_level: 2 },
+            include: { categories: true, stars: true, User: { include: { UserSettings: true } } }
+        });
 
         if (bandages.length === 0) {
             return {
@@ -350,12 +370,30 @@ export class UserService {
             banner_color: current_discord.banner_color,
             works: generate_response(bandages, session),
             is_self: user.id == session?.user?.id,
-            profile_theme: user.profile_theme
+            profile_theme: user.UserSettings?.profile_theme
         }
     }
 
     async setProfileTheme(session: Session, theme: number) {
-        await this.prisma.user.update({ where: { id: session.user.id }, data: { profile_theme: theme } });
+        await this.prisma.userSettings.update({ where: { userId: session.user.id }, data: { profile_theme: theme } });
+    }
+
+    async changeAutoload(session: Session, state: boolean) {
+        /* switch skin autoload in editor */
+
+        const result = await this.prisma.userSettings.update({
+            where: { userId: session.user.id }, data: { autoload: state }
+        })
+        return { statusCode: 200, new_data: result.autoload };
+    }
+
+    async setPublic(session: Session, state: boolean) {
+        /* change profile visibility */
+
+        const result = await this.prisma.userSettings.update({
+            where: { userId: session.user.id }, data: { public_profile: state }
+        })
+        return { statusCode: 200, new_data: result.public_profile };
     }
 }
 

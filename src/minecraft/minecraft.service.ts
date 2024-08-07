@@ -3,7 +3,6 @@ import * as sharp from 'sharp';
 import { PrismaService } from "../prisma/prisma.service";
 import { Injectable } from '@nestjs/common';
 import { Buffer } from "buffer";
-import { Prisma } from "@prisma/client";
 
 @Injectable()
 export class MinecraftService {
@@ -174,7 +173,7 @@ export class MinecraftService {
         if (fragment.length < 3) {
             return null;
         }
-        const filter_rule = { OR: [{ nickname: { contains: fragment } }, { uuid: { contains: fragment } }], valid: true }
+        const filter_rule = { OR: [{ nickname: { contains: fragment } }], valid: true }
         const cache = await this.prisma.minecraft.findMany({
             where: filter_rule,
             orderBy: { default_nick: "asc" },
@@ -215,20 +214,6 @@ export class MinecraftService {
             }
         })
         return { statusCode: 200, new_data: result.valid };
-    }
-
-
-    async changeAutoload(session: Session, state: boolean) {
-        /* switch skin autoload in editor */
-
-        const result = await this.prisma.user.update({
-            where: {
-                id: session.user.id
-            }, data: {
-                autoload: state
-            }
-        })
-        return { statusCode: 200, new_data: result.autoload };
     }
 
     async connect(session: Session, code: string) {

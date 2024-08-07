@@ -84,7 +84,7 @@ export class BandageService {
 
         let available = false;
         let admin = false;
-        if (session && session.user && session.user.admin) {
+        if (session && session.user && session.user.UserSettings?.admin) {
             admin = true;
             const data = await this.prisma.category.findMany({ where: { only_admins: true } });
             available = Object.values(data).some(val => filters_list?.includes(String(val.id)));
@@ -102,7 +102,7 @@ export class BandageService {
         const data = await this.prisma.bandage.findMany({
             where: where,
             include: {
-                User: true,
+                User: { include: { UserSettings: true } },
                 stars: true,
                 categories: true
             },
@@ -145,7 +145,7 @@ export class BandageService {
 
         let categories = [{ id: moderation_id[0] }];  // default categories
         if (body.categories !== undefined) {
-            const validated_categories = await this.validateCategories(body.categories, session.user.admin);
+            const validated_categories = await this.validateCategories(body.categories, Boolean(session.user.UserSettings?.admin));
             categories = [...validated_categories.map((el) => {
                 return { id: el };
             }), ...categories];
@@ -210,7 +210,7 @@ export class BandageService {
         const session = await this.users.validateSession(sessionId, user_agent);
         let admin: boolean = false;
         if (session && session.user) {
-            admin = session.user.admin;
+            admin = Boolean(session.user.UserSettings?.admin);
         }
 
         const categories = await this.prisma.category.findMany({
@@ -229,7 +229,10 @@ export class BandageService {
         /* get bandage by external id */
 
         const session = await this.users.validateSession(sessionId, user_agent);
-        const bandage = await this.prisma.bandage.findFirst({ where: { externalId: id }, include: { User: true, categories: true, stars: true } });
+        const bandage = await this.prisma.bandage.findFirst({
+            where: { externalId: id },
+            include: { User: { include: { UserSettings: true } }, categories: true, stars: true }
+        });
         if (!bandage) {
             return {
                 message: "Bandage not found",
@@ -237,7 +240,7 @@ export class BandageService {
             };
         }
         const hidden = Object.values(bandage.categories).some(val => val.only_admins) || bandage.access_level === 0;
-        const access = session ? (!session.user.admin && session.user.id !== bandage.User?.id) : true;
+        const access = session ? (!session.user.UserSettings?.admin && session.user.id !== bandage.User?.id) : true;
         if (hidden && access) {
             return {
                 message: "Bandage not found",
@@ -248,10 +251,10 @@ export class BandageService {
         let permissions_level = 0;
         if (session) {
             if (session.user.id === bandage.User?.id) permissions_level = 1;
-            if (session.user.admin || (session.user.id === bandage.User?.id && hidden)) permissions_level = 2;
+            if (session.user.UserSettings?.admin || (session.user.id === bandage.User?.id && hidden)) permissions_level = 2;
         }
 
-        const me_profile = session && session.user.profile && session.user.autoload ? {
+        const me_profile = session && session.user.profile && session.user.UserSettings?.autoload ? {
             uuid: session.user.profile.uuid,
             nickname: session.user.profile.nickname
         } : undefined;
@@ -289,7 +292,8 @@ export class BandageService {
                 author: {
                     id: bandage.User?.id,
                     name: bandage.User?.name,
-                    username: bandage.User?.username
+                    username: bandage.User?.username,
+                    public: bandage.User?.UserSettings?.public_profile
                 },
                 categories: categories,
                 me_profile: me_profile,
@@ -313,7 +317,7 @@ export class BandageService {
             }
         }
 
-        if (bandage.User?.id !== session.user.id && !session.user.admin) {
+        if (bandage.User?.id !== session.user.id && !session.user.UserSettings?.admin) {
             return {
                 statusCode: 403,
                 message: "Forbidden"
@@ -327,15 +331,15 @@ export class BandageService {
 
         const hidden = Object.values(bandage.categories).some(val => val.only_admins);
 
-        if (session.user.admin || hidden) {
+        if (session.user.UserSettings?.admin || hidden) {
             if (body.title !== undefined) title = body.title;
             if (body.description !== undefined) description = body.description;
         }
 
         if (body.categories !== undefined) {
-            const validated_categories = await this.validateCategories(body.categories, session.user.admin);
+            const validated_categories = await this.validateCategories(body.categories, Boolean(session.user.UserSettings?.admin));
             const bandage_categories = bandage?.categories.map(el => el.id);
-            if (!session.user.admin) {
+            if (!session.user.UserSettings?.admin) {
                 if (bandage_categories?.includes(moderation_id[0])) validated_categories.push(moderation_id[0]);
                 if (bandage_categories?.includes(moderation_id[1])) validated_categories.push(moderation_id[1]);
                 if (bandage_categories?.includes(official_id)) validated_categories.push(official_id);
@@ -405,7 +409,7 @@ export class BandageService {
             };
         }
 
-        if (!session.user.admin && session.user.id !== bandage.User?.id) {
+        if (!session.user.UserSettings?.admin && session.user.id !== bandage.User?.id) {
             return {
                 statusCode: 403,
                 message: "Forbidden"

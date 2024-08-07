@@ -99,8 +99,6 @@ interface User {
     username: string;
     name: string;
     discordId: string;
-    admin: boolean;
-    banned: boolean;
     joined_at: Date;
     profile: {
         id: number;
@@ -114,8 +112,18 @@ interface User {
         valid: boolean;
         userId: number | null;
     } | null;
-    autoload: boolean;
     notifications: Notifications[];
+    UserSettings: UserSettings | null
+}
+
+interface UserSettings {
+    id: number,
+    userId: number,
+    admin: boolean,
+    banned: boolean,
+    profile_theme: number,
+    autoload: boolean,
+    public_profile: boolean
 }
 
 interface Session {

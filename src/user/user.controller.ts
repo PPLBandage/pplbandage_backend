@@ -59,12 +59,12 @@ export class UserController {
         res.status(data.statusCode).send(data.data);
     }
 
-    @Get("/user/me/connections")
+    @Get("/user/me/settings")
     @UseGuards(AuthGuard)
     async minecraft(@Req() request: RequestSession, @Res() res: Response): Promise<void> {
         /* get user's connections */
 
-        const data = await this.userService.getConnections(request.session);
+        const data = await this.userService.getUserSettings(request.session);
         res.status(data.statusCode).send(data);
     }
 
@@ -127,7 +127,7 @@ export class UserController {
             });
             return;
         }
-        const data = await this.minecraftService.changeAutoload(request.session, query.state === "true");
+        const data = await this.userService.changeAutoload(request.session, query.state === "true");
         res.status(data.statusCode).send(data);
     }
 
@@ -234,6 +234,23 @@ export class UserController {
             return;
         }
         const data = await this.bandageService.setStar(request.session, query.set === "true", id);
+        res.status(data.statusCode).send(data);
+    }
+
+    @Put("/user/me/settings/set_public")
+    @UseGuards(AuthGuard)
+    async set_public(@Req() request: RequestSession, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
+        /* set skin autoload in editor */
+
+        if (!query.state || !["true", "false"].includes(query.state)) {
+            res.status(HttpStatus.BAD_REQUEST).send({
+                status: "error",
+                message: "`State` query param invalid",
+                statusCode: 400
+            });
+            return;
+        }
+        const data = await this.userService.setPublic(request.session, query.state === "true");
         res.status(data.statusCode).send(data);
     }
 }

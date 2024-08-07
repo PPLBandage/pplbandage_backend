@@ -5,17 +5,14 @@ interface Bandage {
         username: string;
         name: string;
         discordId: string;
-        admin: boolean;
-        banned: boolean;
         joined_at: Date;
+        UserSettings: UserSettings | null
     } | null;
     stars: {
         id: number;
         username: string;
         name: string;
         discordId: string;
-        admin: boolean;
-        banned: boolean;
         joined_at: Date;
     }[];
     categories: {
@@ -36,7 +33,7 @@ export const generate_response = (data: Bandage[], session: Session | null) => {
     /* generate list of works response by provided array of bandages */
 
     const result = data.map((el) => {
-        if (el.User?.banned) return undefined;
+        if (el.User?.UserSettings?.banned) return undefined;
         const categories = el.categories.map((cat) => {
             return {
                 id: cat.id,
@@ -57,7 +54,8 @@ export const generate_response = (data: Bandage[], session: Session | null) => {
             author: {
                 id: el.User?.id,
                 name: el.User?.name,
-                username: el.User?.username
+                username: el.User?.username,
+                public: el.User?.UserSettings?.public_profile
             },
             categories: categories.filter((el) => el !== undefined)
         }

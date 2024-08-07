@@ -1,6 +1,8 @@
 import { Controller, Get, HttpStatus, Param, Query, Res, StreamableFile, HttpException } from '@nestjs/common';
 import type { Response } from 'express'
 import { MinecraftService } from 'src/minecraft/minecraft.service';
+import { generateSvg } from './svg.module';
+import * as sharp from 'sharp';
 
 @Controller('api')
 export class minecraftController {
@@ -73,5 +75,18 @@ export class minecraftController {
             throw new HttpException({ message: 'No content' }, HttpStatus.NO_CONTENT);
         }
         return cache;
+    }
+
+    @Get('/beta/head/:name')
+    async beta_head(@Param('name') name: string, @Res({ passthrough: true }) res: Response, @Query() query: { pixel_width: number }) {
+        const pixel_width = Number(query.pixel_width) || 50;
+
+        const cache = await this.minecraftService.updateSkinCache(name);
+        if (!cache) {
+            throw new HttpException({ message: 'Profile not found' }, HttpStatus.NOT_FOUND);
+        }
+        const result = await generateSvg(sharp(Buffer.from(cache.data, "base64")), pixel_width);
+        res.set({ 'Content-Type': 'image/svg+xml' });
+        return result;
     }
 }
