@@ -263,7 +263,7 @@ export class UserService {
 
         const data = await this.prisma.minecraft.findFirst({
             where: { userId: session.user.id },
-            include: { user: { include: { UserSettings: true } } }
+            include: { user: { include: { UserSettings: true, Bandage: true } } }
         });
 
         if (data) {
@@ -291,6 +291,7 @@ export class UserService {
         return {
             statusCode: 200,
             public_profile: session.user.UserSettings?.public_profile,
+            can_be_public: data?.user?.Bandage.length !== 0,
             connections: {
                 discord: discord,
                 minecraft: minecraft

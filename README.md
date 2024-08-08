@@ -12,7 +12,7 @@ Retrieve a skin by nickname.
 
 > Query parameter `cape` determines the format of the returned skin.
 The default value of the parameter is `false`. With this value, the response `Content-Type` header will be `image/png`. In this case, the endpoint will return only the skin as an image.
-If the parameter cape is set to `true,` the endpoint will have a `text/json` `Content-Type` header, and the response will contain images of the skin and cape in base64 format.
+If the parameter cape is set to `true`, the endpoint will have a `text/json` `Content-Type` header, and the response will contain images of the skin and cape in base64 format.
 
 ```JSON
 {
