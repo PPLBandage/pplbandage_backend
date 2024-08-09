@@ -110,7 +110,7 @@ export class BandageService {
         });
 
         const count = await this.prisma.bandage.count({ where: where });
-        const result = generate_response(data, session);
+        const result = generate_response(data, session, available);
         return { data: result, totalCount: count, next_page: result.length ? page + 1 : page };
     }
 

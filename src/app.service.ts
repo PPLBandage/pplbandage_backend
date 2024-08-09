@@ -37,11 +37,11 @@ export interface RequestSession extends Request {
 }
 
 
-export const generate_response = (data: Bandage[], session: Session | null) => {
+export const generate_response = (data: Bandage[], session: Session | null, suppress_ban?: boolean) => {
     /* generate list of works response by provided array of bandages */
 
     const result = data.map((el) => {
-        if (el.User?.UserSettings?.banned) return undefined;
+        if (el.User?.UserSettings?.banned && !suppress_ban) return undefined;
         const categories = el.categories.map((cat) => {
             return {
                 id: cat.id,
