@@ -1,9 +1,9 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
-import { UserService } from 'src/user/user.module';
+import { OauthService } from 'src/oauth/oauth.module';
 
 @Injectable()
 export class NoAuthGuard implements CanActivate {
-    constructor(private user: UserService) { }
+    constructor(private oathService: OauthService) { }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         /* NoAuth Guard */
@@ -12,7 +12,7 @@ export class NoAuthGuard implements CanActivate {
         const sessionId = request.cookies?.sessionId;
         const user_agent = request.headers['user-agent'];
 
-        const session = await this.user.validateSession(sessionId, user_agent);
+        const session = await this.oathService.validateSession(sessionId, user_agent);
         request.session = session;
         return true;
     }

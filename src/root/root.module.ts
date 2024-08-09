@@ -12,6 +12,8 @@ import { NotificationService } from '../notifications/notifications.service';
 import { WorkshopController } from 'src/workshop/workshop.controller';
 import { UserController } from 'src/user/user.controller';
 import { minecraftController } from 'src/minecraft/minecraft.controller';
+import { OauthController } from 'src/oauth/oauth.controller';
+import { OauthService } from 'src/oauth/oauth.module';
 
 ConfigModule.forRoot();
 
@@ -21,9 +23,10 @@ ConfigModule.forRoot();
 		PrismaService,
 		BandageService,
 		MinecraftService,
+		OauthService,
 		AuthGuard,
 		NotificationService],
-	controllers: [RootController, WorkshopController, UserController, minecraftController],
+	controllers: [RootController, WorkshopController, UserController, minecraftController, OauthController],
 	imports: [
 		ThrottlerModule.forRoot([{
 			ttl: 60000,

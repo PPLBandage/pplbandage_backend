@@ -27,22 +27,6 @@ export class UserController {
         res.status(data.statusCode).send(data);
     }
 
-    @Delete("/user/me")
-    async logout(@Req() request: Request, @Res() res: Response): Promise<void> {
-        /* log out user */
-
-        const user_agent = request.headers['user-agent'];
-        const session = await this.userService.validateSession(request.cookies.sessionId, user_agent as string);
-        if (!session) {
-            res.status(HttpStatus.UNAUTHORIZED).send(UNAUTHORIZED);
-            return;
-        }
-
-        await this.userService.logout(session);
-        res.status(200).send({ "status": "success" });
-    }
-
-
     @Get("/user/me/works")
     @UseGuards(AuthGuard)
     async getWork(@Req() request: RequestSession, @Res() res: Response): Promise<void> {
@@ -79,7 +63,7 @@ export class UserController {
         res.send(data);
     }
 
-    @Post("/user/me/profile_theme")
+    @Put("/user/me/profile_theme")
     @UseGuards(AuthGuard)
     async profile_theme(@Req() request: RequestSession, @Res() res: Response, @Body() body: { theme: string }): Promise<void> {
         /* update profile theme */
@@ -93,7 +77,7 @@ export class UserController {
         }
 
         await this.userService.setProfileTheme(request.session, theme);
-        res.status(201).send({
+        res.status(200).send({
             status: 'success',
             new_theme: theme
         })
@@ -194,34 +178,6 @@ export class UserController {
         res.status(data.statusCode).send(data);
     }
 
-    @Post("/oauth/discord/:code")
-    async discord(@Param('code') code: string, @Req() request: Request, @Res({ passthrough: true }) res: Response): Promise<void> {
-        /* create session for discord user */
-
-        const user_agent = request.headers['user-agent'] as string;
-        const data = await this.userService.login(code, user_agent);
-        if (!data) {
-            res.status(400).send({ status: "error", message: "could not login" });
-            return;
-        }
-        if (data.statusCode !== 200) {
-            res.status(data.statusCode).send(data);
-            return;
-        }
-
-        const date = new Date((new Date()).getTime() + (Number(process.env.SESSION_TTL) * 1000));
-        res.setHeader('Access-Control-Expose-Headers', 'SetCookie');
-        res.setHeader('SetCookie', `sessionId=${data.sessionId}; Path=/; Expires=${date.toUTCString()}; SameSite=Strict`);
-
-        res.send(data);
-    }
-
-    @Get("/oauth/roles")
-    async roles(@Res() res: Response): Promise<void> {
-        /* get roles for registration */
-
-        res.send(await this.userService.getRoles());
-    }
 
     @Put("/star/:id")
     @UseGuards(AuthGuard)
