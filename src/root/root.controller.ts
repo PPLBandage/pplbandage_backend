@@ -42,14 +42,10 @@ export class RootController {
         let urls: SitemapProps[] = [
             { loc: 'https://pplbandage.ru/', priority: 1 },
             { loc: 'https://pplbandage.ru/workshop', priority: 0.8 },
-            { loc: 'https://pplbandage.ru/workshop/create', priority: 0.8 },
             { loc: 'https://pplbandage.ru/tutorials', priority: 0.7 },
             { loc: 'https://pplbandage.ru/tutorials/bandage', priority: 0.7 },
             { loc: 'https://pplbandage.ru/tutorials/colorable', priority: 0.7 },
             { loc: 'https://pplbandage.ru/me', priority: 0.5 },
-            { loc: 'https://pplbandage.ru/me/stars', priority: 0.5 },
-            { loc: 'https://pplbandage.ru/me/notifications', priority: 0.5 },
-            { loc: 'https://pplbandage.ru/me/settings', priority: 0.5 },
             { loc: 'https://pplbandage.ru/tos', priority: 0.5 },
             { loc: 'https://pplbandage.ru/contacts', priority: 0.5 }
         ]
@@ -60,7 +56,7 @@ export class RootController {
             priority: 0.6
         })));
 
-        const users = await this.prisma.user.findMany({ where: { Bandage: { some: {} }, UserSettings: { banned: false } } });
+        const users = await this.prisma.user.findMany({ where: { Bandage: { some: {} }, UserSettings: { banned: false, public_profile: true } } });
         urls = urls.concat(users.map((user) => ({
             loc: `https://pplbandage.ru/users/${user.username}`,
             priority: 0.5
