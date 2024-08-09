@@ -7,6 +7,8 @@ import { NotificationService } from 'src/notifications/notifications.service';
 import { MinecraftService } from 'src/minecraft/minecraft.service';
 import { Throttle } from '@nestjs/throttler';
 import { BandageService } from 'src/workshop/bandage.service';
+import { RequestSession } from 'src/app.service';
+import { NoAuthGuard } from 'src/guards/noAuth.guard';
 
 @Controller('api')
 export class UserController {
@@ -184,11 +186,11 @@ export class UserController {
     }
 
     @Get("/users/:username")
-    async user_profile(@Param('username') username: string, @Req() request: Request, @Res() res: Response): Promise<void> {
+    @UseGuards(NoAuthGuard)
+    async user_profile(@Param('username') username: string, @Req() request: RequestSession, @Res() res: Response): Promise<void> {
         /* get user data by nickname */
 
-        const session = await this.userService.validateSession(request.cookies.sessionId, request.headers['user-agent'] as string);
-        const data = await this.userService.getUserByNickname(username, session);
+        const data = await this.userService.getUserByNickname(username, request.session);
         res.status(data.statusCode).send(data);
     }
 
@@ -215,7 +217,7 @@ export class UserController {
     }
 
     @Get("/oauth/roles")
-    async roles(@Req() request: RequestSession, @Res() res: Response): Promise<void> {
+    async roles(@Res() res: Response): Promise<void> {
         /* get roles for registration */
 
         res.send(await this.userService.getRoles());

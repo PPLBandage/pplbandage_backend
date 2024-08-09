@@ -141,7 +141,3 @@ interface CreateBody {
     access_level: number,
     split_type?: boolean
 }
-
-interface RequestSession extends Request {
-    session: Session
-}

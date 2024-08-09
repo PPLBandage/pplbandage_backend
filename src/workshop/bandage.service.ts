@@ -58,17 +58,15 @@ export class BandageService {
         return await this.prisma.bandage.count();
     }
 
-    async getBandages(sessionId: string,
+    async getBandages(session: Session,
         take: number,
         page: number,
-        user_agent: string,
         search?: string,
         filters?: string,
         sort?: string) {
 
         /* get workshop list */
 
-        const session = await this.users.validateSession(sessionId, user_agent);  // validate user session
         let search_rule: BandageSearch[] | undefined = undefined;
         if (search) {
             search_rule = [
@@ -204,10 +202,9 @@ export class BandageService {
         };
     }
 
-    async getCategories(for_edit: boolean, sessionId: string, user_agent: string) {
+    async getCategories(for_edit: boolean, session: Session) {
         /* get list of categories */
 
-        const session = await this.users.validateSession(sessionId, user_agent);
         let admin: boolean = false;
         if (session && session.user) {
             admin = Boolean(session.user.UserSettings?.admin);
@@ -225,10 +222,9 @@ export class BandageService {
         return categories;
     }
 
-    async getBandage(id: string, sessionId: string, user_agent: string) {
+    async getBandage(id: string, session: Session) {
         /* get bandage by external id */
 
-        const session = await this.users.validateSession(sessionId, user_agent);
         const bandage = await this.prisma.bandage.findFirst({
             where: { externalId: id },
             include: { User: { include: { UserSettings: true } }, categories: true, stars: true }

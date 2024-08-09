@@ -1,3 +1,5 @@
+import type { Request } from 'express'
+
 interface Bandage {
     /* bandage interface */
     User: {
@@ -28,6 +30,12 @@ interface Bandage {
     creationDate: Date,
     split_type: boolean
 }
+
+
+export interface RequestSession extends Request {
+    session: Session
+}
+
 
 export const generate_response = (data: Bandage[], session: Session | null) => {
     /* generate list of works response by provided array of bandages */

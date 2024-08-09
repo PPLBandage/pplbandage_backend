@@ -3,20 +3,21 @@ import type { Request, Response } from 'express'
 import { BandageService } from "./bandage.service";
 import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { AuthGuard } from 'src/guards/auth.guard';
+import { NoAuthGuard } from 'src/guards/noAuth.guard';
 import * as sharp from 'sharp';
+import { RequestSession } from 'src/app.service';
 
 @Controller('api')
 export class WorkshopController {
     constructor(private readonly bandageService: BandageService) { }
     @Get("/workshop")
-    async bandages(@Req() request: Request, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
+    @UseGuards(NoAuthGuard)
+    async bandages(@Req() request: RequestSession, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
         /* get list of works */
 
-        const user_agent = request.headers['user-agent'] as string;
-        res.status(200).send(await this.bandageService.getBandages(request.cookies.sessionId,
+        res.status(200).send(await this.bandageService.getBandages(request.session,
             parseInt(query.take as string) || 20,
             parseInt(query.page as string) || 0,
-            user_agent,
             query.search,
             query.filters,
             query.sort));
@@ -82,20 +83,21 @@ export class WorkshopController {
 
     @Get("/workshop/:id")
     @SkipThrottle()
-    async getBandage(@Param('id') id: string, @Req() request: Request, @Res() res: Response): Promise<void> {
+    @UseGuards(NoAuthGuard)
+    async getBandage(@Param('id') id: string, @Req() request: RequestSession, @Res() res: Response): Promise<void> {
         /* get bandage by external id (internal endpoint) */
 
         if (request.headers['unique-access'] !== process.env.WORKSHOP_TOKEN) {
             res.status(403).send({ message: 'Forbidden', statusCode: 403 });
             return;
         }
-        const user_agent = request.headers['user-agent'] as string;
-        const data = await this.bandageService.getBandage(id, request.cookies.sessionId, user_agent);
+        const data = await this.bandageService.getBandage(id, request.session);
         res.status(data.statusCode).send(data);
     }
 
     @Get(["/workshop/:id/as_image", "/workshop/:id/og"])
-    async getBandageImage(@Param('id') id: string, @Req() request: Request, @Res({ passthrough: true }) res: Response, @Query() query: { width: number }): Promise<StreamableFile | void> {
+    @UseGuards(NoAuthGuard)
+    async getBandageImage(@Param('id') id: string, @Req() request: RequestSession, @Res({ passthrough: true }) res: Response, @Query() query: { width: number }): Promise<StreamableFile | void> {
         /* get bandage image render (for OpenGraph) */
 
         const requested_width = Number(query.width) || 512;
@@ -107,8 +109,7 @@ export class WorkshopController {
             return;
         }
 
-        const user_agent = request.headers['user-agent'] as string;
-        const data = await this.bandageService.getBandage(id, request.cookies.sessionId, user_agent);
+        const data = await this.bandageService.getBandage(id, request.session);
         if (data.statusCode !== 200 || !data.data?.base64) {
             res.status(data.statusCode).send(data);
             return;
@@ -197,11 +198,11 @@ export class WorkshopController {
     }
 
     @Get("/categories")
-    async categories(@Req() request: Request, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
+    @UseGuards(NoAuthGuard)
+    async categories(@Req() request: RequestSession, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
         /* get list of categories */
 
-        const user_agent = request.headers['user-agent'] as string;
-        res.status(200).send(await this.bandageService.getCategories(query.for_edit === "true", request.cookies.sessionId, user_agent));
+        res.status(200).send(await this.bandageService.getCategories(query.for_edit === "true", request.session));
     }
 
     @Get('/workshop/count/badge')

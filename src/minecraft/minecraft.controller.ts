@@ -79,6 +79,8 @@ export class minecraftController {
 
     @Get('/beta/head/:name')
     async beta_head(@Param('name') name: string, @Res({ passthrough: true }) res: Response, @Query() query: { pixel_width: number }) {
+        /* Generate SVG head */
+
         const pixel_width = Number(query.pixel_width) || 50;
 
         const cache = await this.minecraftService.updateSkinCache(name);
