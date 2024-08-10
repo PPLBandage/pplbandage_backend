@@ -123,10 +123,11 @@ export class UserService {
             }
         }
 
+        const bandages_count = await this.prisma.bandage.count({ where: { userId: session.user.id } });
         return {
             statusCode: 200,
             public_profile: session.user.UserSettings?.public_profile,
-            can_be_public: data?.user?.Bandage.length !== 0,
+            can_be_public: bandages_count !== 0,
             connections: {
                 discord: discord,
                 minecraft: minecraft
