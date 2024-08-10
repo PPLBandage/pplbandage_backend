@@ -6,7 +6,7 @@ export const generateSvg = async (image: sharp.Sharp, pixel_width: number) => {
         .toBuffer({ resolveWithObject: true });
 
     const pixels = [];
-    const coef = 0.875;
+    const coef = 7 / 8;
     for (let x = 8; x < 16; x++) {
         for (let y = 8; y < 16; y++) {
             const pixelIndex = (y * info.width + x) * info.channels;

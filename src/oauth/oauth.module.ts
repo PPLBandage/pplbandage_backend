@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { Bandage, Minecraft, User, UserSettings, Notifications } from '@prisma/client';
 import { sign, verify } from 'jsonwebtoken';
 import axios from 'axios';
 
@@ -44,6 +45,21 @@ interface PepelandResponse {
         id: string,
         username: string
     }
+}
+
+export interface Session {
+    sessionId: string;
+    cookie: string;
+    user: UserFull;
+}
+
+
+export interface UserFull extends User {
+    profile: Minecraft | null,
+    UserSettings: UserSettings | null,
+    Bandage: Bandage[],
+    stars: Bandage[],
+    notifications: Notifications[]
 }
 
 const generateCookie = (session: string, exp: number): string => {
@@ -96,7 +112,7 @@ export class OauthService {
                 'Content-Type': 'application/x-www-form-urlencoded'
             }, validateStatus: () => true
         });
-        if (discord_tokens.status != 200) return null;
+        if (discord_tokens.status !== 200) return null;
         const data = discord_tokens.data as DiscordResponse;
 
         const discord_user = await axios.get(discord_url + "/users/@me", {
@@ -105,18 +121,12 @@ export class OauthService {
             }, validateStatus: () => true
         });
 
-        if (discord_user.status != 200) return null;
+        if (discord_user.status !== 200) return null;
         const ds_user = discord_user.data as DiscordUser;
 
         const on_ppl = await this.check_ppl(`${data.token_type} ${data.access_token}`);
         if (!on_ppl) {
-            await this.prisma.sessions.deleteMany({
-                where: {
-                    User: {
-                        discordId: ds_user.id
-                    }
-                }
-            });
+            await this.prisma.sessions.deleteMany({ where: { User: { discordId: ds_user.id } } });
             return { message: "You are not on ppl", statusCode: 403 };
         }
 
@@ -157,7 +167,17 @@ export class OauthService {
         if (!session) return null;
         const sessionDB = await this.prisma.sessions.findFirst({
             where: { sessionId: session },
-            include: { User: { include: { profile: true, notifications: true, UserSettings: true } } }
+            include: {
+                User: {
+                    include: {
+                        profile: true,
+                        notifications: true,
+                        UserSettings: true,
+                        Bandage: true,
+                        stars: true
+                    }
+                }
+            }
         });
         if (!sessionDB) return null;
 
@@ -178,7 +198,15 @@ export class OauthService {
                     where: { id: sessionDB.id },
                     data: { sessionId: sessionId },
                     include: {
-                        User: { include: { profile: true, notifications: true, UserSettings: true } }
+                        User: {
+                            include: {
+                                profile: true,
+                                notifications: true,
+                                UserSettings: true,
+                                Bandage: true,
+                                stars: true
+                            }
+                        }
                     }
                 });
 

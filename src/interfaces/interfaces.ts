@@ -94,44 +94,6 @@ interface Notifications {
     creation_date?: Date
 }
 
-interface User {
-    id: number;
-    username: string;
-    name: string;
-    discordId: string;
-    joined_at: Date;
-    profile: {
-        id: number;
-        uuid: string;
-        data: string;
-        data_cape: string;
-        data_head: string;
-        nickname: string;
-        expires: bigint;
-        default_nick: string;
-        valid: boolean;
-        userId: number | null;
-    } | null;
-    notifications: Notifications[];
-    UserSettings: UserSettings | null
-}
-
-interface UserSettings {
-    id: number,
-    userId: number,
-    admin: boolean,
-    banned: boolean,
-    profile_theme: number,
-    autoload: boolean,
-    public_profile: boolean
-}
-
-interface Session {
-    sessionId: string;
-    cookie: string;
-    user: User;
-}
-
 interface CreateBody {
     base64: string,
     base64_slim?: string,

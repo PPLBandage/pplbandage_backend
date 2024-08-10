@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import axios from 'axios';
 import { generate_response } from '../app.service';
+import { Session } from 'src/oauth/oauth.module';
 
 const discord_url = "https://discord.com/api/v10";
 
@@ -38,49 +39,41 @@ export class UserService {
         return response.data as DiscordUser;
     }
 
-    async getUser(session: string) {
+    async getUser(session: Session) {
         /* get user, associated with session */
 
-        const sessionDB = await this.prisma.sessions.findFirst({
-            where: { sessionId: session },
-            include: { User: { include: { UserSettings: true } } }
-        });
-        if (!sessionDB) {
-            return { message: "User not found", statusCode: 401 };
-        }
-
-        if (sessionDB.User.UserSettings?.banned) {
-            await this.prisma.sessions.deleteMany({ where: { userId: sessionDB.User.id } });
+        if (session.user.UserSettings?.banned) {
+            await this.prisma.sessions.deleteMany({ where: { userId: session.user.id } });
             return { message: "Unable to get user", statusCode: 401 };
         }
 
 
-        const response_data = await this.getCurrentData(sessionDB.User.discordId);
+        const response_data = await this.getCurrentData(session.user.discordId);
 
         const updated_user = await this.prisma.user.update({
-            where: { id: sessionDB.User.id },
+            where: { id: session.user.id },
             data: {
                 name: response_data.global_name || response_data.username
             }
         });
 
         let permissions = ['default'];
-        if (sessionDB.User.UserSettings?.admin) {
+        if (session.user.UserSettings?.admin) {
             permissions.push('admin');
         }
 
         return {
             statusCode: 200,
-            userID: sessionDB.User.id,
-            discordID: sessionDB.User.discordId,
+            userID: session.user.id,
+            discordID: session.user.discordId,
             username: updated_user.username,
             name: updated_user.name,
-            joined_at: sessionDB.User.joined_at,
+            joined_at: session.user.joined_at,
             avatar: response_data.avatar ? `https://cdn.discordapp.com/avatars/${response_data.id}/${response_data.avatar}` : `/static/favicon.ico`,
             banner_color: response_data.banner_color,
-            has_unreaded_notifications: sessionDB.User.has_unreaded_notifications,
+            has_unreaded_notifications: session.user.has_unreaded_notifications,
             permissions: permissions,
-            profile_theme: sessionDB.User.UserSettings?.profile_theme
+            profile_theme: session.user.UserSettings?.profile_theme
         };
     }
 
@@ -91,43 +84,31 @@ export class UserService {
     }
 
     async getUserSettings(session: Session) {
-        /* get user's associated accounts */
+        /* get user's settings */
 
-        var minecraft = null;
-        var discord = null;
+        const minecraft = session.user.profile ? {
+            nickname: session.user.profile?.nickname,
+            uuid: session.user.profile?.uuid,
+            last_cached: Number(session.user.profile?.expires) - parseInt(process.env.TTL as string),
+            head: session.user.profile?.data_head,
+            valid: session.user.profile?.valid,
+            autoload: session.user.UserSettings?.autoload
+        } : null;
 
-        const data = await this.prisma.minecraft.findFirst({
-            where: { userId: session.user.id },
-            include: { user: { include: { UserSettings: true, Bandage: true } } }
-        });
-
-        if (data) {
-            minecraft = {
-                nickname: data.default_nick,
-                uuid: data.uuid,
-                last_cached: Number(data.expires) - parseInt(process.env.TTL as string),
-                head: data.data_head,
-                valid: data.valid,
-                autoload: data.user?.UserSettings?.autoload
-            }
+        const current_discord = await this.getCurrentData(session.user.discordId);
+        const discord = {
+            user_id: session.user.discordId,
+            username: session.user.username,
+            name: session.user.name,
+            connected_at: session.user.joined_at,
+            avatar: current_discord.avatar ?
+                `https://cdn.discordapp.com/avatars/${current_discord.id}/${current_discord.avatar}` : null
         }
 
-        if (session.user) {
-            const current_discord = await this.getCurrentData(session.user.discordId);
-            discord = {
-                user_id: session.user.discordId,
-                username: session.user.username,
-                name: session.user.name,
-                connected_at: session.user.joined_at,
-                avatar: current_discord.avatar ? `https://cdn.discordapp.com/avatars/${current_discord.id}/${current_discord.avatar}` : null
-            }
-        }
-
-        const bandages_count = await this.prisma.bandage.count({ where: { userId: session.user.id } });
         return {
             statusCode: 200,
             public_profile: session.user.UserSettings?.public_profile,
-            can_be_public: bandages_count !== 0,
+            can_be_public: session.user.Bandage.length !== 0,
             connections: {
                 discord: discord,
                 minecraft: minecraft

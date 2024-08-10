@@ -23,7 +23,7 @@ export class UserController {
     async me_profile(@Req() request: RequestSession, @Res() res: Response): Promise<void> {
         /* get user data. associated with session */
 
-        const data = await this.userService.getUser(request.session.sessionId);
+        const data = await this.userService.getUser(request.session);
         res.status(data.statusCode).send(data);
     }
 

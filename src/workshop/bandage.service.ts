@@ -6,6 +6,7 @@ import axios from 'axios';
 import * as sharp from 'sharp';
 import { generate_response } from '../app.service';
 import { NotificationService } from '../notifications/notifications.service';
+import { Session } from 'src/oauth/oauth.module';
 
 const moderation_id = [4, 13];  // на проверке, отклонено
 const official_id = 0;

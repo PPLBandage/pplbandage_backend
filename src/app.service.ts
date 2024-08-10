@@ -1,43 +1,24 @@
 import type { Request } from 'express'
-
-interface Bandage {
-    /* bandage interface */
-    User: {
-        id: number;
-        username: string;
-        name: string;
-        discordId: string;
-        joined_at: Date;
-        UserSettings: UserSettings | null
-    } | null;
-    stars: {
-        id: number;
-        username: string;
-        name: string;
-        discordId: string;
-        joined_at: Date;
-    }[];
-    categories: {
-        id: number,
-        name: string,
-        icon: string
-    }[];
-    id: number,
-    externalId: string,
-    title: string,
-    description: string | null,
-    base64: string,
-    creationDate: Date,
-    split_type: boolean
-}
+import { Session, UserFull } from './oauth/oauth.module';
+import { Bandage, Category, User, UserSettings } from '@prisma/client';
 
 
 export interface RequestSession extends Request {
     session: Session
 }
 
+interface UserAuthor extends User {
+    UserSettings: UserSettings | null
+}
 
-export const generate_response = (data: Bandage[], session: Session | null, suppress_ban?: boolean) => {
+export interface BandageFull extends Bandage {
+    User: UserAuthor | null,
+    stars: User[],
+    categories: Category[]
+}
+
+
+export const generate_response = (data: BandageFull[], session: Session | null, suppress_ban?: boolean) => {
     /* generate list of works response by provided array of bandages */
 
     const result = data.map((el) => {
