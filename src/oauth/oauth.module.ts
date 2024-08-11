@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Bandage, Minecraft, User, UserSettings, Notifications } from '@prisma/client';
+import { Bandage, Minecraft, User, UserSettings, Notifications, AccessRoles } from '@prisma/client';
 import { sign, verify } from 'jsonwebtoken';
 import axios from 'axios';
 
@@ -59,7 +59,8 @@ export interface UserFull extends User {
     UserSettings: UserSettings | null,
     Bandage: Bandage[],
     stars: Bandage[],
-    notifications: Notifications[]
+    notifications: Notifications[],
+    AccessRoles: AccessRoles | null
 }
 
 const generateCookie = (session: string, exp: number): string => {
@@ -68,6 +69,10 @@ const generateCookie = (session: string, exp: number): string => {
     const date = new Date(exp * 1000);
     return `sessionId=${session}; Path=/; Expires=${date.toUTCString()}; SameSite=Strict`;
 }
+
+export const hasAccess = (user: UserFull, level: number) =>
+    user.AccessRoles?.level ? user.AccessRoles.level >= level : level === 0;
+
 
 @Injectable()
 export class OauthService {
@@ -136,7 +141,10 @@ export class OauthService {
                 discordId: ds_user.id,
                 username: ds_user.username,
                 name: ds_user.global_name || ds_user.username,
-                UserSettings: { create: {} }
+                UserSettings: { create: {} },
+                AccessRoles: {
+                    connect: { level: 0 }
+                }
             },
             update: {},
             include: { UserSettings: true }
@@ -174,7 +182,8 @@ export class OauthService {
                         notifications: true,
                         UserSettings: true,
                         Bandage: true,
-                        stars: true
+                        stars: true,
+                        AccessRoles: true
                     }
                 }
             }
@@ -204,7 +213,8 @@ export class OauthService {
                                 notifications: true,
                                 UserSettings: true,
                                 Bandage: true,
-                                stars: true
+                                stars: true,
+                                AccessRoles: true
                             }
                         }
                     }

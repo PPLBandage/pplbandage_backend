@@ -2,15 +2,18 @@ import { Controller, Get, HttpStatus, Param, Query, Req, Res, Delete, Put, Post,
 import type { Request, Response } from 'express'
 import { AuthGuard } from 'src/guards/auth.guard';
 import { UserService } from './user.module';
-import { UNAUTHORIZED } from 'src/root/root.controller';
 import { NotificationService } from 'src/notifications/notifications.service';
 import { MinecraftService } from 'src/minecraft/minecraft.service';
 import { Throttle } from '@nestjs/throttler';
 import { BandageService } from 'src/workshop/bandage.service';
 import { RequestSession } from 'src/app.service';
-import { NoAuthGuard } from 'src/guards/noAuth.guard';
+import { RolesGuard } from 'src/guards/roles.guard';
+import { AuthEnum, RolesEnum } from 'src/interfaces/types';
+import { Auth } from 'src/decorators/auth.decorator';
+import { Roles } from 'src/decorators/access.decorator';
 
 @Controller('api')
+@UseGuards(AuthGuard, RolesGuard)
 export class UserController {
     constructor(private readonly userService: UserService,
         private readonly notificationService: NotificationService,
@@ -19,7 +22,7 @@ export class UserController {
     ) { }
 
     @Get("/user/me")
-    @UseGuards(AuthGuard)
+    @Auth(AuthEnum.Strict)
     async me_profile(@Req() request: RequestSession, @Res() res: Response): Promise<void> {
         /* get user data. associated with session */
 
@@ -28,7 +31,7 @@ export class UserController {
     }
 
     @Get("/user/me/works")
-    @UseGuards(AuthGuard)
+    @Auth(AuthEnum.Strict)
     async getWork(@Req() request: RequestSession, @Res() res: Response): Promise<void> {
         /* get user's works */
 
@@ -37,7 +40,7 @@ export class UserController {
     }
 
     @Get("/user/me/stars")
-    @UseGuards(AuthGuard)
+    @Auth(AuthEnum.Strict)
     async getStars(@Req() request: RequestSession, @Res() res: Response): Promise<void> {
         /* get user's stars */
 
@@ -46,16 +49,16 @@ export class UserController {
     }
 
     @Get("/user/me/settings")
-    @UseGuards(AuthGuard)
+    @Auth(AuthEnum.Strict)
     async minecraft(@Req() request: RequestSession, @Res() res: Response): Promise<void> {
-        /* get user's connections */
+        /* get user's settings */
 
         const data = await this.userService.getUserSettings(request.session);
         res.status(data.statusCode).send(data);
     }
 
     @Get("/user/me/notifications")
-    @UseGuards(AuthGuard)
+    @Auth(AuthEnum.Strict)
     async getNotifications(@Req() request: RequestSession, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
         /* get user's connections */
 
@@ -64,7 +67,7 @@ export class UserController {
     }
 
     @Put("/user/me/profile_theme")
-    @UseGuards(AuthGuard)
+    @Auth(AuthEnum.Strict)
     async profile_theme(@Req() request: RequestSession, @Res() res: Response, @Body() body: { theme: string }): Promise<void> {
         /* update profile theme */
 
@@ -84,7 +87,7 @@ export class UserController {
     }
 
     @Put("/user/me/connections/minecraft/set_valid")
-    @UseGuards(AuthGuard)
+    @Auth(AuthEnum.Strict)
     async set_valid(@Req() request: RequestSession, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
         /* set displaying nickname in search */
 
@@ -101,7 +104,7 @@ export class UserController {
     }
 
     @Put("/user/me/connections/minecraft/set_autoload")
-    @UseGuards(AuthGuard)
+    @Auth(AuthEnum.Strict)
     async set_autoload(@Req() request: RequestSession, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
         /* set skin autoload in editor */
 
@@ -118,7 +121,7 @@ export class UserController {
     }
 
     @Post("/user/me/connections/minecraft/connect/:code")
-    @UseGuards(AuthGuard)
+    @Auth(AuthEnum.Strict)
     async connectMinecraft(@Param('code') code: string, @Req() request: RequestSession, @Res() res: Response): Promise<void> {
         /* connect minecraft profile to account */
 
@@ -137,7 +140,7 @@ export class UserController {
 
     @Throttle({ default: { limit: 5, ttl: 60000 } })
     @Post("/user/me/connections/minecraft/cache/purge")
-    @UseGuards(AuthGuard)
+    @Auth(AuthEnum.Strict)
     async skinPurge(@Req() request: RequestSession, @Res({ passthrough: true }) res: Response): Promise<void> {
         /* purge minecraft skin cache, associated with session's account */
 
@@ -162,7 +165,7 @@ export class UserController {
     }
 
     @Delete("/user/me/connections/minecraft")
-    @UseGuards(AuthGuard)
+    @Auth(AuthEnum.Strict)
     async disconnectMinecraft(@Req() request: RequestSession, @Res() res: Response): Promise<void> {
         /* disconnect minecraft profile */
         const data = await this.minecraftService.disconnect(request.session);
@@ -170,7 +173,7 @@ export class UserController {
     }
 
     @Get("/users/:username")
-    @UseGuards(NoAuthGuard)
+    @Auth(AuthEnum.Weak)
     async user_profile(@Param('username') username: string, @Req() request: RequestSession, @Res() res: Response): Promise<void> {
         /* get user data by nickname */
 
@@ -180,7 +183,7 @@ export class UserController {
 
 
     @Put("/star/:id")
-    @UseGuards(AuthGuard)
+    @Auth(AuthEnum.Strict)
     async setStar(@Param('id') id: string, @Query() query: { set: string }, @Req() request: RequestSession, @Res() res: Response): Promise<void> {
         /* set star to work by work external id */
 
@@ -196,7 +199,7 @@ export class UserController {
     }
 
     @Put("/user/me/settings/set_public")
-    @UseGuards(AuthGuard)
+    @Auth(AuthEnum.Strict)
     async set_public(@Req() request: RequestSession, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
         /* set skin autoload in editor */
 
@@ -210,5 +213,12 @@ export class UserController {
         }
         const data = await this.userService.setPublic(request.session, query.state === "true");
         res.status(data.statusCode).send(data);
+    }
+
+    @Get('/users')
+    @Auth(AuthEnum.Strict)
+    @Roles(RolesEnum.SuperAdmin)
+    async get_users(@Res() res: Response) {
+        res.status(200).send(await this.userService.getUsers());
     }
 }

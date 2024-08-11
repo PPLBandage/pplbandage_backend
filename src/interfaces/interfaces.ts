@@ -32,18 +32,6 @@ interface DefaultResponse {
     message: string;
 }
 
-interface Cache {
-    id: number;
-    uuid: string;
-    data: string;
-    data_cape: string;
-    data_head: string;
-    nickname: string;
-    expires: bigint;
-    default_nick: string;
-    valid: boolean;
-}
-
 interface SearchUnit {
     name: string,
     uuid: string,

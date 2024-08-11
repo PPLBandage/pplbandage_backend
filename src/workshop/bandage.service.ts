@@ -6,7 +6,8 @@ import axios from 'axios';
 import * as sharp from 'sharp';
 import { generate_response } from '../app.service';
 import { NotificationService } from '../notifications/notifications.service';
-import { Session } from 'src/oauth/oauth.module';
+import { hasAccess, Session } from 'src/oauth/oauth.module';
+import { RolesEnum } from 'src/interfaces/types';
 
 const moderation_id = [4, 13];  // на проверке, отклонено
 const official_id = 0;
@@ -83,7 +84,7 @@ export class BandageService {
 
         let available = false;
         let admin = false;
-        if (session && session.user && session.user.UserSettings?.admin) {
+        if (session && session.user && hasAccess(session.user, RolesEnum.SuperAdmin)) {
             admin = true;
             const data = await this.prisma.category.findMany({ where: { only_admins: true } });
             available = Object.values(data).some(val => filters_list?.includes(String(val.id)));
@@ -144,7 +145,7 @@ export class BandageService {
 
         let categories = [{ id: moderation_id[0] }];  // default categories
         if (body.categories !== undefined) {
-            const validated_categories = await this.validateCategories(body.categories, Boolean(session.user.UserSettings?.admin));
+            const validated_categories = await this.validateCategories(body.categories, hasAccess(session.user, RolesEnum.SuperAdmin));
             categories = [...validated_categories.map((el) => {
                 return { id: el };
             }), ...categories];
@@ -208,7 +209,7 @@ export class BandageService {
 
         let admin: boolean = false;
         if (session && session.user) {
-            admin = Boolean(session.user.UserSettings?.admin);
+            admin = Boolean(hasAccess(session.user, RolesEnum.SuperAdmin));
         }
 
         const categories = await this.prisma.category.findMany({
@@ -237,7 +238,7 @@ export class BandageService {
             };
         }
         const hidden = Object.values(bandage.categories).some(val => val.only_admins) || bandage.access_level === 0;
-        const access = session ? (!session.user.UserSettings?.admin && session.user.id !== bandage.User?.id) : true;
+        const access = session ? (hasAccess(session.user, RolesEnum.Default) && session.user.id !== bandage.User?.id) : true;
         if (hidden && access) {
             return {
                 message: "Bandage not found",
@@ -248,7 +249,7 @@ export class BandageService {
         let permissions_level = 0;
         if (session) {
             if (session.user.id === bandage.User?.id) permissions_level = 1;
-            if (session.user.UserSettings?.admin || (session.user.id === bandage.User?.id && hidden)) permissions_level = 2;
+            if (hasAccess(session.user, RolesEnum.SuperAdmin) || (session.user.id === bandage.User?.id && hidden)) permissions_level = 2;
         }
 
         const me_profile = session && session.user.profile && session.user.UserSettings?.autoload ? {
@@ -314,7 +315,7 @@ export class BandageService {
             }
         }
 
-        if (bandage.User?.id !== session.user.id && !session.user.UserSettings?.admin) {
+        if (bandage.User?.id !== session.user.id && hasAccess(session.user, RolesEnum.Default)) {
             return {
                 statusCode: 403,
                 message: "Forbidden"
@@ -327,16 +328,17 @@ export class BandageService {
         let access_level = undefined;
 
         const hidden = Object.values(bandage.categories).some(val => val.only_admins);
+        const admin = hasAccess(session.user, RolesEnum.SuperAdmin);
 
-        if (session.user.UserSettings?.admin || hidden) {
+        if (admin || hidden) {
             if (body.title !== undefined) title = body.title;
             if (body.description !== undefined) description = body.description;
         }
 
         if (body.categories !== undefined) {
-            const validated_categories = await this.validateCategories(body.categories, Boolean(session.user.UserSettings?.admin));
+            const validated_categories = await this.validateCategories(body.categories, admin);
             const bandage_categories = bandage?.categories.map(el => el.id);
-            if (!session.user.UserSettings?.admin) {
+            if (!admin) {
                 if (bandage_categories?.includes(moderation_id[0])) validated_categories.push(moderation_id[0]);
                 if (bandage_categories?.includes(moderation_id[1])) validated_categories.push(moderation_id[1]);
                 if (bandage_categories?.includes(official_id)) validated_categories.push(official_id);
@@ -406,7 +408,7 @@ export class BandageService {
             };
         }
 
-        if (!session.user.UserSettings?.admin && session.user.id !== bandage.User?.id) {
+        if (session.user.AccessRoles?.level == 0 && session.user.id !== bandage.User?.id) {
             return {
                 statusCode: 403,
                 message: "Forbidden"

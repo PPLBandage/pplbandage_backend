@@ -36,17 +36,25 @@ model User {
     joined_at                  DateTime        @default(now())
     notifications              Notifications[] @relation("Notifications")
     has_unreaded_notifications Boolean         @default(false)
+    AccessRoles                AccessRoles?    @relation(fields: [accessRolesId], references: [id])
+    accessRolesId              Int?            @default(1)
 }
 
 model UserSettings {
     id             Int     @id @default(autoincrement())
     User           User    @relation(fields: [userId], references: [id])
     userId         Int     @unique
-    admin          Boolean @default(false)
     banned         Boolean @default(false)
     profile_theme  Int     @default(0)
     autoload       Boolean @default(true)
     public_profile Boolean @default(true)
+}
+
+model AccessRoles {
+    id    Int    @id @default(autoincrement())
+    name  String @default("Default")
+    level Int    @unique @default(0)
+    users User[]
 }
 
 model Sessions {

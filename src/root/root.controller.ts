@@ -1,8 +1,14 @@
-import { Controller, Get, Header, Res } from '@nestjs/common';
+import { Controller, Get, Header, Req, Res, UseGuards } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
 import type { Response } from 'express'
 import { generateSitemap, SitemapProps } from './sitemap.module';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { AuthGuard } from 'src/guards/auth.guard';
+import { RolesGuard } from 'src/guards/roles.guard';
+import { Auth } from 'src/decorators/auth.decorator';
+import { AuthEnum, RolesEnum } from 'src/interfaces/types';
+import { Roles } from 'src/decorators/access.decorator';
+import { RequestSession } from 'src/app.service';
 
 
 export const UNAUTHORIZED = {
@@ -13,6 +19,7 @@ export const UNAUTHORIZED = {
 
 
 @Controller('/api')
+@UseGuards(AuthGuard, RolesGuard)
 export class RootController {
     constructor(private prisma: PrismaService) { }
 
@@ -63,5 +70,12 @@ export class RootController {
         })));
 
         return generateSitemap(urls);
+    }
+
+    @Get('/test')
+    @Auth(AuthEnum.Strict)
+    @Roles(RolesEnum.SuperAdmin)
+    async test() {
+        return { 'statusCode': 200, 'message': 'Access granted' }
     }
 }

@@ -2,7 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import axios from 'axios';
 import { generate_response } from '../app.service';
-import { Session } from 'src/oauth/oauth.module';
+import { hasAccess, Session } from 'src/oauth/oauth.module';
+import { RolesEnum } from 'src/interfaces/types';
 
 const discord_url = "https://discord.com/api/v10";
 
@@ -58,7 +59,7 @@ export class UserService {
         });
 
         let permissions = ['default'];
-        if (session.user.UserSettings?.admin) {
+        if (hasAccess(session.user, RolesEnum.SuperAdmin)) {
             permissions.push('admin');
         }
 
@@ -212,6 +213,19 @@ export class UserService {
             where: { userId: session.user.id }, data: { public_profile: state }
         })
         return { statusCode: 200, new_data: result.public_profile };
+    }
+
+    async getUsers() {
+        const users = await this.prisma.user.findMany({ include: { UserSettings: true, AccessRoles: true } });
+
+        return users.map((user) => ({
+            id: user.id,
+            username: user.username,
+            name: user.name,
+            joined_at: user.joined_at,
+            discord_id: user.discordId,
+            banned: user.UserSettings?.banned
+        }));
     }
 }
 

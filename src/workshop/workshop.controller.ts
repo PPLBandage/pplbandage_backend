@@ -1,17 +1,19 @@
 import { Controller, Get, HttpStatus, Param, Query, Req, Res, StreamableFile, Delete, Put, Post, Body, UseGuards } from '@nestjs/common';
-import type { Request, Response } from 'express'
+import type { Response } from 'express'
 import { BandageService } from "./bandage.service";
 import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { AuthGuard } from 'src/guards/auth.guard';
-import { NoAuthGuard } from 'src/guards/noAuth.guard';
 import * as sharp from 'sharp';
 import { RequestSession } from 'src/app.service';
+import { AuthEnum } from 'src/interfaces/types';
+import { Auth } from 'src/decorators/auth.decorator';
 
 @Controller('api')
+@UseGuards(AuthGuard)
 export class WorkshopController {
     constructor(private readonly bandageService: BandageService) { }
     @Get("/workshop")
-    @UseGuards(NoAuthGuard)
+    @Auth(AuthEnum.Weak)
     async bandages(@Req() request: RequestSession, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
         /* get list of works */
 
@@ -25,7 +27,7 @@ export class WorkshopController {
 
     @Throttle({ default: { limit: 5, ttl: 60000 } })
     @Post("/workshop")
-    @UseGuards(AuthGuard)
+    @Auth(AuthEnum.Strict)
     async create_bandage(@Req() request: RequestSession, @Res() res: Response, @Body() body: CreateBody): Promise<void> {
         /* create work */
 
@@ -83,7 +85,7 @@ export class WorkshopController {
 
     @Get("/workshop/:id")
     @SkipThrottle()
-    @UseGuards(NoAuthGuard)
+    @Auth(AuthEnum.Weak)
     async getBandage(@Param('id') id: string, @Req() request: RequestSession, @Res() res: Response): Promise<void> {
         /* get bandage by external id (internal endpoint) */
 
@@ -96,7 +98,7 @@ export class WorkshopController {
     }
 
     @Get(["/workshop/:id/as_image", "/workshop/:id/og"])
-    @UseGuards(NoAuthGuard)
+    @Auth(AuthEnum.Weak)
     async getBandageImage(@Param('id') id: string, @Req() request: RequestSession, @Res({ passthrough: true }) res: Response, @Query() query: { width: number }): Promise<StreamableFile | void> {
         /* get bandage image render (for OpenGraph) */
 
@@ -154,7 +156,7 @@ export class WorkshopController {
     }
 
     @Put("/workshop/:id")
-    @UseGuards(AuthGuard)
+    @Auth(AuthEnum.Strict)
     async editBandage(@Param('id') id: string, @Req() request: RequestSession, @Res() res: Response, @Body() body: CreateBody) {
         /* edit bandage info */
 
@@ -188,7 +190,7 @@ export class WorkshopController {
     }
 
     @Delete("/workshop/:id")
-    @UseGuards(AuthGuard)
+    @Auth(AuthEnum.Strict)
     async deleteBandage(@Param('id') id: string, @Req() request: RequestSession, @Res() res: Response) {
         /* delete bandage by external id */
 
@@ -198,7 +200,7 @@ export class WorkshopController {
     }
 
     @Get("/categories")
-    @UseGuards(NoAuthGuard)
+    @Auth(AuthEnum.Weak)
     async categories(@Req() request: RequestSession, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
         /* get list of categories */
 
