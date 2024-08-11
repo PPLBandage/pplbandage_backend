@@ -408,7 +408,7 @@ export class BandageService {
             };
         }
 
-        if (session.user.AccessRoles?.level == 0 && session.user.id !== bandage.User?.id) {
+        if (!hasAccess(session.user, RolesEnum.SuperAdmin) && session.user.id !== bandage.User?.id) {
             return {
                 statusCode: 403,
                 message: "Forbidden"
