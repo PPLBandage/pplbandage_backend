@@ -1,4 +1,4 @@
-import { Controller, Get, HttpStatus, Param, Query, Req, Res, StreamableFile, Delete, Put, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, HttpStatus, Param, Query, Req, Res, StreamableFile, Delete, Put, Post, Body, UseGuards, ValidationPipe, UsePipes } from '@nestjs/common';
 import type { Response } from 'express'
 import { BandageService } from "./bandage.service";
 import { SkipThrottle, Throttle } from '@nestjs/throttler';
@@ -7,6 +7,8 @@ import * as sharp from 'sharp';
 import { RequestSession } from 'src/app.service';
 import { AuthEnum } from 'src/interfaces/types';
 import { Auth } from 'src/decorators/auth.decorator';
+import { CreateBandageDto } from './dto/createBandage.dto';
+import { EditBandageDto } from './dto/editBandage.dto';
 
 @Controller('api')
 @UseGuards(AuthGuard)
@@ -28,7 +30,8 @@ export class WorkshopController {
     @Throttle({ default: { limit: 5, ttl: 60000 } })
     @Post("/workshop")
     @Auth(AuthEnum.Strict)
-    async create_bandage(@Req() request: RequestSession, @Res() res: Response, @Body() body: CreateBody): Promise<void> {
+    @UsePipes(new ValidationPipe({ whitelist: true }))
+    async create_bandage(@Req() request: RequestSession, @Res() res: Response, @Body() body: CreateBandageDto): Promise<void> {
         /* create work */
 
         if (!body.base64 || !body.title) {
@@ -39,27 +42,9 @@ export class WorkshopController {
             return;
         }
 
-        if (body.title.length > 50) {
-            res.status(HttpStatus.BAD_REQUEST).send({
-                message: "Title cannot be longer than 50 symbols",
-                message_ru: "Заголовок не может быть длиннее 50 символов",
-                statusCode: 400
-            });
-            return;
-        }
-
-        if (body.description.length > 300) {
-            res.status(HttpStatus.BAD_REQUEST).send({
-                message: "Description cannot be longer than 300 symbols",
-                message_ru: "Описание не может быть длиннее 300 символов",
-                statusCode: 400
-            });
-            return;
-        }
-
         const validate_result = await this.bandageService.validateBandage(body.base64);
         if (validate_result.statusCode !== 200) {
-            res.status(validate_result.statusCode).send(validate_result.data);
+            res.status(validate_result.statusCode).send(validate_result);
             return;
         }
 
@@ -72,9 +57,9 @@ export class WorkshopController {
                 return;
             }
 
-            const validate_result_slim = await this.bandageService.validateBandage(body.base64_slim, validate_result.data.height as number);
+            const validate_result_slim = await this.bandageService.validateBandage(body.base64_slim, validate_result.height as number);
             if (validate_result.statusCode !== 200) {
-                res.status(validate_result_slim.statusCode).send(validate_result_slim.data);
+                res.status(validate_result_slim.statusCode).send(validate_result_slim);
                 return;
             }
         }
@@ -157,28 +142,13 @@ export class WorkshopController {
 
     @Put("/workshop/:id")
     @Auth(AuthEnum.Strict)
-    async editBandage(@Param('id') id: string, @Req() request: RequestSession, @Res() res: Response, @Body() body: CreateBody) {
+    @UsePipes(new ValidationPipe({ whitelist: true }))
+    async editBandage(@Param('id') id: string, @Req() request: RequestSession, @Res() res: Response, @Body() body: EditBandageDto) {
         /* edit bandage info */
 
         if (!body) {
             res.status(HttpStatus.BAD_REQUEST).send({
                 message: "Invalid Body",
-                statusCode: 400
-            });
-            return;
-        }
-
-        if (body.title?.length > 50) {
-            res.status(HttpStatus.BAD_REQUEST).send({
-                message: "Title cannot be longer than 50 symbols",
-                statusCode: 400
-            });
-            return;
-        }
-
-        if (body.description?.length > 300) {
-            res.status(HttpStatus.BAD_REQUEST).send({
-                message: "Description cannot be longer than 300 symbols",
                 statusCode: 400
             });
             return;

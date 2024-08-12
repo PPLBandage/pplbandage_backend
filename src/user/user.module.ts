@@ -4,6 +4,7 @@ import axios from 'axios';
 import { generate_response } from '../app.service';
 import { hasAccess, Session } from 'src/oauth/oauth.module';
 import { RolesEnum } from 'src/interfaces/types';
+import { UpdateUsersDto } from './dto/updateUser.dto';
 
 const discord_url = "https://discord.com/api/v10";
 
@@ -25,7 +26,6 @@ interface DiscordUser {
     locale: string,
     premium_type: number
 }
-
 
 @Injectable()
 export class UserService {
@@ -222,6 +222,26 @@ export class UserService {
             banned: user.UserSettings?.banned,
             permissions: user.AccessRoles?.map((role) => role.name.toLowerCase())
         }));
+    }
+
+    async updateUser(username: string, data: UpdateUsersDto) {
+        const user = await this.prisma.user.findFirst({ where: { username: username } });
+        if (!user) {
+            return {
+                statusCode: 404,
+                message: 'User not found'
+            }
+        }
+
+        await this.prisma.userSettings.update({
+            where: { userId: user.id },
+            data: { banned: data.banned }
+        });
+
+        return {
+            statusCode: 200,
+            message: 'Updated'
+        }
     }
 }
 

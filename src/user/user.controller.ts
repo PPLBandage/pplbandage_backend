@@ -1,5 +1,5 @@
-import { Controller, Get, HttpStatus, Param, Query, Req, Res, Delete, Put, Post, Body, UseGuards } from '@nestjs/common';
-import type { Request, Response } from 'express'
+import { Controller, Get, HttpStatus, Param, Query, Req, Res, Delete, Put, Post, Body, UseGuards, ValidationPipe, UsePipes } from '@nestjs/common';
+import type { Response } from 'express'
 import { AuthGuard } from 'src/guards/auth.guard';
 import { UserService } from './user.module';
 import { NotificationService } from 'src/notifications/notifications.service';
@@ -11,6 +11,7 @@ import { RolesGuard } from 'src/guards/roles.guard';
 import { AuthEnum, RolesEnum } from 'src/interfaces/types';
 import { Auth } from 'src/decorators/auth.decorator';
 import { Roles } from 'src/decorators/access.decorator';
+import { UpdateUsersDto } from './dto/updateUser.dto';
 
 @Controller('api')
 @UseGuards(AuthGuard, RolesGuard)
@@ -220,5 +221,14 @@ export class UserController {
     @Roles([RolesEnum.UpdateUsers])
     async get_users(@Res() res: Response) {
         res.status(200).send(await this.userService.getUsers());
+    }
+
+    @Put('/users/:username')
+    @Auth(AuthEnum.Strict)
+    @Roles([RolesEnum.UpdateUsers])
+    @UsePipes(new ValidationPipe({ whitelist: true }))
+    async update_user(@Param('username') username: string, @Res() res: Response, @Body() body: UpdateUsersDto) {
+        const data = await this.userService.updateUser(username, body);
+        res.status(data.statusCode).send(data);
     }
 }

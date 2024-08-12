@@ -8,6 +8,8 @@ import { generate_response } from '../app.service';
 import { NotificationService } from '../notifications/notifications.service';
 import { hasAccess, Session } from 'src/oauth/oauth.module';
 import { RolesEnum } from 'src/interfaces/types';
+import { CreateBandageDto } from './dto/createBandage.dto';
+import { EditBandageDto } from './dto/editBandage.dto';
 
 const moderation_id = [4, 13];  // на проверке, отклонено
 const official_id = 0;
@@ -87,7 +89,7 @@ export class BandageService {
         if (session && session.user && hasAccess(session.user, RolesEnum.ManageBandages)) {
             admin = true;
             const data = await this.prisma.category.findMany({ where: { only_admins: true } });
-            available = Object.values(data).some(val => filters_list?.includes(String(val.id)));
+            available = data.some(val => filters_list?.includes(String(val.id)));
         }
 
         const category = available ? undefined : { none: { only_admins: true } };
@@ -140,7 +142,7 @@ export class BandageService {
         }
     }
 
-    async createBandage(body: CreateBody, session: Session) {
+    async createBandage(body: CreateBandageDto, session: Session) {
         /* create bandage */
 
         let categories = [{ id: moderation_id[0] }];  // default categories
@@ -303,7 +305,7 @@ export class BandageService {
 
     }
 
-    async updateBandage(id: string, body: CreateBody, session: Session) {
+    async updateBandage(id: string, body: EditBandageDto, session: Session) {
         /* update bandage info */
 
         const bandage = await this.prisma.bandage.findFirst({ where: { externalId: id }, include: { User: true, categories: true, stars: true } });
@@ -434,37 +436,33 @@ export class BandageService {
             if (width != 16 || (height < 2 || height > 24 || height % 2 != 0) || metadata.format != 'png') {
                 return {
                     statusCode: 400,
-                    data: {
-                        message: "Invalid bandage size or format!",
-                        message_ru: "Повязка должна иметь ширину 16 пикселей, высоту от 2 до 24 пикселей и четную высоту"
-                    }
+                    message: "Invalid bandage size or format!",
+                    message_ru: "Повязка должна иметь ширину 16 пикселей, высоту от 2 до 24 пикселей и четную высоту"
+
                 };
             }
 
             if (heightInit != undefined && height !== heightInit) {
                 return {
                     statusCode: 400,
-                    data: {
-                        message: "The second bandage should be the same height as the first",
-                        message_ru: "Вторая повязка должна иметь такую ​​же высоту, как и первая"
-                    }
+                    message: "The second bandage should be the same height as the first",
+                    message_ru: "Вторая повязка должна иметь такую ​​же высоту, как и первая"
+
                 };
             }
         } catch {
             return {
                 statusCode: 500,
-                data: {
-                    message: "Error while processing base64",
-                    message_ru: "Произошла ошибка при обработке base64"
-                }
+                message: "Error while processing base64",
+                message_ru: "Произошла ошибка при обработке base64"
+
             };
         }
 
         return {
             statusCode: 200,
-            data: {
-                height: height
-            }
+            height: height
+
         };
     }
 }
