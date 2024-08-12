@@ -74,7 +74,7 @@ export class RootController {
 
     @Get('/test')
     @Auth(AuthEnum.Strict)
-    @Roles(RolesEnum.SuperAdmin)
+    @Roles([RolesEnum.SuperAdmin])
     async test() {
         return { 'statusCode': 200, 'message': 'Access granted' }
     }

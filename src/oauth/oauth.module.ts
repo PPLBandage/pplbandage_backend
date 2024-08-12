@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Bandage, Minecraft, User, UserSettings, Notifications, AccessRoles } from '@prisma/client';
 import { sign, verify } from 'jsonwebtoken';
 import axios from 'axios';
+import { RolesEnum } from 'src/interfaces/types';
 
 const discord_url = "https://discord.com/api/v10";
 const pwgood = "447699225078136832";  // pwgood server id
@@ -60,7 +61,7 @@ export interface UserFull extends User {
     Bandage: Bandage[],
     stars: Bandage[],
     notifications: Notifications[],
-    AccessRoles: AccessRoles | null
+    AccessRoles: AccessRoles[]
 }
 
 const generateCookie = (session: string, exp: number): string => {
@@ -70,8 +71,10 @@ const generateCookie = (session: string, exp: number): string => {
     return `sessionId=${session}; Path=/; Expires=${date.toUTCString()}; SameSite=Strict`;
 }
 
-export const hasAccess = (user: UserFull, level: number) =>
-    user.AccessRoles?.level ? user.AccessRoles.level >= level : level === 0;
+export const hasAccess = (user: UserFull, level: number) => {
+    const user_roles = user.AccessRoles.map((role) => role.level);
+    return user_roles.includes(level) || user_roles.includes(RolesEnum.SuperAdmin);
+}
 
 
 @Injectable()

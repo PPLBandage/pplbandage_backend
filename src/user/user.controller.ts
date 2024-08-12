@@ -217,7 +217,7 @@ export class UserController {
 
     @Get('/users')
     @Auth(AuthEnum.Strict)
-    @Roles(RolesEnum.SuperAdmin)
+    @Roles([RolesEnum.UpdateUsers])
     async get_users(@Res() res: Response) {
         res.status(200).send(await this.userService.getUsers());
     }

@@ -58,11 +58,6 @@ export class UserService {
             }
         });
 
-        let permissions = ['default'];
-        if (hasAccess(session.user, RolesEnum.SuperAdmin)) {
-            permissions.push('admin');
-        }
-
         return {
             statusCode: 200,
             userID: session.user.id,
@@ -73,7 +68,7 @@ export class UserService {
             avatar: response_data.avatar ? `https://cdn.discordapp.com/avatars/${response_data.id}/${response_data.avatar}` : `/static/favicon.ico`,
             banner_color: response_data.banner_color,
             has_unreaded_notifications: session.user.has_unreaded_notifications,
-            permissions: permissions,
+            permissions: session.user.AccessRoles.map((role) => role.name.toLowerCase()),
             profile_theme: session.user.UserSettings?.profile_theme
         };
     }
@@ -224,7 +219,8 @@ export class UserService {
             name: user.name,
             joined_at: user.joined_at,
             discord_id: user.discordId,
-            banned: user.UserSettings?.banned
+            banned: user.UserSettings?.banned,
+            permissions: user.AccessRoles?.map((role) => role.name.toLowerCase())
         }));
     }
 }
