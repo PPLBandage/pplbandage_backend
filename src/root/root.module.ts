@@ -14,6 +14,7 @@ import { UserController } from 'src/user/user.controller';
 import { minecraftController } from 'src/minecraft/minecraft.controller';
 import { OauthController } from 'src/oauth/oauth.controller';
 import { OauthService } from 'src/oauth/oauth.module';
+import { DiscordNotificationService } from 'src/notifications/discord.service';
 
 ConfigModule.forRoot();
 
@@ -25,7 +26,9 @@ ConfigModule.forRoot();
 		MinecraftService,
 		OauthService,
 		AuthGuard,
-		NotificationService],
+		NotificationService,
+		DiscordNotificationService
+	],
 	controllers: [RootController, WorkshopController, UserController, minecraftController, OauthController],
 	imports: [
 		ThrottlerModule.forRoot([{

@@ -10,10 +10,11 @@ import { hasAccess, Session } from 'src/oauth/oauth.module';
 import { RolesEnum } from 'src/interfaces/types';
 import { CreateBandageDto } from './dto/createBandage.dto';
 import { EditBandageDto } from './dto/editBandage.dto';
+import { DiscordNotificationService } from 'src/notifications/discord.service';
 
 const moderation_id = [4, 13];  // на проверке, отклонено
 const official_id = 0;
-const discord_url = "https://discord.com/api/v10";
+
 
 interface BandageSearch {
     title?: { contains: string },
@@ -54,8 +55,8 @@ const rgbToHex = (r: number, g: number, b: number) => {
 @Injectable()
 export class BandageService {
     constructor(private prisma: PrismaService,
-        private users: UserService,
-        private notifications: NotificationService
+        private notifications: NotificationService,
+        private discordNotifications: DiscordNotificationService
     ) { }
 
     async getBandagesCount() {
@@ -187,14 +188,7 @@ export class BandageService {
             }
         });
 
-        await axios.post(`${discord_url}/channels/${process.env.MODERATION_CHANNEL_ID}/messages`, {
-            content: `<@&${process.env.MENTION_ROLE_ID}> New bandage "${result.title}" created by ${session.user.name}!\nhttps://pplbandage.ru/workshop/${result.externalId}`
-        }, {
-            validateStatus: () => true,
-            headers: {
-                Authorization: `Bot ${process.env.BOT_TOKEN}`
-            }
-        });
+        this.discordNotifications.doNotification(`<@&${process.env.MENTION_ROLE_ID}> New bandage "${result.title}" created by ${session.user.name}!\nhttps://pplbandage.ru/workshop/${result.externalId}`);
 
         this.notifications.createNotification(session.user.id, {
             content: `Повязка <a href="/workshop/${result.externalId}"><b>${result.title}</b></a> создана и отправлена на проверку!`

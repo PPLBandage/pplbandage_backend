@@ -48,9 +48,7 @@ export class UserService {
             return { message: "Unable to get user", statusCode: 401 };
         }
 
-
         const response_data = await this.getCurrentData(session.user.discordId);
-
         const updated_user = await this.prisma.user.update({
             where: { id: session.user.id },
             data: {
@@ -83,11 +81,11 @@ export class UserService {
         /* get user's settings */
 
         const minecraft = session.user.profile ? {
-            nickname: session.user.profile?.nickname,
-            uuid: session.user.profile?.uuid,
-            last_cached: Number(session.user.profile?.expires) - parseInt(process.env.TTL as string),
-            head: session.user.profile?.data_head,
-            valid: session.user.profile?.valid,
+            nickname: session.user.profile.default_nick,
+            uuid: session.user.profile.uuid,
+            last_cached: Number(session.user.profile.expires) - parseInt(process.env.TTL as string),
+            head: session.user.profile.data_head,
+            valid: session.user.profile.valid,
             autoload: session.user.UserSettings?.autoload
         } : null;
 
