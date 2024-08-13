@@ -1,7 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Response } from 'express';
-import { RequestSessionWeak } from 'src/app.service';
+import { RequestSessionWeak } from 'src/common/bandage_response.module';
 import { Roles } from 'src/decorators/access.decorator';
 import { RolesEnum } from 'src/interfaces/types';
 

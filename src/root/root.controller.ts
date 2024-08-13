@@ -8,7 +8,6 @@ import { RolesGuard } from 'src/guards/roles.guard';
 import { Auth } from 'src/decorators/auth.decorator';
 import { AuthEnum, RolesEnum } from 'src/interfaces/types';
 import { Roles } from 'src/decorators/access.decorator';
-import { RequestSession } from 'src/app.service';
 
 
 export const UNAUTHORIZED = {

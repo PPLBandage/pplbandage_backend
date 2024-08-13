@@ -1,16 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { UserService } from '../user/user.module';
 import { Prisma } from '@prisma/client';
-import axios from 'axios';
 import * as sharp from 'sharp';
-import { generate_response } from '../app.service';
 import { NotificationService } from '../notifications/notifications.service';
 import { hasAccess, Session } from 'src/oauth/oauth.module';
 import { RolesEnum } from 'src/interfaces/types';
 import { CreateBandageDto } from './dto/createBandage.dto';
 import { EditBandageDto } from './dto/editBandage.dto';
 import { DiscordNotificationService } from 'src/notifications/discord.service';
+import { generate_response } from 'src/common/bandage_response.module';
 
 const moderation_id = [4, 13];  // на проверке, отклонено
 const official_id = 0;

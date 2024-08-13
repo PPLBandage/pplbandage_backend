@@ -1,10 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import axios from 'axios';
-import { generate_response } from '../app.service';
-import { hasAccess, Session } from 'src/oauth/oauth.module';
-import { RolesEnum } from 'src/interfaces/types';
+import { Session } from 'src/oauth/oauth.module';
 import { UpdateUsersDto } from './dto/updateUser.dto';
+import { generate_response } from 'src/common/bandage_response.module';
 
 const discord_url = "https://discord.com/api/v10";
 

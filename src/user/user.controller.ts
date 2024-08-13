@@ -6,12 +6,12 @@ import { NotificationService } from 'src/notifications/notifications.service';
 import { MinecraftService } from 'src/minecraft/minecraft.service';
 import { Throttle } from '@nestjs/throttler';
 import { BandageService } from 'src/workshop/bandage.service';
-import { RequestSession } from 'src/app.service';
 import { RolesGuard } from 'src/guards/roles.guard';
 import { AuthEnum, RolesEnum } from 'src/interfaces/types';
 import { Auth } from 'src/decorators/auth.decorator';
 import { Roles } from 'src/decorators/access.decorator';
 import { UpdateUsersDto } from './dto/updateUser.dto';
+import { RequestSession } from 'src/common/bandage_response.module';
 
 @Controller('api')
 @UseGuards(AuthGuard, RolesGuard)

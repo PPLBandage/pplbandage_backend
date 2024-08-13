@@ -4,11 +4,11 @@ import { BandageService } from "./bandage.service";
 import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { AuthGuard } from 'src/guards/auth.guard';
 import * as sharp from 'sharp';
-import { RequestSession } from 'src/app.service';
 import { AuthEnum } from 'src/interfaces/types';
 import { Auth } from 'src/decorators/auth.decorator';
 import { CreateBandageDto } from './dto/createBandage.dto';
 import { EditBandageDto } from './dto/editBandage.dto';
+import { RequestSession } from 'src/common/bandage_response.module';
 
 @Controller('api')
 @UseGuards(AuthGuard)
