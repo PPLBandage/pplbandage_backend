@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import axios from 'axios';
-import { Session } from 'src/oauth/oauth.module';
+import { hasAccess, Session } from 'src/oauth/oauth.module';
 import { UpdateUsersDto } from './dto/updateUser.dto';
 import { generate_response } from 'src/common/bandage_response.module';
+import { RolesEnum } from 'src/interfaces/types';
 
 const discord_url = "https://discord.com/api/v10";
 
@@ -150,7 +151,14 @@ export class UserService {
             include: { Bandage: true, UserSettings: true }
         });
 
-        if (!user || user.UserSettings?.banned || !user.UserSettings?.public_profile) {
+        if (!user) {
+            return {
+                statusCode: 404,
+                message: 'User not found'
+            }
+        }
+
+        if ((user.UserSettings?.banned || !user.UserSettings?.public_profile) && !hasAccess(session?.user, RolesEnum.UpdateUsers)) {
             return {
                 statusCode: 404,
                 message: 'User not found'
@@ -163,7 +171,7 @@ export class UserService {
             include: { categories: true, stars: true, User: { include: { UserSettings: true } } }
         });
 
-        if (bandages.length === 0) {
+        if (bandages.length === 0 && !hasAccess(session?.user, RolesEnum.UpdateUsers)) {
             return {
                 statusCode: 404,
                 message: 'User not found'

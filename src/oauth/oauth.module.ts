@@ -71,7 +71,8 @@ const generateCookie = (session: string, exp: number): string => {
     return `sessionId=${session}; Path=/; Expires=${date.toUTCString()}; SameSite=Strict`;
 }
 
-export const hasAccess = (user: UserFull, level: number) => {
+export const hasAccess = (user: UserFull | undefined, level: number) => {
+    if (!user) return false;
     const user_roles = user.AccessRoles.map((role) => role.level);
     return user_roles.includes(level) || user_roles.includes(RolesEnum.SuperAdmin);
 }
