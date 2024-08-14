@@ -158,7 +158,9 @@ export class UserService {
             }
         }
 
-        if ((user.UserSettings?.banned || !user.UserSettings?.public_profile) && !hasAccess(session?.user, RolesEnum.UpdateUsers)) {
+        const can_view = hasAccess(session?.user, RolesEnum.UpdateUsers)
+
+        if ((user.UserSettings?.banned || !user.UserSettings?.public_profile) && !can_view) {
             return {
                 statusCode: 404,
                 message: 'User not found'
@@ -167,11 +169,11 @@ export class UserService {
 
         const current_discord = await this.getCurrentData(user.discordId);
         const bandages = await this.prisma.bandage.findMany({
-            where: { userId: user.id, access_level: 2, categories: { none: { only_admins: true } } },
+            where: { userId: user.id, access_level: 2, categories: can_view ? undefined : { none: { only_admins: true } } },
             include: { categories: true, stars: true, User: { include: { UserSettings: true } } }
         });
 
-        if (bandages.length === 0 && !hasAccess(session?.user, RolesEnum.UpdateUsers)) {
+        if (bandages.length === 0 && !can_view) {
             return {
                 statusCode: 404,
                 message: 'User not found'
