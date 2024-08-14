@@ -158,8 +158,7 @@ export class UserService {
             }
         }
 
-        const can_view = hasAccess(session?.user, RolesEnum.UpdateUsers)
-
+        const can_view = hasAccess(session?.user, RolesEnum.UpdateUsers);
         if ((user.UserSettings?.banned || !user.UserSettings?.public_profile) && !can_view) {
             return {
                 statusCode: 404,
@@ -169,7 +168,7 @@ export class UserService {
 
         const current_discord = await this.getCurrentData(user.discordId);
         const bandages = await this.prisma.bandage.findMany({
-            where: { userId: user.id, access_level: 2, categories: can_view ? undefined : { none: { only_admins: true } } },
+            where: { userId: user.id, access_level: can_view ? undefined : 2, categories: can_view ? undefined : { none: { only_admins: true } } },
             include: { categories: true, stars: true, User: { include: { UserSettings: true } } }
         });
 
@@ -189,7 +188,7 @@ export class UserService {
             joined_at: user.joined_at,
             avatar: current_discord.avatar ? `https://cdn.discordapp.com/avatars/${current_discord.id}/${current_discord.avatar}` : `/static/favicon.ico`,
             banner_color: current_discord.banner_color,
-            works: generate_response(bandages, session),
+            works: generate_response(bandages, session, can_view),
             is_self: user.id == session?.user?.id,
             profile_theme: user.UserSettings?.profile_theme
         }
