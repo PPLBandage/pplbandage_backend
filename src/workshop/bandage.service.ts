@@ -260,8 +260,8 @@ export class BandageService {
         });
 
         let check = null;
-        if (Object.values(bandage.categories).some(val => val.icon.includes("clock.svg"))) check = "under review";
-        if (Object.values(bandage.categories).some(val => val.icon.includes("denied.svg"))) check = "denied";
+        if (bandage.categories.some(val => val.icon.includes("clock.svg"))) check = "under review";
+        if (bandage.categories.some(val => val.icon.includes("denied.svg"))) check = "denied";
 
         const buff = Buffer.from(bandage.base64, 'base64');
         const { data, info } = await sharp(buff).resize(1, 1, { fit: 'inside' }).extract({ left: 0, top: 0, width: 1, height: 1 }).raw().toBuffer({ resolveWithObject: true });
@@ -280,7 +280,7 @@ export class BandageService {
                 average_og_color: rgbToHex(r, g, b),
                 creation_date: bandage.creationDate,
                 stars_count: bandage.stars.length,
-                starred: Object.values(bandage.stars).some(val => val.id == session?.user.id),
+                starred: bandage.stars.some(val => val.id == session?.user.id),
                 author: {
                     id: bandage.User?.id,
                     name: bandage.User?.name,

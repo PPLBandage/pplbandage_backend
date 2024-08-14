@@ -44,7 +44,7 @@ export const generate_response = (data: BandageFull[], session: Session | null, 
             split_type: el.split_type,
             creation_date: el.creationDate,
             stars_count: el.stars.length,
-            starred: Object.values(el.stars).some(val => val.id == session?.user.id),
+            starred: el.stars.some(val => val.id == session?.user.id),
             author: {
                 id: el.User?.id,
                 name: el.User?.name,

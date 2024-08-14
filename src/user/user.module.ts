@@ -159,7 +159,7 @@ export class UserService {
 
         const current_discord = await this.getCurrentData(user.discordId);
         const bandages = await this.prisma.bandage.findMany({
-            where: { userId: user.id, access_level: 2 },
+            where: { userId: user.id, access_level: 2, categories: { none: { only_admins: true } } },
             include: { categories: true, stars: true, User: { include: { UserSettings: true } } }
         });
 
