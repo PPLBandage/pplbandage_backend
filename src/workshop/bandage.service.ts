@@ -283,7 +283,7 @@ export class BandageService {
                 starred: bandage.stars.some(val => val.id == session?.user.id),
                 author: {
                     id: bandage.User?.id,
-                    name: bandage.User?.name,
+                    name: bandage.User?.reserved_name || bandage.User?.name,
                     username: bandage.User?.username,
                     public: bandage.User?.UserSettings?.public_profile
                 },

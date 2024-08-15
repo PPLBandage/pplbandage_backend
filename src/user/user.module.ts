@@ -61,7 +61,7 @@ export class UserService {
             userID: session.user.id,
             discordID: session.user.discordId,
             username: updated_user.username,
-            name: updated_user.name,
+            name: updated_user.reserved_name || updated_user.name,
             joined_at: session.user.joined_at,
             avatar: response_data.avatar ? `https://cdn.discordapp.com/avatars/${response_data.id}/${response_data.avatar}` : `/static/favicon.ico`,
             banner_color: response_data.banner_color,
@@ -93,7 +93,7 @@ export class UserService {
         const discord = {
             user_id: session.user.discordId,
             username: session.user.username,
-            name: session.user.name,
+            name: session.user.reserved_name || session.user.name,
             connected_at: session.user.joined_at,
             avatar: current_discord.avatar ?
                 `https://cdn.discordapp.com/avatars/${current_discord.id}/${current_discord.avatar}` : null
@@ -184,7 +184,7 @@ export class UserService {
             userID: user.id,
             discordID: user.discordId,
             username: user.username,
-            name: user.name,
+            name: user.reserved_name || user.name,
             joined_at: user.joined_at,
             avatar: current_discord.avatar ? `https://cdn.discordapp.com/avatars/${current_discord.id}/${current_discord.avatar}` : `/static/favicon.ico`,
             banner_color: current_discord.banner_color,
@@ -222,7 +222,7 @@ export class UserService {
         return users.map((user) => ({
             id: user.id,
             username: user.username,
-            name: user.name,
+            name: user.reserved_name || user.name,
             joined_at: user.joined_at,
             discord_id: user.discordId,
             banned: user.UserSettings?.banned,

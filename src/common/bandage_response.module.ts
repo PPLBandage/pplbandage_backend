@@ -47,7 +47,7 @@ export const generate_response = (data: BandageFull[], session: Session | null, 
             starred: el.stars.some(val => val.id == session?.user.id),
             author: {
                 id: el.User?.id,
-                name: el.User?.name,
+                name: el.User?.reserved_name || el.User?.name,
                 username: el.User?.username,
                 public: el.User?.UserSettings?.public_profile
             },
