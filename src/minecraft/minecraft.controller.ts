@@ -77,7 +77,7 @@ export class minecraftController {
         return cache;
     }
 
-    @Get('/beta/head/:name')
+    @Get('/head/:name/svg')
     async beta_head(@Param('name') name: string, @Res({ passthrough: true }) res: Response, @Query() query: { pixel_width: number }) {
         /* Generate SVG head */
 
