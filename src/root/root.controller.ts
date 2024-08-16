@@ -62,7 +62,13 @@ export class RootController {
             priority: 0.6
         })));
 
-        const users = await this.prisma.user.findMany({ where: { Bandage: { some: {} }, UserSettings: { banned: false, public_profile: true } } });
+        const users = await this.prisma.user.findMany({
+            where: {
+                discordId: { gte: '0' },
+                Bandage: { some: {} },
+                UserSettings: { banned: false, public_profile: true }
+            }
+        });
         urls = urls.concat(users.map((user) => ({
             loc: `https://pplbandage.ru/users/${user.username}`,
             priority: 0.5
