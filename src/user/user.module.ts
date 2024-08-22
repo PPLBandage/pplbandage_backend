@@ -31,12 +31,17 @@ interface DiscordUser {
 export class UserService {
     constructor(private prisma: PrismaService) { }
 
-    async getCurrentData(user_id: string): Promise<DiscordUser> {
+    async getCurrentData(user_id: string): Promise<DiscordUser | null> {
         const response = await axios.get(`${discord_url}/users/${user_id}`, {
             headers: {
                 Authorization: `Bot ${process.env.BOT_TOKEN}`
-            }
+            },
+            validateStatus: () => true
         });
+
+        if (response.status !== 200) {
+            return null;
+        }
         return response.data as DiscordUser;
     }
 
@@ -45,10 +50,20 @@ export class UserService {
 
         if (session.user.UserSettings?.banned) {
             await this.prisma.sessions.deleteMany({ where: { userId: session.user.id } });
-            return { message: "Unable to get user", statusCode: 401 };
+            return {
+                message: "Unable to get user",
+                statusCode: 401
+            };
         }
 
         const response_data = await this.getCurrentData(session.user.discordId);
+
+        if (!response_data) {
+            return {
+                statusCode: 404,
+                message: 'Unable to get user data'
+            }
+        }
         const updated_user = await this.prisma.user.update({
             where: { id: session.user.id },
             data: {
@@ -90,6 +105,14 @@ export class UserService {
         } : null;
 
         const current_discord = await this.getCurrentData(session.user.discordId);
+
+        if (!current_discord) {
+            return {
+                statusCode: 404,
+                message: 'Unable to get user data'
+            }
+        }
+
         const discord = {
             user_id: session.user.discordId,
             username: session.user.username,
@@ -167,6 +190,14 @@ export class UserService {
         }
 
         const current_discord = await this.getCurrentData(user.discordId);
+
+        if (!current_discord) {
+            return {
+                statusCode: 404,
+                message: 'Unable to get user data'
+            }
+        }
+
         const bandages = await this.prisma.bandage.findMany({
             where: { userId: user.id, access_level: can_view ? undefined : 2, categories: can_view ? undefined : { none: { only_admins: true } } },
             include: { categories: true, stars: true, User: { include: { UserSettings: true } } }
@@ -204,7 +235,10 @@ export class UserService {
         const result = await this.prisma.userSettings.update({
             where: { userId: session.user.id }, data: { autoload: state }
         })
-        return { statusCode: 200, new_data: result.autoload };
+        return {
+            statusCode: 200,
+            new_data: result.autoload
+        };
     }
 
     async setPublic(session: Session, state: boolean) {
