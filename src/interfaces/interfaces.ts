@@ -28,9 +28,6 @@ interface Profile {
     properties: Properties[];
 }
 
-interface DefaultResponse {
-    message: string;
-}
 
 interface SearchUnit {
     name: string,
@@ -80,14 +77,4 @@ interface Notifications {
     author?: string,
     type?: number,
     creation_date?: Date
-}
-
-interface CreateBody {
-    base64: string,
-    base64_slim?: string,
-    title: string,
-    description: string,
-    categories: number[],
-    access_level: number,
-    split_type?: boolean
 }
