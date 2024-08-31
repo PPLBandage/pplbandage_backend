@@ -71,11 +71,8 @@ export class UserService {
             }
         });
 
-        const stars_count = await this.prisma.user.count({
-            where: {
-                stars: { some: { userId: session.user.id } }
-            }
-        });
+        const starred_bandages = await this.prisma.bandage.findMany({ where: { userId: session.user.id, stars: { some: {} } }, include: { stars: true } });
+        const stars_count = starred_bandages.reduce((acc, current_val) => acc + current_val.stars.length, 0);
 
         return {
             statusCode: 200,
@@ -217,11 +214,8 @@ export class UserService {
             }
         }
 
-        const stars_count = await this.prisma.user.count({
-            where: {
-                stars: { some: { userId: user.id } }
-            }
-        });
+        const starred_bandages = await this.prisma.bandage.findMany({ where: { userId: user.id, stars: { some: {} } }, include: { stars: true } });
+        const stars_count = starred_bandages.reduce((acc, current_val) => acc + current_val.stars.length, 0);
 
         return {
             statusCode: 200,
