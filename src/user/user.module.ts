@@ -71,6 +71,12 @@ export class UserService {
             }
         });
 
+        const stars_count = await this.prisma.user.count({
+            where: {
+                stars: { some: { userId: session.user.id } }
+            }
+        });
+
         return {
             statusCode: 200,
             userID: session.user.id,
@@ -82,7 +88,8 @@ export class UserService {
             banner_color: response_data.banner_color,
             has_unreaded_notifications: session.user.has_unreaded_notifications,
             permissions: session.user.AccessRoles.map((role) => role.name.toLowerCase()),
-            profile_theme: session.user.UserSettings?.profile_theme
+            profile_theme: session.user.UserSettings?.profile_theme,
+            stars_count: stars_count
         };
     }
 
@@ -210,6 +217,12 @@ export class UserService {
             }
         }
 
+        const stars_count = await this.prisma.user.count({
+            where: {
+                stars: { some: { userId: user.id } }
+            }
+        });
+
         return {
             statusCode: 200,
             userID: user.id,
@@ -221,7 +234,8 @@ export class UserService {
             banner_color: current_discord.banner_color,
             works: generate_response(bandages, session, can_view),
             is_self: user.id == session?.user?.id,
-            profile_theme: user.UserSettings?.profile_theme
+            profile_theme: user.UserSettings?.profile_theme,
+            stars_count: stars_count
         }
     }
 
