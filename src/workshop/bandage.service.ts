@@ -260,8 +260,8 @@ export class BandageService {
         });
 
         let check = null;
-        if (bandage.categories.some(val => val.icon.includes("clock.svg"))) check = "under review";
-        if (bandage.categories.some(val => val.icon.includes("denied.svg"))) check = "denied";
+        if (bandage.categories.some(val => val.id === 4)) check = "under review";
+        if (bandage.categories.some(val => val.id === 13)) check = "denied";
 
         const buff = Buffer.from(bandage.base64, 'base64');
         const { data, info } = await sharp(buff).resize(1, 1, { fit: 'inside' }).extract({ left: 0, top: 0, width: 1, height: 1 }).raw().toBuffer({ resolveWithObject: true });
