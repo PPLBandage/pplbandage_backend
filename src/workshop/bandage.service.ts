@@ -285,7 +285,7 @@ export class BandageService {
                     id: bandage.User?.id,
                     name: bandage.User?.reserved_name || bandage.User?.name,
                     username: bandage.User?.username,
-                    public: bandage.User?.UserSettings?.public_profile
+                    public: bandage.User && bandage.User?.id > 0 ? bandage.User?.UserSettings?.public_profile : false
                 },
                 categories: categories,
                 me_profile: me_profile,
