@@ -49,7 +49,7 @@ export const generate_response = (data: BandageFull[], session: Session | null, 
                 id: el.User?.id,
                 name: el.User?.reserved_name || el.User?.name,
                 username: el.User?.username,
-                public: el.User?.UserSettings?.public_profile
+                public: el.User && Number(el.User?.discordId) > 0 ? el.User?.UserSettings?.public_profile : false
             },
             categories: categories.filter((el) => el !== undefined)
         }
