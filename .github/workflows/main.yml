@@ -28,6 +28,7 @@ jobs:
           sshpass -e ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
             cd /root/eldraxis
             systemctl stop eldraxis
+            npm i
             npx prisma db push
             npm run build
             systemctl start eldraxis
