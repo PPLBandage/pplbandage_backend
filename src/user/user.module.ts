@@ -1,10 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import axios from 'axios';
 import { hasAccess, Session } from 'src/oauth/oauth.module';
 import { UpdateUsersDto } from './dto/updateUser.dto';
 import { generate_response } from 'src/common/bandage_response.module';
 import { RolesEnum } from 'src/interfaces/types';
+import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
+import { Console } from 'console';
 
 const discord_url = "https://discord.com/api/v10";
 
@@ -29,19 +31,25 @@ interface DiscordUser {
 
 @Injectable()
 export class UserService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        @Inject(CACHE_MANAGER) private cacheManager: Cache
+    ) { }
 
     async getCurrentData(user_id: string): Promise<DiscordUser | null> {
+        const cache = await this.cacheManager.get<string>(`discord:${user_id}`);
+        if (cache) return JSON.parse(cache) as DiscordUser;
+
         const response = await axios.get(`${discord_url}/users/${user_id}`, {
-            headers: {
-                Authorization: `Bot ${process.env.BOT_TOKEN}`
-            },
+            headers: { Authorization: `Bot ${process.env.BOT_TOKEN}` },
             validateStatus: () => true
         });
 
         if (response.status !== 200) {
             return null;
         }
+
+        await this.cacheManager.set(`discord:${user_id}`, JSON.stringify(response.data), 1000 * 60 * 60);
         return response.data as DiscordUser;
     }
 

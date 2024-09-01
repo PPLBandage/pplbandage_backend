@@ -15,6 +15,7 @@ import { minecraftController } from 'src/minecraft/minecraft.controller';
 import { OauthController } from 'src/oauth/oauth.controller';
 import { OauthService } from 'src/oauth/oauth.module';
 import { DiscordNotificationService } from 'src/notifications/discord.service';
+import { CacheModule } from '@nestjs/cache-manager';
 
 ConfigModule.forRoot();
 
@@ -34,7 +35,8 @@ ConfigModule.forRoot();
 		ThrottlerModule.forRoot([{
 			ttl: 60000,
 			limit: 150,
-		}])
+		}]),
+		CacheModule.register()
 	]
 })
 export class RootModule { }
