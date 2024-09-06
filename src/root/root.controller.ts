@@ -1,7 +1,7 @@
 import { Controller, Get, Header, Req, Res, UseGuards } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
 import type { Response } from 'express'
-import { generateSitemap, SitemapProps } from './sitemap.module';
+import { generateSitemap, SitemapProps } from './sitemap';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { RolesGuard } from 'src/guards/roles.guard';

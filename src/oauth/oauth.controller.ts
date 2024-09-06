@@ -1,7 +1,7 @@
 import { Controller, Get, HttpStatus, Param, Req, Res, Delete, Post } from '@nestjs/common';
 import type { Request, Response } from 'express'
 import { UNAUTHORIZED } from 'src/root/root.controller';
-import { OauthService } from './oauth.module';
+import { OauthService } from './oauth.service';
 
 @Controller('api')
 export class OauthController {

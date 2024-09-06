@@ -1,7 +1,7 @@
 import { Controller, Get, HttpStatus, Param, Query, Req, Res, Delete, Put, Post, Body, UseGuards, ValidationPipe, UsePipes } from '@nestjs/common';
 import type { Response } from 'express'
 import { AuthGuard } from 'src/guards/auth.guard';
-import { UserService } from './user.module';
+import { UserService } from './user.service';
 import { NotificationService } from 'src/notifications/notifications.service';
 import { MinecraftService } from 'src/minecraft/minecraft.service';
 import { Throttle } from '@nestjs/throttler';
@@ -11,7 +11,7 @@ import { AuthEnum, RolesEnum } from 'src/interfaces/types';
 import { Auth } from 'src/decorators/auth.decorator';
 import { Roles } from 'src/decorators/access.decorator';
 import { UpdateUsersDto } from './dto/updateUser.dto';
-import { RequestSession } from 'src/common/bandage_response.module';
+import { RequestSession } from 'src/common/bandage_response';
 
 @Controller('api')
 @UseGuards(AuthGuard, RolesGuard)

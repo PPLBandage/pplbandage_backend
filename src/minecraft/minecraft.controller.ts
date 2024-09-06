@@ -1,7 +1,7 @@
 import { Controller, Get, HttpStatus, Param, Query, Res, StreamableFile, HttpException } from '@nestjs/common';
 import type { Response } from 'express'
 import { MinecraftService } from 'src/minecraft/minecraft.service';
-import { generateSvg } from './svg.module';
+import { generateSvg } from './svg';
 import * as sharp from 'sharp';
 
 @Controller('api')

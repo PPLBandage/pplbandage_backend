@@ -1,7 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Response } from 'express';
 import { UNAUTHORIZED } from '../root/root.controller';
-import { OauthService } from 'src/oauth/oauth.module';
+import { OauthService } from 'src/oauth/oauth.service';
 import { Reflector } from '@nestjs/core';
 import { Auth } from 'src/decorators/auth.decorator';
 import { PrismaService } from 'src/prisma/prisma.service';

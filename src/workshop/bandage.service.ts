@@ -3,12 +3,12 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import * as sharp from 'sharp';
 import { NotificationService } from '../notifications/notifications.service';
-import { hasAccess, Session } from 'src/oauth/oauth.module';
+import { hasAccess, Session } from 'src/oauth/oauth.service';
 import { RolesEnum } from 'src/interfaces/types';
 import { CreateBandageDto } from './dto/createBandage.dto';
 import { EditBandageDto } from './dto/editBandage.dto';
 import { DiscordNotificationService } from 'src/notifications/discord.service';
-import { generate_response } from 'src/common/bandage_response.module';
+import { generate_response } from 'src/common/bandage_response';
 
 const moderation_id = [4, 13];  // на проверке, отклонено
 const official_id = 0;

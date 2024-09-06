@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import axios from 'axios';
-import { hasAccess, Session } from 'src/oauth/oauth.module';
+import { hasAccess, Session } from 'src/oauth/oauth.service';
 import { UpdateUsersDto } from './dto/updateUser.dto';
-import { generate_response } from 'src/common/bandage_response.module';
+import { generate_response } from 'src/common/bandage_response';
 import { RolesEnum } from 'src/interfaces/types';
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 import { Console } from 'console';

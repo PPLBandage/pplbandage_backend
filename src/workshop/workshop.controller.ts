@@ -8,7 +8,7 @@ import { AuthEnum } from 'src/interfaces/types';
 import { Auth } from 'src/decorators/auth.decorator';
 import { CreateBandageDto } from './dto/createBandage.dto';
 import { EditBandageDto } from './dto/editBandage.dto';
-import { RequestSession } from 'src/common/bandage_response.module';
+import { RequestSession } from 'src/common/bandage_response';
 
 @Controller('api')
 @UseGuards(AuthGuard)

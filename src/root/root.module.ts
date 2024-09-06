@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { RootController } from './root.controller';
 import { ConfigModule } from '@nestjs/config';
-import { UserService } from 'src/user/user.module';
+import { UserService } from 'src/user/user.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { BandageService } from 'src/workshop/bandage.service';
 import { MinecraftService } from '../minecraft/minecraft.service';
@@ -13,7 +13,7 @@ import { WorkshopController } from 'src/workshop/workshop.controller';
 import { UserController } from 'src/user/user.controller';
 import { minecraftController } from 'src/minecraft/minecraft.controller';
 import { OauthController } from 'src/oauth/oauth.controller';
-import { OauthService } from 'src/oauth/oauth.module';
+import { OauthService } from 'src/oauth/oauth.service';
 import { DiscordNotificationService } from 'src/notifications/discord.service';
 import { CacheModule } from '@nestjs/cache-manager';
 
