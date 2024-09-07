@@ -21,6 +21,6 @@ async function bootstrap() {
 	app.use(morgan(':method :url :status - :response-time ms'));
 	app.useBodyParser('json', { limit: '10mb' });
 	app.use(cookieParser());
-	await app.listen(8082);
+	await app.listen(8001);
 }
 bootstrap();

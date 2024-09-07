@@ -11,7 +11,7 @@ services:
     networks:
       - nginx
     restart: unless-stopped
-    command: npm run start:prod
+    command: npm run start
 
 volumes:
   prisma:
