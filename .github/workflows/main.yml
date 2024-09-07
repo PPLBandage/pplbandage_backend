@@ -15,21 +15,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Copy files via SCP
-        env:
-          SSHPASS: ${{ secrets.ROOT_SSH_PASSWORD }}
-        run: |
-          sshpass -e scp -o StrictHostKeyChecking=no -r ./* root@${{ secrets.SERVER_IP }}:/root/eldraxis
-
       - name: Execute remote commands
         env:
           SSHPASS: ${{ secrets.ROOT_SSH_PASSWORD }}
         run: |
           sshpass -e ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
-            cd /root/eldraxis
-            systemctl stop eldraxis
-            npm i
-            npx prisma db push
-            npm run build
-            systemctl start eldraxis
+            cd /home/andcoolsystems/PPLBandage_Backend
+            git pull
+            docker compose build
+            docker compose up -d
           EOF
