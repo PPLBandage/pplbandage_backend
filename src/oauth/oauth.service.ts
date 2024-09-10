@@ -4,6 +4,7 @@ import { Bandage, Minecraft, User, UserSettings, Notifications, AccessRoles } fr
 import { sign, verify } from 'jsonwebtoken';
 import axios from 'axios';
 import { RolesEnum } from 'src/interfaces/types';
+import { UserService } from 'src/user/user.service';
 
 const discord_url = "https://discord.com/api/v10";
 const pwgood = "447699225078136832";  // pwgood server id
@@ -80,7 +81,9 @@ export const hasAccess = (user: UserFull | undefined, level: number) => {
 
 @Injectable()
 export class OauthService {
-    constructor(private prisma: PrismaService) { }
+    constructor(private prisma: PrismaService,
+        private readonly userService: UserService
+    ) { }
 
     async getRoles() {
         return (await this.prisma.roles.findMany()).reverse();
@@ -106,6 +109,23 @@ export class OauthService {
             }
         }
         return false;
+    }
+
+    async resolveCollisions(username: string) {
+        const users = await this.prisma.user.findMany({ where: { username: username } });
+        if (users.length <= 1) return;
+
+        await Promise.all(users.map(async user => {
+            const current_data = await this.userService.getCurrentData(user.discordId);
+            if (!current_data) return;
+            await this.prisma.user.update({
+                where: { id: user.id },
+                data: {
+                    username: current_data.username,
+                    name: current_data.global_name || current_data.username
+                }
+            });
+        }));
     }
 
     async login(code: string, user_agent: string) {
@@ -153,6 +173,8 @@ export class OauthService {
             update: {},
             include: { UserSettings: true }
         });
+
+        await this.resolveCollisions(user_db.username);
         if (user_db.UserSettings?.banned) {
             await this.prisma.sessions.deleteMany({ where: { userId: user_db.id } });
             return { message: "Unable to login", statusCode: 403 };

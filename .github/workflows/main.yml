@@ -21,7 +21,9 @@ jobs:
         run: |
           sshpass -e ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
             cd /home/andcoolsystems/PPLBandage_Backend
-            git pull
+            git fetch
+            git stash
+            git merge '@{u}'
             docker compose build
             docker compose up -d
           EOF
