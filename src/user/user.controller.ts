@@ -182,6 +182,13 @@ export class UserController {
         res.status(data.statusCode).send(data);
     }
 
+    @Get("/users/:username/og")
+    async userOg(@Param('username') username: string, @Res() res: Response): Promise<void> {
+        /* get user data by nickname */
+
+        const data = await this.userService.getUserOg(username);
+        res.status(data.statusCode).send(data);
+    }
 
     @Put("/star/:id")
     @Auth(AuthEnum.Strict)

@@ -179,11 +179,25 @@ export class UserService {
         return { statusCode: 200, data: generate_response(result, session) };
     }
 
-    async getUserByNickname(username: string, session: Session | null) {
+    async _getUserByNickname(username: string, session: Session | null) {
         const user = await this.prisma.user.findFirst({
             where: { username: username },
             include: { Bandage: true, UserSettings: true }
         });
+
+        if (!user) {
+            return null;
+        }
+
+        const can_view = hasAccess(session?.user, RolesEnum.UpdateUsers);
+        if ((user.UserSettings?.banned || !user.UserSettings?.public_profile) && !can_view) {
+            return null;
+        }
+        return user;
+    }
+
+    async getUserByNickname(username: string, session: Session | null) {
+        const user = await this._getUserByNickname(username, session);
 
         if (!user) {
             return {
@@ -193,13 +207,6 @@ export class UserService {
         }
 
         const can_view = hasAccess(session?.user, RolesEnum.UpdateUsers);
-        if ((user.UserSettings?.banned || !user.UserSettings?.public_profile) && !can_view) {
-            return {
-                statusCode: 404,
-                message: 'User not found'
-            }
-        }
-
         const current_discord = await this.getCurrentData(user.discordId);
 
         if (!current_discord) {
@@ -237,6 +244,34 @@ export class UserService {
             is_self: user.id == session?.user?.id,
             profile_theme: user.UserSettings?.profile_theme,
             stars_count: stars_count
+        }
+    }
+
+    async getUserOg(username: string) {
+        const user = await this._getUserByNickname(username, null);
+        if (!user) {
+            return {
+                statusCode: 404,
+                message: 'User not found'
+            }
+        }
+        const current_discord = await this.getCurrentData(user.discordId);
+
+        if (!current_discord) {
+            return {
+                statusCode: 404,
+                message: 'Unable to get user data'
+            }
+        }
+
+        return {
+            statusCode: 200,
+            discordID: user.discordId,
+            username: user.username,
+            name: user.reserved_name || user.name,
+            avatar: current_discord.avatar ? `https://cdn.discordapp.com/avatars/${current_discord.id}/${current_discord.avatar}` : `/static/favicon.ico`,
+            banner_color: current_discord.banner_color,
+            works_count: user.Bandage.length,
         }
     }
 
