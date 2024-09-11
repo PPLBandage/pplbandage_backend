@@ -6,7 +6,6 @@ import { UpdateUsersDto } from './dto/updateUser.dto';
 import { generate_response } from 'src/common/bandage_response';
 import { RolesEnum } from 'src/interfaces/types';
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
-import { Console } from 'console';
 
 const discord_url = "https://discord.com/api/v10";
 

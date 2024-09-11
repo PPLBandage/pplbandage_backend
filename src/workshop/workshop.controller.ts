@@ -1,5 +1,5 @@
 import { Controller, Get, HttpStatus, Param, Query, Req, Res, StreamableFile, Delete, Put, Post, Body, UseGuards, ValidationPipe, UsePipes } from '@nestjs/common';
-import type { Response } from 'express'
+import type { Response, Request } from 'express'
 import { BandageService } from "./bandage.service";
 import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { AuthGuard } from 'src/guards/auth.guard';
@@ -79,6 +79,19 @@ export class WorkshopController {
             return;
         }
         const data = await this.bandageService.getBandage(id, request.session);
+        res.status(data.statusCode).send(data);
+    }
+
+    @Get("/workshop/:id/info")
+    @SkipThrottle()
+    async getBandageOg(@Param('id') id: string, @Req() request: Request, @Res() res: Response): Promise<void> {
+        /* get bandage info by external id (internal endpoint) */
+
+        if (request.headers['unique-access'] !== process.env.WORKSHOP_TOKEN) {
+            res.status(403).send({ message: 'Forbidden', statusCode: 403 });
+            return;
+        }
+        const data = await this.bandageService.getDataForOg(id);
         res.status(data.statusCode).send(data);
     }
 

@@ -218,28 +218,69 @@ export class BandageService {
         return categories;
     }
 
-    async getBandage(id: string, session: Session) {
-        /* get bandage by external id */
-
+    async _getBandage(id: string, session: Session | null) {
         const bandage = await this.prisma.bandage.findFirst({
             where: { externalId: id },
             include: { User: { include: { UserSettings: true } }, categories: true, stars: true }
         });
+        if (!bandage) {
+            return null;
+        }
+        const hidden = bandage.categories.some(val => val.only_admins);
+        const no_access = session ? !hasAccess(session.user, RolesEnum.ManageBandages) && session.user.id !== bandage.User?.id : true;
+        if ((hidden || bandage.access_level === 0) && no_access) {
+            return null;
+        }
+
+        return bandage;
+    }
+
+    async getDataForOg(id: string) {
+        const bandage = await this._getBandage(id, null);
+
         if (!bandage) {
             return {
                 message: "Bandage not found",
                 statusCode: 404
             };
         }
-        const hidden = bandage.categories.some(val => val.only_admins);
-        const no_access = session ? !hasAccess(session.user, RolesEnum.ManageBandages) && session.user.id !== bandage.User?.id : true;
-        if ((hidden || bandage.access_level === 0) && no_access) {
+
+        const buff = Buffer.from(bandage.base64, 'base64');
+        const { data } = await sharp(buff).resize(1, 1, { fit: 'inside' }).extract({ left: 0, top: 0, width: 1, height: 1 }).raw().toBuffer({ resolveWithObject: true });
+        const [r, g, b, a] = data;
+
+        return {
+            statusCode: 200,
+            data: {
+                id: bandage.id,
+                external_id: bandage.externalId,
+                title: bandage.title,
+                description: bandage.description,
+                average_og_color: rgbToHex(r, g, b),
+                stars_count: bandage.stars.length,
+                author: {
+                    id: bandage.User?.id,
+                    name: bandage.User?.reserved_name || bandage.User?.name,
+                    username: bandage.User?.username,
+                    public: bandage.User && Number(bandage.User?.discordId) > 0 ? bandage.User?.UserSettings?.public_profile : false
+                }
+            }
+        }
+    }
+
+    async getBandage(id: string, session: Session) {
+        /* get bandage by external id */
+
+        const bandage = await this._getBandage(id, session);
+
+        if (!bandage) {
             return {
                 message: "Bandage not found",
                 statusCode: 404
             };
         }
 
+        const hidden = bandage.categories.some(val => val.only_admins);
         let permissions_level = 0;
         if (session) {
             if (session.user.id === bandage.User?.id) permissions_level = 1;
@@ -263,10 +304,6 @@ export class BandageService {
         if (bandage.categories.some(val => val.id === 4)) check = "under review";
         if (bandage.categories.some(val => val.id === 13)) check = "denied";
 
-        const buff = Buffer.from(bandage.base64, 'base64');
-        const { data, info } = await sharp(buff).resize(1, 1, { fit: 'inside' }).extract({ left: 0, top: 0, width: 1, height: 1 }).raw().toBuffer({ resolveWithObject: true });
-        const [r, g, b, a] = data;
-
         return {
             statusCode: 200,
             data: {
@@ -277,7 +314,6 @@ export class BandageService {
                 base64: bandage.base64,
                 base64_slim: bandage.split_type ? bandage.base64_slim : undefined,
                 split_type: bandage.split_type,
-                average_og_color: rgbToHex(r, g, b),
                 creation_date: bandage.creationDate,
                 stars_count: bandage.stars.length,
                 starred: bandage.stars.some(val => val.id == session?.user.id),
