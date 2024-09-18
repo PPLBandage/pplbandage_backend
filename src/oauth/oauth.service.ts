@@ -8,6 +8,7 @@ import { UserService } from 'src/user/user.service';
 
 const discord_url = "https://discord.com/api/v10";
 const pwgood = "447699225078136832";  // pwgood server id
+const EPOCH = 1672531200000n;
 
 interface DiscordResponse {
     token_type: string,
@@ -76,6 +77,12 @@ export const hasAccess = (user: UserFull | undefined, level: number) => {
     if (!user) return false;
     const user_roles = user.AccessRoles.map((role) => role.level);
     return user_roles.includes(level) || user_roles.includes(RolesEnum.SuperAdmin);
+}
+
+const generateSnowflake = (increment = 0n) => {
+    const timestamp = BigInt(Date.now()) - EPOCH;
+    const snowflake = (timestamp << 22n) | increment;
+    return snowflake.toString();
 }
 
 
@@ -159,9 +166,12 @@ export class OauthService {
             return { message: "You are not on ppl", statusCode: 403 };
         }
 
+        const users_count = await this.prisma.user.count();
+
         const user_db = await this.prisma.user.upsert({
             where: { discordId: ds_user.id },
             create: {
+                id: generateSnowflake(BigInt(users_count)),
                 discordId: ds_user.id,
                 username: ds_user.username,
                 name: ds_user.global_name || ds_user.username,

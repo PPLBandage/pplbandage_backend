@@ -19,12 +19,12 @@ model Minecraft {
     valid        Boolean @default(true)
     slim         Boolean @default(false)
 
-    user   User? @relation(fields: [userId], references: [id])
-    userId Int?  @unique
+    user   User?   @relation(fields: [userId], references: [id])
+    userId String? @unique
 }
 
 model User {
-    id                         Int             @id @default(autoincrement())
+    id                         String          @id
     username                   String          @default("")
     reserved_name              String?
     name                       String          @default("")
@@ -44,7 +44,7 @@ model User {
 model UserSettings {
     id             Int     @id @default(autoincrement())
     User           User    @relation(fields: [userId], references: [id])
-    userId         Int     @unique
+    userId         String  @unique
     banned         Boolean @default(false)
     profile_theme  Int     @default(0)
     autoload       Boolean @default(true)
@@ -63,7 +63,7 @@ model Sessions {
     sessionId  String @unique @default("")
     User_Agent String @default("")
     User       User   @relation(fields: [userId], references: [id])
-    userId     Int
+    userId     String
 }
 
 model Bandage {
@@ -75,7 +75,7 @@ model Bandage {
     base64_slim  String     @default("")
     split_type   Boolean    @default(false)
     User         User?      @relation("UserBandages", fields: [userId], references: [id])
-    userId       Int?
+    userId       String?
     creationDate DateTime   @default(now())
     stars        User[]     @relation("UserStars")
     categories   Category[] @relation("Categories")

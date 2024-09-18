@@ -377,14 +377,14 @@ export class BandageService {
             const difference = bandage_categories.filter((element) => !validated_categories.includes(element));
             const difference_after = validated_categories.filter((element) => !bandage_categories.includes(element));
             if (difference_after.includes(moderation_id[1])) {
-                this.notifications.createNotification(bandage.userId as number, {
+                this.notifications.createNotification(bandage.userId, {
                     content: `Повязка <a href="/workshop/${bandage.externalId}"><b>${bandage.title}</b></a> была отклонена. Пожалуйста, свяжитесь с <a href="/contacts"><b>администрацией</b></a> для уточнения причин.`,
                     type: 2
                 });
             }
 
             else if (moderation_id.some(element => difference.includes(element))) {
-                this.notifications.createNotification(bandage.userId as number, {
+                this.notifications.createNotification(bandage.userId, {
                     content: `Повязка <a href="/workshop/${bandage.externalId}"><b>${bandage.title}</b></a> успешно прошла проверку и теперь доступна остальным в <a href="/workshop"><b>мастерской</b></a>!`,
                     type: 1
                 });

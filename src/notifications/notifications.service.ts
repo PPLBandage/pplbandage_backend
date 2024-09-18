@@ -28,7 +28,8 @@ export class NotificationService {
         return { data: notifications, total_count: count };
     }
 
-    async createNotification(userId: number, notification: Notifications) {
+    async createNotification(userId: string | null, notification: Notifications) {
+        if (!userId) return;
         const notification_db = await this.prisma.notifications.create({
             data: {
                 users: { connect: { id: userId } },
