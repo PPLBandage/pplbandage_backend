@@ -49,6 +49,7 @@ model UserSettings {
     profile_theme  Int     @default(0)
     autoload       Boolean @default(true)
     public_profile Boolean @default(true)
+    skip_ppl_check Boolean @default(false)
 }
 
 model AccessRoles {

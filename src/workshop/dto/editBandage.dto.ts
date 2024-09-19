@@ -1,4 +1,4 @@
-import { IsArray, IsBoolean, IsNumber, IsOptional, IsString, Length, MaxLength, MinLength } from 'class-validator';
+import { IsArray, IsNumber, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class EditBandageDto {
     @IsString({ message: 'Поле `title` должно иметь тип string' })

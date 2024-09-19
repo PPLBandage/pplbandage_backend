@@ -79,7 +79,7 @@ export const hasAccess = (user: UserFull | undefined, level: number) => {
     return user_roles.includes(level) || user_roles.includes(RolesEnum.SuperAdmin);
 }
 
-const generateSnowflake = (increment = 0n) => {
+const generateSnowflake = (increment: bigint): string => {
     const timestamp = BigInt(Date.now()) - EPOCH;
     const snowflake = (timestamp << 22n) | increment;
     return snowflake.toString();
@@ -138,6 +138,7 @@ export class OauthService {
     async login(code: string, user_agent: string) {
         /* log in by code */
 
+        // ----------------------- Get access token -------------------------------
         const discord_tokens = await axios.post(discord_url + "/oauth2/token", {
             'grant_type': 'authorization_code',
             'code': code,
@@ -151,6 +152,8 @@ export class OauthService {
         if (discord_tokens.status !== 200) return null;
         const data = discord_tokens.data as DiscordResponse;
 
+        // ----------------------- Get discord user data --------------------------
+
         const discord_user = await axios.get(discord_url + "/users/@me", {
             headers: {
                 'Authorization': `${data.token_type} ${data.access_token}`
@@ -160,14 +163,17 @@ export class OauthService {
         if (discord_user.status !== 200) return null;
         const ds_user = discord_user.data as DiscordUser;
 
+        // ----------------------- Check discord server roles ---------------------
+
+        const user_settings = await this.prisma.userSettings.findFirst({ where: { User: { discordId: ds_user.id } } });
         const on_ppl = await this.check_ppl(`${data.token_type} ${data.access_token}`);
-        if (!on_ppl) {
+        if (!on_ppl && !user_settings?.skip_ppl_check) {
             await this.prisma.sessions.deleteMany({ where: { User: { discordId: ds_user.id } } });
             return { message: "You are not on ppl", statusCode: 403 };
         }
 
+        // ----------------------- Upsert user field in DB ------------------------
         const users_count = await this.prisma.user.count();
-
         const user_db = await this.prisma.user.upsert({
             where: { discordId: ds_user.id },
             create: {
@@ -185,10 +191,13 @@ export class OauthService {
         });
 
         await this.resolveCollisions(user_db.username);
+
         if (user_db.UserSettings?.banned) {
             await this.prisma.sessions.deleteMany({ where: { userId: user_db.id } });
             return { message: "Unable to login", statusCode: 403 };
         }
+
+        // ----------------------- Create session token ---------------------------
 
         const sessionId = sign({ userId: user_db.id }, 'ppl_super_secret', { expiresIn: Number(process.env.SESSION_TTL) });
         const token_record = await this.prisma.sessions.create({
