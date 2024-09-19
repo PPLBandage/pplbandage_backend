@@ -24,6 +24,7 @@ jobs:
             git fetch
             git stash
             git merge '@{u}'
+            npx prisma db push
             docker compose build
             docker compose up -d
           EOF
