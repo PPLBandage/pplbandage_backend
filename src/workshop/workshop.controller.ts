@@ -1,4 +1,20 @@
-import { Controller, Get, HttpStatus, Param, Query, Req, Res, StreamableFile, Delete, Put, Post, Body, UseGuards, ValidationPipe, UsePipes } from '@nestjs/common';
+import {
+    Controller,
+    Get,
+    HttpStatus,
+    Param,
+    Query,
+    Req,
+    Res,
+    StreamableFile,
+    Delete,
+    Put,
+    Post,
+    Body,
+    UseGuards,
+    ValidationPipe,
+    UsePipes
+} from '@nestjs/common';
 import type { Response, Request } from 'express'
 import { BandageService } from "./bandage.service";
 import { SkipThrottle, Throttle } from '@nestjs/throttler';
@@ -9,6 +25,7 @@ import { Auth } from 'src/decorators/auth.decorator';
 import { CreateBandageDto } from './dto/createBandage.dto';
 import { EditBandageDto } from './dto/editBandage.dto';
 import { RequestSession } from 'src/common/bandage_response';
+import { EditQueryDTO, WidthQueryDTO, WorkshopSearchQueryDTO } from 'src/workshop/dto/queries.dto';
 
 @Controller('api')
 @UseGuards(AuthGuard)
@@ -16,22 +33,32 @@ export class WorkshopController {
     constructor(private readonly bandageService: BandageService) { }
     @Get("/workshop")
     @Auth(AuthEnum.Weak)
-    async bandages(@Req() request: RequestSession, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
+    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+    async bandages(
+        @Req() request: RequestSession,
+        @Res() res: Response,
+        @Query() query: WorkshopSearchQueryDTO
+    ): Promise<void> {
         /* get list of works */
 
         res.status(200).send(await this.bandageService.getBandages(request.session,
-            parseInt(query.take as string) || 20,
-            parseInt(query.page as string) || 0,
+            query.take ?? 20,
+            query.page ?? 0,
             query.search,
             query.filters,
-            query.sort));
+            query.sort
+        ));
     }
 
     @Throttle({ default: { limit: 5, ttl: 60000 } })
     @Post("/workshop")
     @Auth(AuthEnum.Strict)
     @UsePipes(new ValidationPipe({ whitelist: true }))
-    async create_bandage(@Req() request: RequestSession, @Res() res: Response, @Body() body: CreateBandageDto): Promise<void> {
+    async create_bandage(
+        @Req() request: RequestSession,
+        @Res() res: Response,
+        @Body() body: CreateBandageDto
+    ): Promise<void> {
         /* create work */
 
         if (!body.base64 || !body.title) {
@@ -71,7 +98,11 @@ export class WorkshopController {
     @Get("/workshop/:id")
     @SkipThrottle()
     @Auth(AuthEnum.Weak)
-    async getBandage(@Param('id') id: string, @Req() request: RequestSession, @Res() res: Response): Promise<void> {
+    async getBandage(
+        @Param('id') id: string,
+        @Req() request: RequestSession,
+        @Res() res: Response
+    ): Promise<void> {
         /* get bandage by external id (internal endpoint) */
 
         if (request.headers['unique-access'] !== process.env.WORKSHOP_TOKEN) {
@@ -84,7 +115,11 @@ export class WorkshopController {
 
     @Get("/workshop/:id/info")
     @SkipThrottle()
-    async getBandageOg(@Param('id') id: string, @Req() request: Request, @Res() res: Response): Promise<void> {
+    async getBandageOg(
+        @Param('id') id: string,
+        @Req() request: Request,
+        @Res() res: Response
+    ): Promise<void> {
         /* get bandage info by external id (internal endpoint) */
 
         if (request.headers['unique-access'] !== process.env.WORKSHOP_TOKEN) {
@@ -97,17 +132,16 @@ export class WorkshopController {
 
     @Get(["/workshop/:id/as_image", "/workshop/:id/og"])
     @Auth(AuthEnum.Weak)
-    async getBandageImage(@Param('id') id: string, @Req() request: RequestSession, @Res({ passthrough: true }) res: Response, @Query() query: { width: number }): Promise<StreamableFile | void> {
+    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+    async getBandageImage(
+        @Param('id') id: string,
+        @Req() request: RequestSession,
+        @Res({ passthrough: true }) res: Response,
+        @Query() query: WidthQueryDTO
+    ): Promise<StreamableFile | void> {
         /* get bandage image render (for OpenGraph) */
 
-        const requested_width = Number(query.width) || 512;
-        if (isNaN(requested_width) || requested_width < 16 || requested_width > 1000) {
-            res.status(400).send({
-                status: 'error',
-                message: '`width` cannot be less than 16 an higher than 1000'
-            });
-            return;
-        }
+        const requested_width = query.width ?? 512;
 
         const data = await this.bandageService.getBandage(id, request.session);
         if (data.statusCode !== 200 || !data.data?.base64) {
@@ -156,7 +190,12 @@ export class WorkshopController {
     @Put("/workshop/:id")
     @Auth(AuthEnum.Strict)
     @UsePipes(new ValidationPipe({ whitelist: true }))
-    async editBandage(@Param('id') id: string, @Req() request: RequestSession, @Res() res: Response, @Body() body: EditBandageDto) {
+    async editBandage(
+        @Param('id') id: string,
+        @Req() request: RequestSession,
+        @Res() res: Response,
+        @Body() body: EditBandageDto
+    ) {
         /* edit bandage info */
 
         if (!body) {
@@ -174,7 +213,11 @@ export class WorkshopController {
 
     @Delete("/workshop/:id")
     @Auth(AuthEnum.Strict)
-    async deleteBandage(@Param('id') id: string, @Req() request: RequestSession, @Res() res: Response) {
+    async deleteBandage(
+        @Param('id') id: string,
+        @Req() request: RequestSession,
+        @Res() res: Response
+    ) {
         /* delete bandage by external id */
 
         const data = await this.bandageService.deleteBandage(request.session, id);
@@ -184,10 +227,15 @@ export class WorkshopController {
 
     @Get("/categories")
     @Auth(AuthEnum.Weak)
-    async categories(@Req() request: RequestSession, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
+    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+    async categories(
+        @Req() request: RequestSession,
+        @Res() res: Response,
+        @Query() query: EditQueryDTO
+    ): Promise<void> {
         /* get list of categories */
 
-        res.status(200).send(await this.bandageService.getCategories(query.for_edit === "true", request.session));
+        res.status(200).send(await this.bandageService.getCategories(query.for_edit === 'true', request.session));
     }
 
     @Get('/workshop/count/badge')

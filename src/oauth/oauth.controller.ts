@@ -31,7 +31,10 @@ export class OauthController {
         const user_agent = request.headers['user-agent'] as string;
         const data = await this.oauthService.login(code, user_agent);
         if (!data) {
-            res.status(500).send({ status: "error", message: "could not login" });
+            res.status(500).send({
+                status: "error",
+                message: "could not login"
+            });
             return;
         }
         if (data.statusCode !== 200) {

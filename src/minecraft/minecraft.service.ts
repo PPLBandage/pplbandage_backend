@@ -15,13 +15,19 @@ export class MinecraftService {
         const regexp = new RegExp('^[0-9a-fA-F]{32}$');
         let uuid = str.replace('-', '');
         if (!regexp.test(uuid)) {
-            const response_uuid = await axios.get(`https://api.mojang.com/users/profiles/minecraft/${uuid}`, { validateStatus: () => true });
+            const response_uuid = await axios.get(
+                `https://api.mojang.com/users/profiles/minecraft/${uuid}`,
+                { validateStatus: () => true }
+            );
             if (!response_uuid || response_uuid?.status !== 200) {
                 return null;
             }
             uuid = response_uuid?.data.id;
         }
-        const response_skin = await axios.get(`https://sessionserver.mojang.com/session/minecraft/profile/${uuid}`, { validateStatus: () => true });
+        const response_skin = await axios.get(
+            `https://sessionserver.mojang.com/session/minecraft/profile/${uuid}`,
+            { validateStatus: () => true }
+        );
         if (!response_skin || response_skin?.status !== 200) {
             return null;
         }
@@ -35,7 +41,10 @@ export class MinecraftService {
         const regexp = new RegExp('^[0-9a-fA-F]{32}$');
         let uuid = str.replace('-', '');
         if (!regexp.test(uuid)) {
-            const response_uuid = await axios.get(`https://api.mojang.com/users/profiles/minecraft/${uuid}`, { validateStatus: () => true });
+            const response_uuid = await axios.get(
+                `https://api.mojang.com/users/profiles/minecraft/${uuid}`,
+                { validateStatus: () => true }
+            );
             if (!response_uuid || response_uuid?.status !== 200) {
                 return null;
             }
@@ -74,10 +83,10 @@ export class MinecraftService {
     }
 
 
-    async resolveCollisions(prof: { uuid: string }[]) {
+    async resolveCollisions(profiles: { uuid: string }[]) {
         /* resolve nicknames collisions in data base */
 
-        for (const record of prof) {
+        for (const record of profiles) {
             const data = await this.getUserData(record?.uuid);
             if (!data) {
                 continue;
@@ -97,22 +106,24 @@ export class MinecraftService {
     async updateSkinCache(nickname: string, ignore_cache: boolean = false) {
         /* update skin data in data base */
 
-        const uuid = await this.getUUID(nickname);
+        const uuid = await this.getUUID(nickname);  // validate UUID (resolve UUID by nickname also)
         if (!uuid) {
             return null;
         }
 
-        const cache = await this.prisma.minecraft.findFirst({ where: { uuid: uuid } });
+        const cache = await this.prisma.minecraft.findFirst({ where: { uuid: uuid } });  // get cache if exists
         if (cache && cache.expires > new Date().getTime() && !ignore_cache) {
             return cache;
         }
 
-        const fetched_skin_data = await this.getUserData(uuid);
+        const fetched_skin_data = await this.getUserData(uuid);  // fetch new skin data
         if (!fetched_skin_data) {
             return null;
         }
 
         if (cache && cache?.default_nick !== fetched_skin_data.name) {
+            // if the nickname has been changed since the last caching
+
             await this.prisma.minecraft.update({
                 where: { uuid: fetched_skin_data.id },
                 data: {
@@ -124,23 +135,25 @@ export class MinecraftService {
 
         const nicks = await this.prisma.minecraft.findMany({ where: { nickname: fetched_skin_data?.name.toLowerCase() } });
         if (nicks.length > 1) {
+            /* -- resolve nicknames collision --
+            Since the cache of skins and nicknames is not deleted after they expire,
+            there is a possibility that Minecraft accounts will be occupied by other
+            nicknames and there will be a name collision in the database
+            */
+
             await this.resolveCollisions(nicks);
         }
 
-        const textures = atob(fetched_skin_data.properties[0].value);
+        const textures = Buffer.from(fetched_skin_data.properties[0].value, 'base64').toString();
         const json_textures = JSON.parse(textures) as EncodedResponse;
-        const skin_response = await axios.get(json_textures.textures.SKIN.url, {
-            responseType: 'arraybuffer'
-        });
+        const skin_response = await axios.get(json_textures.textures.SKIN.url, { responseType: 'arraybuffer' });
         const skin_buff = Buffer.from(skin_response.data, 'binary');
         const head = await this.generateHead(skin_buff);
 
-        let cape_b64 = "";
+        let cape_b64 = '';
         if (json_textures.textures.CAPE) {
-            const skin_response = await axios.get(json_textures.textures?.CAPE.url, {
-                responseType: 'arraybuffer'
-            });
-            cape_b64 = Buffer.from(skin_response.data, 'binary').toString("base64");
+            const cape_response = await axios.get(json_textures.textures.CAPE.url, { responseType: 'arraybuffer' });
+            cape_b64 = Buffer.from(cape_response.data, 'binary').toString('base64');
         }
         const updated_data = await this.prisma.minecraft.upsert({
             where: { uuid: fetched_skin_data.id },
@@ -149,19 +162,19 @@ export class MinecraftService {
                 nickname: fetched_skin_data.name.toLowerCase(),
                 default_nick: fetched_skin_data.name,
                 expires: new Date().getTime() + parseInt(process.env.TTL as string),
-                data: skin_buff.toString("base64"),
+                data: skin_buff.toString('base64'),
                 data_cape: cape_b64,
-                data_head: head.toString("base64"),
-                slim: json_textures.textures.SKIN.metadata?.model === "slim"
+                data_head: head.toString('base64'),
+                slim: json_textures.textures.SKIN.metadata?.model === 'slim'
             },
             update: {
                 nickname: fetched_skin_data.name.toLowerCase(),
                 default_nick: fetched_skin_data.name,
                 expires: new Date().getTime() + parseInt(process.env.TTL as string),
-                data: skin_buff.toString("base64"),
+                data: skin_buff.toString('base64'),
                 data_cape: cape_b64,
-                data_head: head.toString("base64"),
-                slim: json_textures.textures.SKIN.metadata?.model === "slim"
+                data_head: head.toString('base64'),
+                slim: json_textures.textures.SKIN.metadata?.model === 'slim'
             }
         });
         return updated_data;
@@ -174,20 +187,20 @@ export class MinecraftService {
         if (fragment.length < 3) {
             return null;
         }
-        const filter_rule = { OR: [{ nickname: { contains: fragment } }], valid: true }
+        const filter_rule = { OR: [{ nickname: { contains: fragment } }], valid: true };
         const cache = await this.prisma.minecraft.findMany({
             where: filter_rule,
             orderBy: { default_nick: "asc" },
-            take: Math.min(take, 100), skip: take * page
+            take: take, skip: take * page
         });
         if (!cache || cache.length === 0) {
             return null;
         }
         const count: number = await this.prisma.minecraft.count({ where: filter_rule });
-        const records_list: SearchUnit[] = cache.map((nick) => {
-            return { name: nick.default_nick, uuid: nick.uuid, head: nick.data_head };
-        });
-        if (!count) return null;
+        const records_list: SearchUnit[] = cache.map(nick => ({ name: nick.default_nick, uuid: nick.uuid, head: nick.data_head }));
+        if (!count) {
+            return null;
+        }
         return {
             status: "success",
             requestedFragment: fragment,
@@ -196,6 +209,7 @@ export class MinecraftService {
             next_page: page + 1
         };
     }
+
 
     async changeValid(session: Session, state: boolean) {
         /* switch displaying nick in search */
@@ -208,11 +222,8 @@ export class MinecraftService {
         };
 
         const result = await this.prisma.minecraft.update({
-            where: {
-                id: minecraft.id
-            }, data: {
-                valid: state
-            }
+            where: { id: minecraft.id },
+            data: { valid: state }
         })
         return { statusCode: 200, new_data: result.valid };
     }
@@ -223,8 +234,8 @@ export class MinecraftService {
         if (session.user.profile) {
             return {
                 statusCode: 400,
-                message: "Account already connected!",
-                message_ru: "Аккаунт уже подключен!"
+                message: "Account already connected",
+                message_ru: "Аккаунт уже подключен"
             };
         }
 
@@ -232,8 +243,8 @@ export class MinecraftService {
         if (user_data.status !== 200) {
             return {
                 statusCode: 404,
-                message: "Code not found!",
-                message_ru: "Код не найден!"
+                message: "Code not found",
+                message_ru: "Код не найден"
             };
         }
 
@@ -244,28 +255,20 @@ export class MinecraftService {
             return {
                 statusCode: 500,
                 message: "Error while finding player data",
-                message_ru: "Не удалось найти и обновить данные о игроке!"
+                message_ru: "Не удалось найти и обновить данные о игроке"
             };
         }
         if (skin_data.userId) {
             return {
                 statusCode: 400,
-                message: "This account already connected!",
-                message_ru: "Этот аккаунт уже подключен к другой учётной записи!"
+                message: "This account already connected",
+                message_ru: "Этот аккаунт уже подключен к другой учётной записи"
             };
         }
 
         await this.prisma.user.update({
-            where: {
-                id: session.user.id
-            },
-            data: {
-                profile: {
-                    connect: {
-                        id: skin_data.id
-                    }
-                }
-            }
+            where: { id: session.user.id },
+            data: { profile: { connect: { id: skin_data.id } } }
         });
 
         return {
@@ -283,26 +286,19 @@ export class MinecraftService {
             return {
                 statusCode: 400,
                 message: "Account didn't connected",
-                message_ru: "Аккаунт Minecraft не подключен!"
+                message_ru: "Аккаунт Minecraft не подключен"
             }
         }
 
         await this.prisma.user.update({
-            where: {
-                id: session.user.id
-            }, data: {
-                profile: {
-                    disconnect: {
-                        id: session.user.profile.id
-                    }
-                }
-            }
+            where: { id: session.user.id },
+            data: { profile: { disconnect: { id: session.user.profile.id } } }
         });
 
         return {
             statusCode: 200,
             message: "Success",
-            message_ru: "Аккаунт успешно отключен!",
+            message_ru: "Аккаунт успешно отключен",
         }
     }
 }

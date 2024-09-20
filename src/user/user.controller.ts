@@ -1,4 +1,19 @@
-import { Controller, Get, HttpStatus, Param, Query, Req, Res, Delete, Put, Post, Body, UseGuards, ValidationPipe, UsePipes } from '@nestjs/common';
+import {
+    Controller,
+    Get,
+    HttpStatus,
+    Param,
+    Query,
+    Req,
+    Res,
+    Delete,
+    Put,
+    Post,
+    Body,
+    UseGuards,
+    ValidationPipe,
+    UsePipes
+} from '@nestjs/common';
 import type { Response } from 'express'
 import { AuthGuard } from 'src/guards/auth.guard';
 import { UserService } from './user.service';
@@ -12,6 +27,7 @@ import { Auth } from 'src/decorators/auth.decorator';
 import { Roles } from 'src/decorators/access.decorator';
 import { UpdateUsersDto } from './dto/updateUser.dto';
 import { RequestSession } from 'src/common/bandage_response';
+import { PageTakeQueryDTO, SetQueryDTO, StateQueryDTO, ThemeQueryDTO } from './dto/queries.dto';
 
 @Controller('api')
 @UseGuards(AuthGuard, RolesGuard)
@@ -24,7 +40,10 @@ export class UserController {
 
     @Get("/user/me")
     @Auth(AuthEnum.Strict)
-    async me_profile(@Req() request: RequestSession, @Res() res: Response): Promise<void> {
+    async me_profile(
+        @Req() request: RequestSession,
+        @Res() res: Response
+    ): Promise<void> {
         /* get user data. associated with session */
 
         const data = await this.userService.getUser(request.session);
@@ -33,7 +52,10 @@ export class UserController {
 
     @Get("/user/me/works")
     @Auth(AuthEnum.Strict)
-    async getWork(@Req() request: RequestSession, @Res() res: Response): Promise<void> {
+    async getWork(
+        @Req() request: RequestSession,
+        @Res() res: Response
+    ): Promise<void> {
         /* get user's works */
 
         const data = await this.userService.getWork(request.session);
@@ -42,7 +64,10 @@ export class UserController {
 
     @Get("/user/me/stars")
     @Auth(AuthEnum.Strict)
-    async getStars(@Req() request: RequestSession, @Res() res: Response): Promise<void> {
+    async getStars(
+        @Req() request: RequestSession,
+        @Res() res: Response
+    ): Promise<void> {
         /* get user's stars */
 
         const data = await this.userService.getStars(request.session);
@@ -51,7 +76,10 @@ export class UserController {
 
     @Get("/user/me/settings")
     @Auth(AuthEnum.Strict)
-    async minecraft(@Req() request: RequestSession, @Res() res: Response): Promise<void> {
+    async minecraft(
+        @Req() request: RequestSession,
+        @Res() res: Response
+    ): Promise<void> {
         /* get user's settings */
 
         const data = await this.userService.getUserSettings(request.session);
@@ -60,70 +88,70 @@ export class UserController {
 
     @Get("/user/me/notifications")
     @Auth(AuthEnum.Strict)
-    async getNotifications(@Req() request: RequestSession, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
+    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+    async getNotifications(
+        @Req() request: RequestSession,
+        @Res() res: Response,
+        @Query() query: PageTakeQueryDTO
+    ): Promise<void> {
         /* get user's connections */
 
-        const data = await this.notificationService.get(request.session, parseInt(query.take as string) || 5, parseInt(query.page as string) || 0);
+        const data = await this.notificationService.get(request.session, query.take || 5, query.page || 0);
         res.send(data);
     }
 
     @Put("/user/me/profile_theme")
     @Auth(AuthEnum.Strict)
-    async profile_theme(@Req() request: RequestSession, @Res() res: Response, @Body() body: { theme: string }): Promise<void> {
+    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+    async profile_theme(
+        @Req() request: RequestSession,
+        @Res() res: Response,
+        @Body() body: ThemeQueryDTO
+    ): Promise<void> {
         /* update profile theme */
 
-        const theme = Number(body.theme);
-        if (isNaN(theme) || theme < 0 || theme > 2) {
-            res.status(400).send({
-                status: 'error',
-                message: 'invalid profile theme'
-            })
-        }
-
-        await this.userService.setProfileTheme(request.session, theme);
+        await this.userService.setProfileTheme(request.session, body.theme as number);
         res.status(200).send({
             status: 'success',
-            new_theme: theme
+            new_theme: body.theme
         })
     }
 
     @Put("/user/me/connections/minecraft/set_valid")
     @Auth(AuthEnum.Strict)
-    async set_valid(@Req() request: RequestSession, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
+    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+    async set_valid(
+        @Req() request: RequestSession,
+        @Res() res: Response,
+        @Query() query: StateQueryDTO
+    ): Promise<void> {
         /* set displaying nickname in search */
 
-        if (!query.state || !["true", "false"].includes(query.state)) {
-            res.status(HttpStatus.BAD_REQUEST).send({
-                status: "error",
-                message: "`state` query param invalid",
-                statusCode: 400
-            });
-            return;
-        }
-        const data = await this.minecraftService.changeValid(request.session, query.state === "true");
+        const data = await this.minecraftService.changeValid(request.session, query.state === 'true');
         res.status(data.statusCode).send(data);
     }
 
     @Put("/user/me/connections/minecraft/set_autoload")
     @Auth(AuthEnum.Strict)
-    async set_autoload(@Req() request: RequestSession, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
+    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+    async set_autoload(
+        @Req() request: RequestSession,
+        @Res() res: Response,
+        @Query() query: StateQueryDTO
+    ): Promise<void> {
         /* set skin autoload in editor */
 
-        if (!query.state || !["true", "false"].includes(query.state)) {
-            res.status(HttpStatus.BAD_REQUEST).send({
-                status: "error",
-                message: "`State` query param invalid",
-                statusCode: 400
-            });
-            return;
-        }
-        const data = await this.userService.changeAutoload(request.session, query.state === "true");
+        const data = await this.userService.changeAutoload(request.session, query.state === 'true');
         res.status(data.statusCode).send(data);
     }
 
     @Post("/user/me/connections/minecraft/connect/:code")
     @Auth(AuthEnum.Strict)
-    async connectMinecraft(@Param('code') code: string, @Req() request: RequestSession, @Res() res: Response): Promise<void> {
+    async connectMinecraft(
+        @Param('code') code: string,
+        @Req() request: RequestSession,
+        @Res() res: Response
+    ): Promise<void> {
         /* connect minecraft profile to account */
 
         if (code.length != 6) {
@@ -142,7 +170,10 @@ export class UserController {
     @Throttle({ default: { limit: 5, ttl: 60000 } })
     @Post("/user/me/connections/minecraft/cache/purge")
     @Auth(AuthEnum.Strict)
-    async skinPurge(@Req() request: RequestSession, @Res({ passthrough: true }) res: Response): Promise<void> {
+    async skinPurge(
+        @Req() request: RequestSession,
+        @Res({ passthrough: true }) res: Response
+    ): Promise<void> {
         /* purge minecraft skin cache, associated with session's account */
 
         if (!request.session.user.profile) {
@@ -167,7 +198,10 @@ export class UserController {
 
     @Delete("/user/me/connections/minecraft")
     @Auth(AuthEnum.Strict)
-    async disconnectMinecraft(@Req() request: RequestSession, @Res() res: Response): Promise<void> {
+    async disconnectMinecraft(
+        @Req() request: RequestSession,
+        @Res() res: Response
+    ): Promise<void> {
         /* disconnect minecraft profile */
         const data = await this.minecraftService.disconnect(request.session);
         res.status(data.statusCode).send(data);
@@ -175,7 +209,11 @@ export class UserController {
 
     @Get("/users/:username")
     @Auth(AuthEnum.Weak)
-    async user_profile(@Param('username') username: string, @Req() request: RequestSession, @Res() res: Response): Promise<void> {
+    async user_profile(
+        @Param('username') username: string,
+        @Req() request: RequestSession,
+        @Res() res: Response
+    ): Promise<void> {
         /* get user data by nickname */
 
         const data = await this.userService.getUserByNickname(username, request.session);
@@ -183,7 +221,10 @@ export class UserController {
     }
 
     @Get("/users/:username/og")
-    async userOg(@Param('username') username: string, @Res() res: Response): Promise<void> {
+    async userOg(
+        @Param('username') username: string,
+        @Res() res: Response
+    ): Promise<void> {
         /* get user data by nickname */
 
         const data = await this.userService.getUserOg(username);
@@ -192,34 +233,30 @@ export class UserController {
 
     @Put("/star/:id")
     @Auth(AuthEnum.Strict)
-    async setStar(@Param('id') id: string, @Query() query: { set: string }, @Req() request: RequestSession, @Res() res: Response): Promise<void> {
+    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+    async setStar(
+        @Param('id') id: string,
+        @Query() query: SetQueryDTO,
+        @Req() request: RequestSession,
+        @Res() res: Response
+    ): Promise<void> {
         /* set star to work by work external id */
 
-        if (!query.set || !["true", "false"].includes(query.set)) {
-            res.status(HttpStatus.BAD_REQUEST).send({
-                message: "`Set` query param invalid",
-                statusCode: 400
-            });
-            return;
-        }
         const data = await this.bandageService.setStar(request.session, query.set === "true", id);
         res.status(data.statusCode).send(data);
     }
 
     @Put("/user/me/settings/set_public")
     @Auth(AuthEnum.Strict)
-    async set_public(@Req() request: RequestSession, @Res() res: Response, @Query() query: SearchQuery): Promise<void> {
+    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+    async set_public(
+        @Req() request: RequestSession,
+        @Res() res: Response,
+        @Query() query: StateQueryDTO
+    ): Promise<void> {
         /* set skin autoload in editor */
 
-        if (!query.state || !["true", "false"].includes(query.state)) {
-            res.status(HttpStatus.BAD_REQUEST).send({
-                status: "error",
-                message: "`State` query param invalid",
-                statusCode: 400
-            });
-            return;
-        }
-        const data = await this.userService.setPublic(request.session, query.state === "true");
+        const data = await this.userService.setPublic(request.session, query.state === 'true');
         res.status(data.statusCode).send(data);
     }
 
@@ -233,7 +270,7 @@ export class UserController {
     @Put('/users/:username')
     @Auth(AuthEnum.Strict)
     @Roles([RolesEnum.UpdateUsers])
-    @UsePipes(new ValidationPipe({ whitelist: true }))
+    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async update_user(@Param('username') username: string, @Res() res: Response, @Body() body: UpdateUsersDto) {
         const data = await this.userService.updateUser(username, body);
         res.status(data.statusCode).send(data);

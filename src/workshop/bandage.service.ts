@@ -21,15 +21,17 @@ interface BandageSearch {
     User?: { name: { contains: string } }
 }
 
+export const sort_keys = ['popular_up', 'date_up', 'name_up'];
+
 const constructSort = (sort?: string): Prisma.BandageOrderByWithRelationInput => {
     /* generate sort rule */
 
     switch (sort) {
-        case "popular_up":
+        case sort_keys[0]:
             return { stars: { _count: 'desc' } };
-        case "date_up":
+        case sort_keys[1]:
             return { creationDate: 'desc' };
-        case "name_up":
+        case sort_keys[2]:
             return { title: 'asc' }
         default:
             return {};
@@ -65,7 +67,7 @@ export class BandageService {
         take: number,
         page: number,
         search?: string,
-        filters?: string,
+        filters?: number[],
         sort?: string) {
 
         /* get workshop list */
@@ -80,15 +82,14 @@ export class BandageService {
             ];
         }
 
-        const filters_list = filters?.split(',').filter(el => !isNaN(Number(el)) && el != '');
-        const filters_rule = filters_list?.map(el => { return { categories: { some: { id: Number(el) } } }; });
+        const filters_rule = filters?.map(el => ({ categories: { some: { id: el } } }));
 
         let available = false;
         let admin = false;
         if (session && session.user && hasAccess(session.user, RolesEnum.ManageBandages)) {
             admin = true;
             const data = await this.prisma.category.findMany({ where: { only_admins: true } });
-            available = data.some(val => filters_list?.includes(String(val.id)));
+            available = data.some(val => filters?.includes(val.id));
         }
 
         const category = available ? undefined : { none: { only_admins: true } };
