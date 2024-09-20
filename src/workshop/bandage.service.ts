@@ -148,9 +148,10 @@ export class BandageService {
         let categories = [{ id: moderation_id[0] }];  // default categories
         if (body.categories !== undefined) {
             const validated_categories = await this.validateCategories(body.categories, hasAccess(session.user, RolesEnum.SuperAdmin));
-            categories = [...validated_categories.map((el) => {
-                return { id: el };
-            }), ...categories];
+            categories = [
+                ...validated_categories.map(el => ({ id: el })),
+                ...categories
+            ];
         }
 
         const count = await this.prisma.bandage.count({
@@ -174,22 +175,15 @@ export class BandageService {
                 title: body.title,
                 description: body.description,
                 base64: body.base64,
-                base64_slim: body.base64_slim || '',
-                split_type: body.split_type || false,
-                User: {
-                    connect: {
-                        id: session?.user.id
-                    }
-                },
-                categories: {
-                    connect: categories
-                }
+                base64_slim: body.base64_slim ?? '',
+                split_type: body.split_type ?? false,
+                User: { connect: { id: session.user.id } },
+                categories: { connect: categories }
             }
         });
 
-        this.discordNotifications.doNotification(`<@&${process.env.MENTION_ROLE_ID}> New bandage "${result.title}" created by ${session.user.name}!\nhttps://pplbandage.ru/workshop/${result.externalId}`);
-
-        this.notifications.createNotification(session.user.id, {
+        await this.discordNotifications.doNotification(`<@&${process.env.MENTION_ROLE_ID}> New bandage "${result.title}" created by ${session.user.name}!\nhttps://pplbandage.ru/workshop/${result.externalId}`);
+        await this.notifications.createNotification(session.user.id, {
             content: `Повязка <a href="/workshop/${result.externalId}"><b>${result.title}</b></a> создана и отправлена на проверку!`
         });
 
@@ -202,18 +196,15 @@ export class BandageService {
     async getCategories(for_edit: boolean, session: Session) {
         /* get list of categories */
 
-        let admin: boolean = false;
-        if (session && session.user) {
-            admin = Boolean(hasAccess(session.user, RolesEnum.ManageBandages));
-        }
-
+        const admin = hasAccess(session.user, RolesEnum.ManageBandages);
         const categories = await this.prisma.category.findMany({
             where: for_edit ? {
                 reachable: admin ? undefined : true,
                 only_admins: admin ? undefined : false
             } : {
                 only_admins: admin ? undefined : false
-            }, select: { id: true, name: true, icon: true },
+            },
+            select: { id: true, name: true, icon: true },
             orderBy: { order: 'asc' }
         });
         return categories;
@@ -247,8 +238,12 @@ export class BandageService {
         }
 
         const buff = Buffer.from(bandage.base64, 'base64');
-        const { data } = await sharp(buff).resize(1, 1, { fit: 'inside' }).extract({ left: 0, top: 0, width: 1, height: 1 }).raw().toBuffer({ resolveWithObject: true });
-        const [r, g, b, a] = data;
+        const { data } = await sharp(buff)
+            .resize(1, 1, { fit: 'inside' })
+            .extract({ left: 0, top: 0, width: 1, height: 1 })
+            .raw()
+            .toBuffer({ resolveWithObject: true });
+        const [r, g, b] = data;
 
         return {
             statusCode: 200,
@@ -375,26 +370,26 @@ export class BandageService {
                 if (bandage_categories?.includes(official_id)) validated_categories.push(official_id);
             }
 
-            const difference = bandage_categories.filter((element) => !validated_categories.includes(element));
-            const difference_after = validated_categories.filter((element) => !bandage_categories.includes(element));
+            const difference = bandage_categories.filter(element => !validated_categories.includes(element));
+            const difference_after = validated_categories.filter(element => !bandage_categories.includes(element));
             if (difference_after.includes(moderation_id[1])) {
-                this.notifications.createNotification(bandage.userId, {
+                await this.notifications.createNotification(bandage.userId, {
                     content: `Повязка <a href="/workshop/${bandage.externalId}"><b>${bandage.title}</b></a> была отклонена. Пожалуйста, свяжитесь с <a href="/contacts"><b>администрацией</b></a> для уточнения причин.`,
                     type: 2
                 });
             }
 
             else if (moderation_id.some(element => difference.includes(element))) {
-                this.notifications.createNotification(bandage.userId, {
+                await this.notifications.createNotification(bandage.userId, {
                     content: `Повязка <a href="/workshop/${bandage.externalId}"><b>${bandage.title}</b></a> успешно прошла проверку и теперь доступна остальным в <a href="/workshop"><b>мастерской</b></a>!`,
                     type: 1
                 });
             }
-            categories = validated_categories.map((el) => { return { id: el }; });
+            categories = validated_categories.map(el => ({ id: el }));
         }
 
         if (body.access_level !== undefined) {
-            const check_al = Number(body.access_level);
+            const check_al = body.access_level;
             if (!isNaN(check_al) && check_al >= 0 && check_al <= 2) access_level = check_al;
         }
 
@@ -425,7 +420,7 @@ export class BandageService {
         });
 
         const reachable_ids = reachable_categories.map(el => el.id);
-        return categories.filter((el) => reachable_ids.includes(el));
+        return categories.filter(el => reachable_ids.includes(el));
     }
 
     async deleteBandage(session: Session, externalId: string) {

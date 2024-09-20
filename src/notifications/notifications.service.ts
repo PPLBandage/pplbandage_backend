@@ -47,7 +47,7 @@ export class NotificationService {
         const notification_db = await this.prisma.notifications.create({ data: notification });
         const users = await this.prisma.user.findMany();
 
-        users.forEach((user) => {
+        users.forEach(user => {
             this.prisma.user.update({
                 where: { id: user.id },
                 data: {

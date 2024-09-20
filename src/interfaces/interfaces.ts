@@ -28,7 +28,6 @@ interface Profile {
     properties: Properties[];
 }
 
-
 interface SearchUnit {
     name: string,
     uuid: string,
@@ -41,16 +40,6 @@ interface Search {
     data: SearchUnit[],
     total_count: number,
     next_page: number
-}
-
-interface SearchQuery {
-    take?: string,
-    page?: string,
-    search?: string,
-    for_edit?: string,
-    filters?: string,
-    sort?: string,
-    state?: string
 }
 
 interface SearchParams {

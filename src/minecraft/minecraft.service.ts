@@ -22,7 +22,7 @@ export class MinecraftService {
             if (!response_uuid || response_uuid?.status !== 200) {
                 return null;
             }
-            uuid = response_uuid?.data.id;
+            uuid = response_uuid.data.id;
         }
         const response_skin = await axios.get(
             `https://sessionserver.mojang.com/session/minecraft/profile/${uuid}`,
@@ -31,7 +31,7 @@ export class MinecraftService {
         if (!response_skin || response_skin?.status !== 200) {
             return null;
         }
-        return response_skin?.data;
+        return response_skin.data;
     }
 
 
@@ -48,7 +48,7 @@ export class MinecraftService {
             if (!response_uuid || response_uuid?.status !== 200) {
                 return null;
             }
-            uuid = response_uuid?.data.id;
+            uuid = response_uuid.data.id;
         }
         return uuid;
     }
@@ -77,7 +77,10 @@ export class MinecraftService {
             .resize(36, 36, { kernel: sharp.kernel.nearest })
             .png()
             .toBuffer();
-        head.composite([{ input: firstLayer, top: 2, left: 2, blend: 'over' }, { input: secondLayer, top: 0, left: 0, blend: 'over' }]);
+        head.composite([
+            { input: firstLayer, top: 2, left: 2, blend: 'over' },
+            { input: secondLayer, top: 0, left: 0, blend: 'over' }
+        ]);
 
         return await head.toBuffer();
     }
@@ -87,7 +90,7 @@ export class MinecraftService {
         /* resolve nicknames collisions in data base */
 
         for (const record of profiles) {
-            const data = await this.getUserData(record?.uuid);
+            const data = await this.getUserData(record.uuid);
             if (!data) {
                 continue;
             }
@@ -133,15 +136,15 @@ export class MinecraftService {
             })
         }
 
-        const nicks = await this.prisma.minecraft.findMany({ where: { nickname: fetched_skin_data?.name.toLowerCase() } });
-        if (nicks.length > 1) {
+        const profiles = await this.prisma.minecraft.findMany({ where: { nickname: fetched_skin_data?.name.toLowerCase() } });
+        if (profiles.length > 1) {
             /* -- resolve nicknames collision --
             Since the cache of skins and nicknames is not deleted after they expire,
             there is a possibility that Minecraft accounts will be occupied by other
             nicknames and there will be a name collision in the database
             */
 
-            await this.resolveCollisions(nicks);
+            await this.resolveCollisions(profiles);
         }
 
         const textures = Buffer.from(fetched_skin_data.properties[0].value, 'base64').toString();

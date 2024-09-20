@@ -56,7 +56,9 @@ export class minecraftController {
             throw new HttpException({
                 status: 'error',
                 message: 'Profile not found'
-            }, HttpStatus.NOT_FOUND);
+            },
+                HttpStatus.NOT_FOUND
+            );
         }
 
         res.setHeader('Content-Type', 'image/png');

@@ -3,7 +3,7 @@ import { IsArray, IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString, MaxLeng
 export class CreateBandageDto {
     @IsString({ message: 'Поле `base64` должно иметь тип string' })
     @IsNotEmpty({ message: 'Поле `base64` обязательно' })
-    base64?: string;
+    base64!: string;
 
     @IsOptional()
     @IsString({ message: 'Поле `base64_slim` должно иметь тип string' })
@@ -13,7 +13,7 @@ export class CreateBandageDto {
     @MinLength(1, { message: 'Заголовок должен быть длиннее 1 символа' })
     @MaxLength(50, { message: 'Заголовок слишком длинный (макс. 50 символов)' })
     @IsNotEmpty({ message: 'Поле `title` обязательно' })
-    title?: string;
+    title!: string;
 
     @IsOptional()
     @IsString({ message: 'Поле `description` должно иметь тип string' })

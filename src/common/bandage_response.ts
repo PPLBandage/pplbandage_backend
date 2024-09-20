@@ -26,15 +26,9 @@ export interface BandageFull extends Bandage {
 export const generate_response = (data: BandageFull[], session: Session | null, suppress_ban?: boolean) => {
     /* generate list of works response by provided array of bandages */
 
-    const result = data.map((el) => {
+    const result = data.map(el => {
         if (el.User?.UserSettings?.banned && !suppress_ban) return undefined;
-        const categories = el.categories.map((cat) => {
-            return {
-                id: cat.id,
-                name: cat.name,
-                icon: cat.icon
-            }
-        })
+        const categories = el.categories.map(cat => ({ id: cat.id, name: cat.name, icon: cat.icon }))
         return {
             id: el.id,
             external_id: el.externalId,
@@ -51,9 +45,9 @@ export const generate_response = (data: BandageFull[], session: Session | null, 
                 username: el.User?.username,
                 public: el.User && Number(el.User?.discordId) > 0 ? el.User?.UserSettings?.public_profile : false
             },
-            categories: categories.filter((el) => el !== undefined)
+            categories: categories.filter(el => el !== undefined)
         }
     });
 
-    return result.filter((el) => el !== undefined);
+    return result.filter(el => el !== undefined);
 }

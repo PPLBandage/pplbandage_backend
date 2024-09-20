@@ -5,9 +5,6 @@ import { generateSitemap, SitemapProps } from './sitemap';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { RolesGuard } from 'src/guards/roles.guard';
-import { Auth } from 'src/decorators/auth.decorator';
-import { AuthEnum, RolesEnum } from 'src/interfaces/types';
-import { Roles } from 'src/decorators/access.decorator';
 
 
 export const UNAUTHORIZED = {
@@ -57,7 +54,7 @@ export class RootController {
         ]
 
         const bandages = await this.prisma.bandage.findMany({ where: { access_level: 2 } });
-        urls = urls.concat(bandages.map((bandage) => ({
+        urls = urls.concat(bandages.map(bandage => ({
             loc: `https://pplbandage.ru/workshop/${bandage.externalId}`,
             priority: 0.6
         })));
@@ -69,18 +66,11 @@ export class RootController {
                 UserSettings: { banned: false, public_profile: true }
             }
         });
-        urls = urls.concat(users.map((user) => ({
+        urls = urls.concat(users.map(user => ({
             loc: `https://pplbandage.ru/users/${user.username}`,
             priority: 0.5
         })));
 
         return generateSitemap(urls);
-    }
-
-    @Get('/test')
-    @Auth(AuthEnum.Strict)
-    @Roles([RolesEnum.SuperAdmin])
-    async test() {
-        return { 'statusCode': 200, 'message': 'Access granted' }
     }
 }

@@ -78,7 +78,10 @@ export class UserService {
             }
         });
 
-        const starred_bandages = await this.prisma.bandage.findMany({ where: { userId: session.user.id, stars: { some: {} } }, include: { stars: true } });
+        const starred_bandages = await this.prisma.bandage.findMany({
+            where: { userId: session.user.id, stars: { some: {} } },
+            include: { stars: true }
+        });
         const stars_count = starred_bandages.reduce((acc, current_val) => acc + current_val.stars.length, 0);
 
         return {
@@ -91,7 +94,7 @@ export class UserService {
             avatar: response_data.avatar ? `https://cdn.discordapp.com/avatars/${response_data.id}/${response_data.avatar}` : `/static/favicon.ico`,
             banner_color: response_data.banner_color,
             has_unreaded_notifications: session.user.has_unreaded_notifications,
-            permissions: session.user.AccessRoles.map((role) => role.name.toLowerCase()),
+            permissions: session.user.AccessRoles.map(role => role.name.toLowerCase()),
             profile_theme: session.user.UserSettings?.profile_theme,
             stars_count: stars_count
         };
@@ -228,7 +231,10 @@ export class UserService {
             }
         }
 
-        const starred_bandages = await this.prisma.bandage.findMany({ where: { userId: user.id, stars: { some: {} } }, include: { stars: true } });
+        const starred_bandages = await this.prisma.bandage.findMany({
+            where: { userId: user.id, stars: { some: {} } },
+            include: { stars: true }
+        });
         const stars_count = starred_bandages.reduce((acc, current_val) => acc + current_val.stars.length, 0);
 
         return {
@@ -238,7 +244,9 @@ export class UserService {
             username: user.username,
             name: user.reserved_name || user.name,
             joined_at: user.joined_at,
-            avatar: current_discord.avatar ? `https://cdn.discordapp.com/avatars/${current_discord.id}/${current_discord.avatar}` : `/static/favicon.ico`,
+            avatar: current_discord.avatar ?
+                `https://cdn.discordapp.com/avatars/${current_discord.id}/${current_discord.avatar}` :
+                `/static/favicon.ico`,
             banner_color: current_discord.banner_color,
             works: generate_response(bandages, session, can_view),
             is_self: user.id == session?.user?.id,
@@ -269,7 +277,9 @@ export class UserService {
             discordID: user.discordId,
             username: user.username,
             name: user.reserved_name || user.name,
-            avatar: current_discord.avatar ? `https://cdn.discordapp.com/avatars/${current_discord.id}/${current_discord.avatar}` : `/static/favicon.ico`,
+            avatar: current_discord.avatar ?
+                `https://cdn.discordapp.com/avatars/${current_discord.id}/${current_discord.avatar}` :
+                `/static/favicon.ico`,
             banner_color: current_discord.banner_color,
             works_count: user.Bandage.length,
         }
@@ -303,14 +313,14 @@ export class UserService {
     async getUsers() {
         const users = await this.prisma.user.findMany({ include: { UserSettings: true, AccessRoles: true } });
 
-        return users.map((user) => ({
+        return users.map(user => ({
             id: user.id,
             username: user.username,
             name: user.reserved_name || user.name,
             joined_at: user.joined_at,
             discord_id: user.discordId,
             banned: user.UserSettings?.banned,
-            permissions: user.AccessRoles?.map((role) => role.name.toLowerCase())
+            permissions: user.AccessRoles?.map(role => role.name.toLowerCase())
         }));
     }
 

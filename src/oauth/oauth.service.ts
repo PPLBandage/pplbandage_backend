@@ -75,7 +75,7 @@ const generateCookie = (session: string, exp: number): string => {
 
 export const hasAccess = (user: UserFull | undefined, level: number) => {
     if (!user) return false;
-    const user_roles = user.AccessRoles.map((role) => role.level);
+    const user_roles = user.AccessRoles.map(role => role.level);
     return user_roles.includes(level) || user_roles.includes(RolesEnum.SuperAdmin);
 }
 
@@ -109,13 +109,9 @@ export class OauthService {
             return false;
         }
         const data = response.data as PepelandResponse;
-        const roles = (await this.getRoles()).map((role) => role.ds_id);
-        for (const role of data.roles) {
-            if (roles.includes(role)) {
-                return true;
-            }
-        }
-        return false;
+        const roles = (await this.getRoles()).map(role => role.ds_id);
+
+        return data.roles.some(role => roles.includes(role));
     }
 
     async resolveCollisions(username: string) {
