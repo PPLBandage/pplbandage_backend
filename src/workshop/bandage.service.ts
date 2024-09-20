@@ -196,7 +196,7 @@ export class BandageService {
     async getCategories(for_edit: boolean, session: Session) {
         /* get list of categories */
 
-        const admin = hasAccess(session.user, RolesEnum.ManageBandages);
+        const admin = hasAccess(session?.user, RolesEnum.ManageBandages);
         const categories = await this.prisma.category.findMany({
             where: for_edit ? {
                 reachable: admin ? undefined : true,
