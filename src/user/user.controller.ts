@@ -177,7 +177,7 @@ export class UserController {
         /* purge minecraft skin cache, associated with session's account */
 
         if (!request.session.user.profile) {
-            res.status(400).send({
+            res.status(404).send({
                 message: "Could not find associated Minecraft account",
             });
             return;
