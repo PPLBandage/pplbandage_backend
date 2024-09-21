@@ -486,7 +486,6 @@ export class BandageService {
         return {
             statusCode: 200,
             height: height
-
         };
     }
 }
