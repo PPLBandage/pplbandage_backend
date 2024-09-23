@@ -45,6 +45,7 @@
 | `author`        | Профиль автора повязки. Об этом ниже.                                                                                                                        | [`Author`](#объект-автора-повязки) |
 | `categories`    | Массив категорий повязки. Об этом ниже.                                                                                                                      | [`Category[]`](#объект-категории)  |
 
+
 ### Объект автора повязки
 О пользователях подробнее в [другом разделе](/docs/users.md).  
 
@@ -63,9 +64,48 @@
 | `name` | Название категории.    | `string`   |
 | `icon` | Ключ иконки категории. | `string`   |
 
+<details>
+  <summary>Пример JSON ответа</summary>
+
+  ```json
+[
+    {
+        "id": 69,
+        "external_id": "coolid",
+        "title": "Повязка",
+        "description": "Описание",
+        "base64": "Base 64",
+        "split_type": false,
+        "creation_date": "2023-07-26T15:55:00.000Z",
+        "stars_count": 1,
+        "starred": false,
+        "author": {
+            "id": "69",
+            "name": "AndcoolSystems",
+            "username": "andcoolsystems",
+            "public": true
+        },
+        "categories": [
+            {
+                "id": 0,
+                "name": "Официальные",
+                "icon": "IconRosetteDiscountCheck"
+            },
+            {
+                "id": 6,
+                "name": "Тематические",
+                "icon": "IconBrush"
+            }
+        ]
+    }
+]
+  ```
+</details>
+
 ---
 
 ## `POST /workshop`
+<sub>Strict Auth required</sub>  
 Создает новую работу в мастерской.
 
 > [!NOTE]
@@ -147,9 +187,55 @@
 
 Профиль передается только в том случае, когда он подключён к аккаунту и в настройках включена *автозагрузка скина в мастерской*.
 
+<details>
+  <summary>Пример JSON ответа</summary>
+
+  ```json
+{
+    "statusCode": 200,
+    "data": {
+        "id": 69,
+        "external_id": "coolid",
+        "title": "Повязка",
+        "description": "Описание",
+        "base64": "base64",
+        "split_type": false,
+        "creation_date": "2023-07-26T15:55:00.000Z",
+        "stars_count": 1,
+        "starred": false,
+        "author": {
+            "id": "1",
+            "name": "AndcoolSystems",
+            "username": "andcoolsystems",
+            "public": true
+        },
+        "categories": [
+            {
+                "id": 0,
+                "name": "Официальные",
+                "icon": "IconRosetteDiscountCheck"
+            },
+            {
+                "id": 6,
+                "name": "Тематические",
+                "icon": "IconBrush"
+            }
+        ],
+        "me_profile": {
+            "uuid": "1420c63cb1114453993fb3479ba1d4c6",
+            "nickname": "AndcoolSystems"
+        },
+        "permissions_level": 0,
+        "access_level": 2,
+        "check_state": null
+    }
+}
+  ```
+</details>
+
 ---
 
-## `/workshop/<external_id>/info`
+## `GET /workshop/<external_id>/info`
 Возвращает основную информацию о повязке. Используется для генерации Open Graph.  
 Доступ к этому эндпоинту можно получить только передав `Unique-Access` хедер в запрос, содержащий токен доступа. Токен не разглашается.
 
@@ -163,6 +249,30 @@
 | `stars_count`      | Количество пользователей, добавивших повязку в избранное | `number`                           |
 | `average_og_color` | Средний цвет повязки в формате HEX                       | `string`                           |
 | `author`           | Профиль автора повязки. Об этом ниже.                    | [`Author`](#объект-автора-повязки) |
+
+<details>
+  <summary>Пример JSON ответа</summary>
+
+  ```json
+{
+    "statusCode": 200,
+    "data": {
+        "id": 69,
+        "external_id": "coolid",
+        "title": "Повязка",
+        "description": "Описание",
+        "average_og_color": "#b46691",
+        "stars_count": 1,
+        "author": {
+            "id": "1",
+            "name": "AndcoolSystems",
+            "username": "andcoolsystems",
+            "public": true
+        }
+    }
+}
+  ```
+</details>
 
 ---
 
@@ -189,9 +299,40 @@
 ### Возвращаемое значение
 Возвращает массив объектов, типа [`Category`](#объект-категории)
 
+<details>
+  <summary>Пример JSON ответа</summary>
+
+  ```json
+[
+    {
+        "id": 0,
+        "name": "Официальные",
+        "icon": "IconRosetteDiscountCheck"
+    },
+    {
+        "id": 3,
+        "name": "Окрашиваемые",
+        "icon": "IconPalette"
+    }
+]
+  ```
+</details>
+
+---
+
+## `PUT /star/<external_id>`
+<sub>Strict Auth required</sub>  
+Добавляет/удаляет повязку в избранное.
+
+### Query параметры
+| Имя   | Описание                                    | Тип данных |
+| ----- | ------------------------------------------- | ---------- |
+| `set` | Добавить или удалить повязку из избранного. | `boolean`  |
+
 ---
 
 ## `PUT /workshop/<external_id>`
+<sub>Strict Auth required</sub>  
 Обновляет повязку.
 
 ### Тело запроса
@@ -210,4 +351,5 @@
 ---
 
 ## `DELETE /workshop/<external_id>`
+<sub>Strict Auth required</sub>  
 Удаляет повязку. Пользователь должен быть владельцем повязки или администратором.

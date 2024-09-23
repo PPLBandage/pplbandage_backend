@@ -263,7 +263,7 @@ export class MinecraftService {
         }
         if (skin_data.userId) {
             return {
-                statusCode: 400,
+                statusCode: 409,
                 message: "This account already connected",
                 message_ru: "Этот аккаунт уже подключен к другой учётной записи"
             };

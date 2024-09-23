@@ -231,21 +231,6 @@ export class UserController {
         res.status(data.statusCode).send(data);
     }
 
-    @Put("/star/:id")
-    @Auth(AuthEnum.Strict)
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-    async setStar(
-        @Param('id') id: string,
-        @Query() query: SetQueryDTO,
-        @Req() request: RequestSession,
-        @Res() res: Response
-    ): Promise<void> {
-        /* set star to work by work external id */
-
-        const data = await this.bandageService.setStar(request.session, query.set === "true", id);
-        res.status(data.statusCode).send(data);
-    }
-
     @Put("/user/me/settings/set_public")
     @Auth(AuthEnum.Strict)
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))

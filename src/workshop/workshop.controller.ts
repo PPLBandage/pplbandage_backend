@@ -26,6 +26,7 @@ import { CreateBandageDto } from './dto/createBandage.dto';
 import { EditBandageDto } from './dto/editBandage.dto';
 import { RequestSession } from 'src/common/bandage_response';
 import { EditQueryDTO, WidthQueryDTO, WorkshopSearchQueryDTO } from 'src/workshop/dto/queries.dto';
+import { SetQueryDTO } from 'src/user/dto/queries.dto';
 
 @Controller('api')
 @UseGuards(AuthGuard)
@@ -236,6 +237,21 @@ export class WorkshopController {
         /* get list of categories */
 
         res.status(200).send(await this.bandageService.getCategories(query.for_edit === 'true', request.session));
+    }
+
+    @Put("/star/:id")
+    @Auth(AuthEnum.Strict)
+    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+    async setStar(
+        @Param('id') id: string,
+        @Query() query: SetQueryDTO,
+        @Req() request: RequestSession,
+        @Res() res: Response
+    ): Promise<void> {
+        /* set star to work by work external id */
+
+        const data = await this.bandageService.setStar(request.session, query.set === "true", id);
+        res.status(data.statusCode).send(data);
     }
 
     @Get('/workshop/count/badge')
