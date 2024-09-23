@@ -225,7 +225,7 @@
             "uuid": "1420c63cb1114453993fb3479ba1d4c6",
             "nickname": "AndcoolSystems"
         },
-        "permissions_level": 0,
+        "permissions_level": 2,
         "access_level": 2,
         "check_state": null
     }
