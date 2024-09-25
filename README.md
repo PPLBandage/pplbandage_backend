@@ -14,7 +14,7 @@
 - - [Корневые эндпоинты API](/docs/mainRoute.md)
 - - [Мастерская](/docs/workshop.md)
 - - Пользователи
-- - Minecraft API
+- - [Minecraft API](/docs/minecraft.md)
 - - Auth
 
 ## Введение
