@@ -219,6 +219,11 @@ export class UserService {
             }
         }
 
+        const updated_user = await this.prisma.user.update({
+            where: { id: user.id },
+            data: { name: current_discord.global_name || current_discord.username }
+        });
+
         const bandages = await this.prisma.bandage.findMany({
             where: { userId: user.id, access_level: can_view ? undefined : 2, categories: can_view ? undefined : { none: { only_admins: true } } },
             include: { categories: true, stars: true, User: { include: { UserSettings: true } } }
@@ -241,8 +246,8 @@ export class UserService {
             statusCode: 200,
             userID: user.id,
             discordID: user.discordId,
-            username: user.username,
-            name: user.reserved_name || user.name,
+            username: updated_user.username,
+            name: updated_user.reserved_name || updated_user.name,
             joined_at: user.joined_at,
             avatar: current_discord.avatar ?
                 `https://cdn.discordapp.com/avatars/${current_discord.id}/${current_discord.avatar}` :
