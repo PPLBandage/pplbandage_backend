@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Session } from 'src/oauth/oauth.service';
+import { Session } from 'src/auth/auth.service';
 
 /*
 @types:

@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import axios from 'axios';
-import { hasAccess, Session } from 'src/oauth/oauth.service';
+import { hasAccess, Session } from 'src/auth/auth.service';
 import { UpdateUsersDto } from './dto/updateUser.dto';
 import { generate_response } from 'src/common/bandage_response';
 import { RolesEnum } from 'src/interfaces/types';

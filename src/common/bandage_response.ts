@@ -1,6 +1,6 @@
 import type { Request } from 'express'
 import { Bandage, Category, User, UserSettings } from '@prisma/client';
-import { Session } from 'src/oauth/oauth.service';
+import { Session } from 'src/auth/auth.service';
 
 
 export interface RequestSession extends Request {

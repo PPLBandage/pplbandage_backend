@@ -1,7 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Response } from 'express';
 import { UNAUTHORIZED } from '../root/root.controller';
-import { OauthService } from 'src/oauth/oauth.service';
+import { AuthService } from 'src/auth/auth.service';
 import { Reflector } from '@nestjs/core';
 import { Auth } from 'src/decorators/auth.decorator';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -10,7 +10,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class AuthGuard implements CanActivate {
     constructor(
         private prisma: PrismaService,
-        private oathService: OauthService,
+        private oathService: AuthService,
         private reflector: Reflector
     ) { }
 
@@ -39,7 +39,7 @@ export class AuthGuard implements CanActivate {
             response.setHeader('SetCookie', session.cookie);
         }
 
-        session && await this.prisma.user.update({ where: { id: session.user.id }, data: { last_accessed: new Date() } })
+        session && await this.prisma.sessions.update({ where: { sessionId: session.sessionId }, data: { last_accessed: new Date() } })
         return true;
     }
 }

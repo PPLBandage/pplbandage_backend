@@ -3,7 +3,7 @@ import * as sharp from 'sharp';
 import { PrismaService } from "../prisma/prisma.service";
 import { Injectable } from '@nestjs/common';
 import { Buffer } from "buffer";
-import { Session } from "src/oauth/oauth.service";
+import { Session } from "src/auth/auth.service";
 
 @Injectable()
 export class MinecraftService {

@@ -27,7 +27,7 @@ import { Auth } from 'src/decorators/auth.decorator';
 import { Roles } from 'src/decorators/access.decorator';
 import { UpdateUsersDto } from './dto/updateUser.dto';
 import { RequestSession } from 'src/common/bandage_response';
-import { PageTakeQueryDTO, SetQueryDTO, StateQueryDTO, ThemeQueryDTO } from './dto/queries.dto';
+import { PageTakeQueryDTO, StateQueryDTO, ThemeQueryDTO } from './dto/queries.dto';
 
 @Controller('api')
 @UseGuards(AuthGuard, RolesGuard)

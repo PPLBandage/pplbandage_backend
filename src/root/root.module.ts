@@ -12,8 +12,8 @@ import { NotificationService } from '../notifications/notifications.service';
 import { WorkshopController } from 'src/workshop/workshop.controller';
 import { UserController } from 'src/user/user.controller';
 import { minecraftController } from 'src/minecraft/minecraft.controller';
-import { OauthController } from 'src/oauth/oauth.controller';
-import { OauthService } from 'src/oauth/oauth.service';
+import { AuthController } from 'src/auth/auth.controller';
+import { AuthService } from 'src/auth/auth.service';
 import { DiscordNotificationService } from 'src/notifications/discord.service';
 import { CacheModule } from '@nestjs/cache-manager';
 
@@ -25,12 +25,12 @@ ConfigModule.forRoot();
 		PrismaService,
 		BandageService,
 		MinecraftService,
-		OauthService,
+		AuthService,
 		AuthGuard,
 		NotificationService,
 		DiscordNotificationService
 	],
-	controllers: [RootController, WorkshopController, UserController, minecraftController, OauthController],
+	controllers: [RootController, WorkshopController, UserController, minecraftController, AuthController],
 	imports: [
 		ThrottlerModule.forRoot([{
 			ttl: 60000,

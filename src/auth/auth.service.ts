@@ -5,6 +5,7 @@ import { sign, verify } from 'jsonwebtoken';
 import axios from 'axios';
 import { RolesEnum } from 'src/interfaces/types';
 import { UserService } from 'src/user/user.service';
+import { UAParser } from 'ua-parser-js'
 
 const discord_url = "https://discord.com/api/v10";
 const pwgood = "447699225078136832";  // pwgood server id
@@ -87,7 +88,7 @@ const generateSnowflake = (increment: bigint): string => {
 
 
 @Injectable()
-export class OauthService {
+export class AuthService {
     constructor(private prisma: PrismaService,
         private readonly userService: UserService
     ) { }
@@ -145,7 +146,10 @@ export class OauthService {
                 'Content-Type': 'application/x-www-form-urlencoded'
             }, validateStatus: () => true
         });
-        if (discord_tokens.status !== 200) return null;
+        if (discord_tokens.status !== 200) {
+            console.error(discord_tokens.data)
+            return null;
+        }
         const data = discord_tokens.data as DiscordResponse;
 
         // ----------------------- Get discord user data --------------------------
@@ -156,7 +160,10 @@ export class OauthService {
             }, validateStatus: () => true
         });
 
-        if (discord_user.status !== 200) return null;
+        if (discord_user.status !== 200) {
+            console.error(discord_user.data)
+            return null;
+        }
         const ds_user = discord_user.data as DiscordUser;
 
         // ----------------------- Check discord server roles ---------------------
@@ -279,6 +286,55 @@ export class OauthService {
         /* user log out */
 
         await this.prisma.sessions.delete({ where: { sessionId: session.sessionId } });
+    }
+
+
+    async getSessions(session: Session) {
+        /* Get user sessions */
+
+        const sessions = await this.prisma.sessions.findMany({ where: { userId: session.user.id } });
+
+        return sessions.map(_session => {
+            const user_agent = UAParser(_session.User_Agent);
+            return {
+                id: _session.id,
+                last_accessed: _session.last_accessed,
+                is_self: _session.sessionId === session.sessionId,
+                is_mobile: ['mobile', 'tablet'].includes(user_agent.device.type as string),
+                browser: user_agent.browser.name,
+                browser_version: user_agent.browser.version
+            }
+        })
+    }
+
+    async deleteSession(session: Session, session_id: number) {
+        const session_to_delete = await this.prisma.sessions.findFirst({ where: { id: session_id } });
+        if (!session_to_delete || session_to_delete.userId !== session.user.id) {
+            return {
+                statusCode: 404,
+                message: 'Not found'
+            }
+        }
+
+        await this.prisma.sessions.delete({ where: { id: session_id } });
+        return {
+            statusCode: 200,
+            message: 'Logged out'
+        }
+    }
+
+    async deleteSessionAll(session: Session) {
+        const sessions_to_delete = await this.prisma.sessions.findMany({ where: { userId: session.user.id } });
+        sessions_to_delete.forEach(async _session => {
+            if (_session.sessionId === session.sessionId) return;
+            await this.prisma.sessions.delete({ where: { id: _session.id } });
+        });
+
+        return {
+            statusCode: 200,
+            message: 'Logged out'
+        }
+
     }
 }
 

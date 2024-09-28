@@ -60,11 +60,12 @@ model AccessRoles {
 }
 
 model Sessions {
-    id         Int    @id @default(autoincrement())
-    sessionId  String @unique @default("")
-    User_Agent String @default("")
-    User       User   @relation(fields: [userId], references: [id])
-    userId     String
+    id            Int      @id @default(autoincrement())
+    sessionId     String   @unique @default("")
+    User_Agent    String   @default("")
+    User          User     @relation(fields: [userId], references: [id])
+    userId        String
+    last_accessed DateTime @default(now())
 }
 
 model Bandage {
