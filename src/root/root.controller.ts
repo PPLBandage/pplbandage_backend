@@ -14,7 +14,7 @@ export const UNAUTHORIZED = {
 }
 
 
-@Controller('/api')
+@Controller()
 @UseGuards(AuthGuard, RolesGuard)
 export class RootController {
     constructor(private prisma: PrismaService) { }

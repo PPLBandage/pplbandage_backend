@@ -7,7 +7,7 @@ import { Auth } from 'src/decorators/auth.decorator';
 import { AuthEnum } from 'src/interfaces/types';
 import { RequestSession } from 'src/common/bandage_response';
 
-@Controller('api')
+@Controller()
 @UseGuards(AuthGuard)
 export class AuthController {
     constructor(private readonly authService: AuthService

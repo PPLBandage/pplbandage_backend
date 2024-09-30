@@ -28,7 +28,7 @@ import { RequestSession } from 'src/common/bandage_response';
 import { EditQueryDTO, WidthQueryDTO, WorkshopSearchQueryDTO } from 'src/workshop/dto/queries.dto';
 import { SetQueryDTO } from 'src/user/dto/queries.dto';
 
-@Controller('api')
+@Controller()
 @UseGuards(AuthGuard)
 export class WorkshopController {
     constructor(private readonly bandageService: BandageService) { }

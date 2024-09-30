@@ -6,7 +6,7 @@ import * as sharp from 'sharp';
 import { PageTakeQueryDTO } from 'src/user/dto/queries.dto';
 import { CapeQueryDTO, PixelWidthQueryDTO } from './dto/queries.dto';
 
-@Controller('api/minecraft')
+@Controller('minecraft')
 export class minecraftController {
     constructor(private readonly minecraftService: MinecraftService) { }
 

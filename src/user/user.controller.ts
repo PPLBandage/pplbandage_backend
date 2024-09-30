@@ -20,7 +20,6 @@ import { UserService } from './user.service';
 import { NotificationService } from 'src/notifications/notifications.service';
 import { MinecraftService } from 'src/minecraft/minecraft.service';
 import { Throttle } from '@nestjs/throttler';
-import { BandageService } from 'src/workshop/bandage.service';
 import { RolesGuard } from 'src/guards/roles.guard';
 import { AuthEnum, RolesEnum } from 'src/interfaces/types';
 import { Auth } from 'src/decorators/auth.decorator';
@@ -29,13 +28,12 @@ import { UpdateUsersDto } from './dto/updateUser.dto';
 import { RequestSession } from 'src/common/bandage_response';
 import { PageTakeQueryDTO, StateQueryDTO, ThemeQueryDTO } from './dto/queries.dto';
 
-@Controller('api')
+@Controller()
 @UseGuards(AuthGuard, RolesGuard)
 export class UserController {
     constructor(private readonly userService: UserService,
         private readonly notificationService: NotificationService,
-        private readonly minecraftService: MinecraftService,
-        private readonly bandageService: BandageService
+        private readonly minecraftService: MinecraftService
     ) { }
 
     @Get("/user/me")
