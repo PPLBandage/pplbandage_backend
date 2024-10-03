@@ -281,6 +281,7 @@ export class BandageService {
         if (session) {
             if (session.user.id === bandage.User?.id) permissions_level = 1;
             if (hasAccess(session.user, RolesEnum.ManageBandages) || (session.user.id === bandage.User?.id && hidden)) permissions_level = 2;
+            if (hasAccess(session.user, RolesEnum.ForbidSelfHarm, true)) permissions_level = 0;
         }
 
         const me_profile = session && session.user.profile && session.user.UserSettings?.autoload ? {
@@ -300,7 +301,6 @@ export class BandageService {
         if (bandage.categories.some(val => val.id === 4)) check = "under review";
         if (bandage.categories.some(val => val.id === 13)) check = "denied";
 
-        if (hasAccess(session.user, RolesEnum.ForbidSelfHarm, true)) permissions_level = 0;
 
         return {
             statusCode: 200,
