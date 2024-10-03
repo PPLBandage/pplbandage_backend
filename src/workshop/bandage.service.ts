@@ -300,6 +300,8 @@ export class BandageService {
         if (bandage.categories.some(val => val.id === 4)) check = "under review";
         if (bandage.categories.some(val => val.id === 13)) check = "denied";
 
+        if (hasAccess(session.user, RolesEnum.ForbidSelfHarm, true)) permissions_level = 0;
+
         return {
             statusCode: 200,
             data: {
@@ -346,6 +348,13 @@ export class BandageService {
                 statusCode: 403,
                 message: "Forbidden"
             }
+        }
+
+        if (hasAccess(session.user, RolesEnum.ForbidSelfHarm, true)) {
+            return {
+                statusCode: 403,
+                message: "Forbidden"
+            };
         }
 
         let title = undefined;
@@ -435,6 +444,13 @@ export class BandageService {
         }
 
         if (!hasAccess(session.user, RolesEnum.ManageBandages) && session.user.id !== bandage.User?.id) {
+            return {
+                statusCode: 403,
+                message: "Forbidden"
+            };
+        }
+
+        if (hasAccess(session.user, RolesEnum.ForbidSelfHarm, true)) {
             return {
                 statusCode: 403,
                 message: "Forbidden"
