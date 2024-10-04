@@ -212,6 +212,20 @@ export class WorkshopController {
 
     }
 
+    @Put("/workshop/:id/archive")
+    @Auth(AuthEnum.Strict)
+    async archiveBandage(
+        @Param('id') id: string,
+        @Req() request: RequestSession,
+        @Res() res: Response
+    ) {
+        /* Archive bandage */
+
+        const data = await this.bandageService.archiveBandage(request.session, id);
+        res.status(data.statusCode).send(data);
+
+    }
+
     @Delete("/workshop/:id")
     @Auth(AuthEnum.Strict)
     async deleteBandage(

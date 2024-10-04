@@ -82,6 +82,7 @@ model Bandage {
     stars        User[]     @relation("UserStars")
     categories   Category[] @relation("Categories")
     access_level Int        @default(2)
+    archived     Boolean    @default(false)
 }
 
 model Category {

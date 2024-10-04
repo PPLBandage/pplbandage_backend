@@ -282,6 +282,7 @@ export class BandageService {
             if (session.user.id === bandage.User?.id) permissions_level = 1;
             if (hasAccess(session.user, RolesEnum.ManageBandages) || (session.user.id === bandage.User?.id && hidden)) permissions_level = 2;
             if (hasAccess(session.user, RolesEnum.ForbidSelfHarm, true)) permissions_level = 0;
+            if (bandage.archived && !hasAccess(session.user, RolesEnum.ManageBandages)) permissions_level = 0;
         }
 
         const me_profile = session && session.user.profile && session.user.UserSettings?.autoload ? {
@@ -289,7 +290,7 @@ export class BandageService {
             nickname: session.user.profile.nickname
         } : undefined;
 
-        const categories = bandage.categories.map((cat) => {
+        const categories = bandage.categories.map(cat => {
             return {
                 id: cat.id,
                 name: cat.name,
@@ -298,8 +299,8 @@ export class BandageService {
         });
 
         let check = null;
-        if (bandage.categories.some(val => val.id === 4)) check = "under review";
-        if (bandage.categories.some(val => val.id === 13)) check = "denied";
+        if (bandage.categories.some(val => val.id === moderation_id[0])) check = "under review";
+        if (bandage.categories.some(val => val.id === moderation_id[1])) check = "denied";
 
 
         return {
@@ -350,7 +351,10 @@ export class BandageService {
             }
         }
 
-        if (hasAccess(session.user, RolesEnum.ForbidSelfHarm, true)) {
+        if (
+            hasAccess(session.user, RolesEnum.ForbidSelfHarm, true) ||
+            (bandage.archived && !hasAccess(session.user, RolesEnum.ManageBandages))
+        ) {
             return {
                 statusCode: 403,
                 message: "Forbidden"
@@ -450,7 +454,10 @@ export class BandageService {
             };
         }
 
-        if (hasAccess(session.user, RolesEnum.ForbidSelfHarm, true)) {
+        if (
+            hasAccess(session.user, RolesEnum.ForbidSelfHarm, true) ||
+            (bandage.archived && !hasAccess(session.user, RolesEnum.ManageBandages))
+        ) {
             return {
                 statusCode: 403,
                 message: "Forbidden"
@@ -473,7 +480,7 @@ export class BandageService {
             const width = metadata.width as number;
             height = metadata.height as number;
 
-            if (width != 16 || (height < 2 || height > 24 || height % 2 != 0) || metadata.format != 'png') {
+            if (width !== 16 || (height < 2 || height > 24 || height % 2 !== 0) || metadata.format !== 'png') {
                 return {
                     statusCode: 400,
                     message: "Invalid bandage size or format!",
@@ -503,5 +510,29 @@ export class BandageService {
             statusCode: 200,
             height: height
         };
+    }
+
+    async archiveBandage(session: Session, externalId: string) {
+        const bandage = await this.prisma.bandage.findFirst({ where: { externalId: externalId }, include: { User: true } });
+        if (!bandage) {
+            return {
+                statusCode: 404,
+                message: "Not found"
+            };
+        }
+
+        if (!hasAccess(session.user, RolesEnum.ManageBandages) && session.user.id !== bandage.User?.id) {
+            return {
+                statusCode: 403,
+                message: "Forbidden"
+            };
+        }
+
+        await this.prisma.bandage.update({ where: { externalId: externalId }, data: { archived: true } });
+
+        return {
+            statusCode: 200,
+            message: 'Archived'
+        }
     }
 }
