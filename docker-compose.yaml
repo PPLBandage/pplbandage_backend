@@ -3,8 +3,6 @@ services:
     container_name: ppl_api
     volumes:
       - ./prisma:/app/prisma
-    ports:
-      - '8001:8001'
     build:
       context: .
       dockerfile: Dockerfile
