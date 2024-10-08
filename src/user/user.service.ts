@@ -91,7 +91,7 @@ export class UserService {
             username: updated_user.username,
             name: updated_user.reserved_name || updated_user.name,
             joined_at: session.user.joined_at,
-            avatar: response_data.avatar ? `https://cdn.discordapp.com/avatars/${response_data.id}/${response_data.avatar}` : `/static/favicon.ico`,
+            avatar: response_data.avatar ? `${process.env.DISCORD_AVATAR}/avatars/${response_data.id}/${response_data.avatar}` : `/static/favicon.ico`,
             banner_color: response_data.banner_color,
             has_unreaded_notifications: session.user.has_unreaded_notifications,
             permissions: session.user.AccessRoles.map(role => role.name.toLowerCase()),
@@ -133,7 +133,7 @@ export class UserService {
             name: session.user.reserved_name || session.user.name,
             connected_at: session.user.joined_at,
             avatar: current_discord.avatar ?
-                `https://cdn.discordapp.com/avatars/${current_discord.id}/${current_discord.avatar}` : null
+                `${process.env.DISCORD_AVATAR}/avatars/${current_discord.id}/${current_discord.avatar}` : null
         }
 
         return {
@@ -250,7 +250,7 @@ export class UserService {
             name: updated_user.reserved_name || updated_user.name,
             joined_at: user.joined_at,
             avatar: current_discord.avatar ?
-                `https://cdn.discordapp.com/avatars/${current_discord.id}/${current_discord.avatar}` :
+                `${process.env.DISCORD_AVATAR}/avatars/${current_discord.id}/${current_discord.avatar}` :
                 `/static/favicon.ico`,
             banner_color: current_discord.banner_color,
             works: generate_response(bandages, session, can_view),
@@ -283,7 +283,7 @@ export class UserService {
             username: user.username,
             name: user.reserved_name || user.name,
             avatar: current_discord.avatar ?
-                `https://cdn.discordapp.com/avatars/${current_discord.id}/${current_discord.avatar}` :
+                `${process.env.DISCORD_AVATAR}/avatars/${current_discord.id}/${current_discord.avatar}` :
                 `/static/favicon.ico`,
             banner_color: current_discord.banner_color,
             works_count: user.Bandage.length,
