@@ -7,7 +7,7 @@ import { generate_response } from 'src/common/bandage_response';
 import { RolesEnum } from 'src/interfaces/types';
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 
-const discord_url = "https://discord.com/api/v10";
+const discord_url = process.env.DISCORD_URL + "/api/v10";
 
 
 interface DiscordUser {

@@ -7,7 +7,7 @@ import { RolesEnum } from 'src/interfaces/types';
 import { UserService } from 'src/user/user.service';
 import { UAParser } from 'ua-parser-js'
 
-const discord_url = "https://discord.com/api/v10";
+const discord_url = process.env.DISCORD_URL + "/api/v10";
 const pwgood = "447699225078136832";  // pwgood server id
 const EPOCH = 1672531200000n;
 
