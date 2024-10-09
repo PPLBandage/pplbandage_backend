@@ -12,7 +12,8 @@ import {
     Body,
     UseGuards,
     ValidationPipe,
-    UsePipes
+    UsePipes,
+    StreamableFile
 } from '@nestjs/common';
 import type { Response } from 'express'
 import { AuthGuard } from 'src/guards/auth.guard';
@@ -257,5 +258,25 @@ export class UserController {
     async update_user(@Param('username') username: string, @Res() res: Response, @Body() body: UpdateUsersDto) {
         const data = await this.userService.updateUser(username, body);
         res.status(data.statusCode).send(data);
+    }
+
+    @Get("/avatars/:user_id")
+    async head(
+        @Param('user_id') user_id: string,
+        @Res({ passthrough: true }) res: Response
+    ): Promise<StreamableFile | void> {
+        /* get user avatar by id */
+
+        const cache = await this.userService.getAvatar(user_id);
+        if (!cache) {
+            res.status(500).send({
+                status: 'error',
+                message: 'Unable to get user avatar'
+            });
+            return;
+        }
+
+        res.setHeader('Content-Type', 'image/png');
+        return new StreamableFile(Buffer.from(cache, "base64"));
     }
 }

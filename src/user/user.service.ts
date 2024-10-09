@@ -47,9 +47,32 @@ export class UserService {
         if (response.status !== 200) {
             return null;
         }
+        const data = response.data as DiscordUser;
 
+        await this.cacheManager.set(`avatar_hash:${user_id}`, data.avatar ?? 'none', 1000 * 60 * 10);
         await this.cacheManager.set(`discord:${user_id}`, JSON.stringify(response.data), 1000 * 60 * 60);
-        return response.data as DiscordUser;
+        return data;
+    }
+
+    async getAvatar(user_id: string) {
+        const user = await this.prisma.user.findFirst({ where: { discordId: user_id } });
+        if (!user) return null;
+
+        const avatar_cache = await this.cacheManager.get<string>(`avatar:${user_id}`);
+        if (avatar_cache) return avatar_cache;
+
+        let hash = await this.cacheManager.get<string>(`avatar_hash:${user_id}`);
+        if (!hash) {
+            hash = (await this.getCurrentData(user_id))?.avatar ?? 'none';
+        }
+
+        if (hash === 'none') return null;
+
+        const avatar_response = await axios.get(`${process.env.DISCORD_AVATAR}/${user_id}/${hash}`, { responseType: 'arraybuffer' });
+        const avatar = Buffer.from(avatar_response.data, 'binary').toString('base64');
+
+        await this.cacheManager.set(`avatar:${user_id}`, avatar, 1000 * 60 * 60 * 24);
+        return avatar;
     }
 
     async getUser(session: Session) {
@@ -91,7 +114,9 @@ export class UserService {
             username: updated_user.username,
             name: updated_user.reserved_name || updated_user.name,
             joined_at: session.user.joined_at,
-            avatar: response_data.avatar ? `${process.env.DISCORD_AVATAR}/${response_data.id}/${response_data.avatar}` : `/static/favicon.ico`,
+            avatar: response_data.avatar ?
+                `/api/v1/avatars/${session.user.discordId}` :
+                `/static/favicon.ico`,
             banner_color: response_data.banner_color,
             has_unreaded_notifications: session.user.has_unreaded_notifications,
             permissions: session.user.AccessRoles.map(role => role.name.toLowerCase()),
@@ -133,7 +158,8 @@ export class UserService {
             name: session.user.reserved_name || session.user.name,
             connected_at: session.user.joined_at,
             avatar: current_discord.avatar ?
-                `${process.env.DISCORD_AVATAR}/${current_discord.id}/${current_discord.avatar}` : null
+                `/api/v1/avatars/${session.user.discordId}` :
+                null
         }
 
         return {
@@ -250,7 +276,7 @@ export class UserService {
             name: updated_user.reserved_name || updated_user.name,
             joined_at: user.joined_at,
             avatar: current_discord.avatar ?
-                `${process.env.DISCORD_AVATAR}/${current_discord.id}/${current_discord.avatar}` :
+                `/api/v1/avatars/${current_discord.id}` :
                 `/static/favicon.ico`,
             banner_color: current_discord.banner_color,
             works: generate_response(bandages, session, can_view),
@@ -283,7 +309,7 @@ export class UserService {
             username: user.username,
             name: user.reserved_name || user.name,
             avatar: current_discord.avatar ?
-                `${process.env.DISCORD_AVATAR}/${current_discord.id}/${current_discord.avatar}` :
+                `/api/v1/avatars/${current_discord.id}` :
                 `/static/favicon.ico`,
             banner_color: current_discord.banner_color,
             works_count: user.Bandage.length,
