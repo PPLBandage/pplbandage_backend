@@ -68,7 +68,7 @@ export class UserService {
 
         if (hash === 'none') return null;
 
-        const avatar_response = await axios.get(`${process.env.DISCORD_AVATAR}/${user_id}/${hash}`, { responseType: 'arraybuffer' });
+        const avatar_response = await axios.get(`${process.env.DISCORD_AVATAR}/${user_id}/${hash}?size=512`, { responseType: 'arraybuffer' });
         const avatar = Buffer.from(avatar_response.data, 'binary').toString('base64');
 
         await this.cacheManager.set(`avatar:${user_id}`, avatar, 1000 * 60 * 60 * 24);
