@@ -35,23 +35,13 @@ export class AuthController {
 
         const user_agent = request.headers['user-agent'] as string;
         const data = await this.authService.login(code, user_agent);
-        if (!data) {
-            res.status(500).send({
-                status: "error",
-                message: "could not login"
-            });
-            return;
-        }
-        if (data.statusCode !== 200) {
-            res.status(data.statusCode).send(data);
-            return;
-        }
 
-        const date = new Date((new Date()).getTime() + (Number(process.env.SESSION_TTL) * 1000));
-        res.setHeader('Access-Control-Expose-Headers', 'SetCookie');
-        res.setHeader('SetCookie', `sessionId=${data.sessionId}; Path=/; Expires=${date.toUTCString()}; SameSite=Strict`);
-
-        res.send(data);
+        if (data.statusCode === 200) {
+            const date = new Date((new Date()).getTime() + (Number(process.env.SESSION_TTL) * 1000));
+            res.setHeader('Access-Control-Expose-Headers', 'SetCookie');
+            res.setHeader('SetCookie', `sessionId=${data.sessionId}; Path=/; Expires=${date.toUTCString()}; SameSite=Strict`);
+        }
+        res.status(data.statusCode).send(data);
     }
 
     @Get("/auth/roles")

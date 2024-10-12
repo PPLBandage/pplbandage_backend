@@ -144,11 +144,15 @@ export class AuthService {
             headers: {
                 'Authorization': `Basic ${process.env.BASIC_AUTH}`,
                 'Content-Type': 'application/x-www-form-urlencoded'
-            }, validateStatus: () => true
+            },
+            validateStatus: () => true
         });
         if (discord_tokens.status !== 200) {
-            console.error(discord_tokens.data)
-            return null;
+            return {
+                statusCode: 400,
+                message: 'Invalid code',
+                message_ru: 'Недействительный код. Попробуйте еще раз'
+            };
         }
         const data = discord_tokens.data as DiscordResponse;
 
@@ -161,8 +165,11 @@ export class AuthService {
         });
 
         if (discord_user.status !== 200) {
-            console.error(discord_user.data)
-            return null;
+            return {
+                statusCode: 500,
+                message: 'Error retrieving user data',
+                message_ru: 'Ошибка при получении данных пользователя'
+            };
         }
         const ds_user = discord_user.data as DiscordUser;
 
@@ -172,7 +179,11 @@ export class AuthService {
         const on_ppl = await this.check_ppl(`${data.token_type} ${data.access_token}`);
         if (!on_ppl && !user_settings?.skip_ppl_check) {
             await this.prisma.sessions.deleteMany({ where: { User: { discordId: ds_user.id } } });
-            return { message: "You are not on ppl", statusCode: 403 };
+            return {
+                statusCode: 403,
+                message: 'You are not on ppl',
+                message_ru: 'У вас нет требуемых ролей для регистрации'
+            };
         }
 
         // ----------------------- Upsert user field in DB ------------------------
@@ -197,7 +208,11 @@ export class AuthService {
 
         if (user_db.UserSettings?.banned) {
             await this.prisma.sessions.deleteMany({ where: { userId: user_db.id } });
-            return { message: "Unable to login", statusCode: 403 };
+            return {
+                statusCode: 403,
+                message: 'Unable to login',
+                message_ru: 'Невозможно получить доступ к профилю'
+            };
         }
 
         // ----------------------- Create session token ---------------------------
