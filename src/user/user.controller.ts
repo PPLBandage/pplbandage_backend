@@ -215,6 +215,11 @@ export class UserController {
     ): Promise<void> {
         /* get user data by nickname */
 
+        if (request.headers['unique-access'] !== process.env.WORKSHOP_TOKEN) {
+            res.status(403).send({ message: 'Forbidden', statusCode: 403 });
+            return;
+        }
+
         const data = await this.userService.getUserByNickname(username, request.session);
         res.status(data.statusCode).send(data);
     }

@@ -53,10 +53,12 @@ model UserSettings {
 }
 
 model AccessRoles {
-    id    Int    @id @default(autoincrement())
-    name  String @default("Default")
-    level Int    @unique @default(0)
-    users User[]
+    id          Int    @id @default(autoincrement())
+    name        String @default("Default")
+    level       Int    @unique @default(0)
+    users       User[]
+    icon        String @default("")
+    public_name String @default("")
 }
 
 model Sessions {

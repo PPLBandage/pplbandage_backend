@@ -120,6 +120,9 @@ export class UserService {
             banner_color: response_data.banner_color,
             has_unreaded_notifications: session.user.has_unreaded_notifications,
             permissions: session.user.AccessRoles.map(role => role.name.toLowerCase()),
+            roles: session.user.AccessRoles
+                .filter(role => role.public_name)
+                .map(role => ({ id: role.id, name: role.public_name, icon: role.icon })),
             profile_theme: session.user.UserSettings?.profile_theme,
             stars_count: stars_count
         };
@@ -211,7 +214,7 @@ export class UserService {
     async _getUserByNickname(username: string, session: Session | null) {
         const user = await this.prisma.user.findFirst({
             where: { username: username },
-            include: { Bandage: true, UserSettings: true }
+            include: { Bandage: true, UserSettings: true, AccessRoles: true }
         });
 
         if (!user) {
@@ -282,6 +285,9 @@ export class UserService {
             works: generate_response(bandages, session, can_view),
             is_self: user.id == session?.user?.id,
             profile_theme: user.UserSettings?.profile_theme,
+            roles: user.AccessRoles
+                .filter(role => role.public_name)
+                .map(role => ({ id: role.id, name: role.public_name, icon: role.icon })),
             stars_count: stars_count
         }
     }
