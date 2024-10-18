@@ -6,6 +6,7 @@ import { UpdateUsersDto } from './dto/updateUser.dto';
 import { generate_response } from 'src/common/bandage_response';
 import { RolesEnum } from 'src/interfaces/types';
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
+import * as sharp from 'sharp';
 
 const discord_url = process.env.DISCORD_URL + "/api/v10";
 
@@ -69,10 +70,17 @@ export class UserService {
         if (hash === 'none') return null;
 
         const avatar_response = await axios.get(`${process.env.DISCORD_AVATAR}/${user_id}/${hash}?size=512`, { responseType: 'arraybuffer' });
-        const avatar = Buffer.from(avatar_response.data, 'binary').toString('base64');
+        let avatar_buffer = Buffer.from(avatar_response.data);
 
-        await this.cacheManager.set(`avatar:${user_id}`, avatar, 1000 * 60 * 60 * 24);
-        return avatar;
+        if (avatar_buffer[0] === 0x47 && avatar_buffer[1] === 0x49 && avatar_buffer[2] === 0x46) {
+            avatar_buffer = await sharp(avatar_buffer)
+                .extract({ left: 0, top: 0, width: 1, height: 1 })
+                .toBuffer();
+        }
+
+        const avatarB64 = avatar_buffer.toString('base64');
+        await this.cacheManager.set(`avatar:${user_id}`, avatarB64, 1000 * 60 * 60 * 24);
+        return avatarB64;
     }
 
     async getUser(session: Session) {
