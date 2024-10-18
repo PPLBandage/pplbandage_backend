@@ -30,7 +30,8 @@ export class RolesGuard implements CanActivate {
 
         response.status(403).send({
             statusCode: 403,
-            message: 'Forbidden'
+            message: 'Forbidden',
+            message_ru: 'Доступ запрещен'
         });
         return false;
     }

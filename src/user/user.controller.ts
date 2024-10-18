@@ -111,7 +111,7 @@ export class UserController {
 
         await this.userService.setProfileTheme(request.session, body.theme as number);
         res.status(200).send({
-            status: 'success',
+            statusCode: 200,
             new_theme: body.theme
         })
     }
@@ -154,8 +154,8 @@ export class UserController {
         /* connect minecraft profile to account */
 
         if (code.length != 6) {
-            res.status(HttpStatus.BAD_REQUEST).send({
-                status: "error",
+            res.status(400).send({
+                statusCode: 400,
                 message: "Invalid code",
                 message_ru: "Код должен содержать 6 символов!"
             });
@@ -178,6 +178,7 @@ export class UserController {
         if (!request.session.user.profile) {
             res.status(404).send({
                 message: "Could not find associated Minecraft account",
+                message_ru: 'Аккаунт Minecraft не привязан'
             });
             return;
         }
@@ -185,13 +186,15 @@ export class UserController {
         const cache = await this.minecraftService.updateSkinCache(request.session.user.profile.uuid, true);
         if (!cache) {
             res.status(404).send({
-                message: 'Profile not found'
+                message: 'Profile not found',
+                message_ru: 'Профиль не найден'
             });
             return;
         }
 
         res.status(200).send({
             message: "Successfully purged",
+            message_ru: 'Кэш успешно обновлён'
         });
     }
 
@@ -216,7 +219,11 @@ export class UserController {
         /* get user data by nickname */
 
         if (request.headers['unique-access'] !== process.env.WORKSHOP_TOKEN) {
-            res.status(403).send({ message: 'Forbidden', statusCode: 403 });
+            res.status(403).send({
+                statusCode: 403,
+                message: 'Forbidden',
+                message_ru: 'Доступ запрещен'
+            });
             return;
         }
 
@@ -275,8 +282,9 @@ export class UserController {
         const cache = await this.userService.getAvatar(user_id);
         if (!cache) {
             res.status(500).send({
-                status: 'error',
-                message: 'Unable to get user avatar'
+                statusCode: 500,
+                message: 'Unable to get user avatar',
+                message_ru: 'Не удалось получить изображение профиля'
             });
             return;
         }

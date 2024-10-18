@@ -205,7 +205,7 @@ export class MinecraftService {
             return null;
         }
         return {
-            status: "success",
+            statusCode: 200,
             requestedFragment: fragment,
             data: records_list,
             total_count: count,
@@ -221,7 +221,8 @@ export class MinecraftService {
 
         if (!minecraft) return {
             statusCode: 400,
-            message: "Minecraft account not connected"
+            message: 'Minecraft account not connected',
+            message_ru: 'Аккаунт Minecraft не привязан'
         };
 
         const result = await this.prisma.minecraft.update({
@@ -237,8 +238,8 @@ export class MinecraftService {
         if (session.user.profile) {
             return {
                 statusCode: 400,
-                message: "Account already connected",
-                message_ru: "Аккаунт уже подключен"
+                message: 'Account already connected',
+                message_ru: 'Аккаунт уже подключен'
             };
         }
 
@@ -246,8 +247,8 @@ export class MinecraftService {
         if (user_data.status !== 200) {
             return {
                 statusCode: 404,
-                message: "Code not found",
-                message_ru: "Код не найден"
+                message: 'Code not found',
+                message_ru: 'Код не найден'
             };
         }
 
@@ -257,15 +258,15 @@ export class MinecraftService {
         if (!skin_data) {
             return {
                 statusCode: 500,
-                message: "Error while finding player data",
-                message_ru: "Не удалось найти и обновить данные о игроке"
+                message: 'Error while finding player data',
+                message_ru: 'Не удалось найти и обновить данные о игроке'
             };
         }
         if (skin_data.userId) {
             return {
                 statusCode: 409,
-                message: "This account already connected",
-                message_ru: "Этот аккаунт уже подключен к другой учётной записи"
+                message: 'This account already connected',
+                message_ru: 'Этот аккаунт уже подключен к другой учётной записи'
             };
         }
 
@@ -276,8 +277,8 @@ export class MinecraftService {
 
         return {
             statusCode: 200,
-            message: "Success",
-            message_ru: "Аккаунт успешно подключен!",
+            message: 'Success',
+            message_ru: 'Аккаунт успешно подключен!',
             uuid: skin_data.uuid
         }
     }
@@ -288,8 +289,8 @@ export class MinecraftService {
         if (!session.user.profile) {
             return {
                 statusCode: 400,
-                message: "Account didn't connected",
-                message_ru: "Аккаунт Minecraft не подключен"
+                message: 'Account didn\'t connected',
+                message_ru: 'Аккаунт Minecraft не подключен'
             }
         }
 
@@ -300,8 +301,8 @@ export class MinecraftService {
 
         return {
             statusCode: 200,
-            message: "Success",
-            message_ru: "Аккаунт успешно отключен",
+            message: 'Success',
+            message_ru: 'Аккаунт успешно отключен',
         }
     }
 }

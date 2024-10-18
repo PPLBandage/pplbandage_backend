@@ -83,7 +83,8 @@ export class AuthController {
         if (isNaN(Number(id))) {
             res.status(400).send({
                 statusCode: 400,
-                message: 'Invalid session id'
+                message: 'Invalid session id',
+                message_ru: 'Неправильный идентификатор сессии'
             });
             return;
         }

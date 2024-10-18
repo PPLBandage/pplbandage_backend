@@ -64,8 +64,9 @@ export class WorkshopController {
 
         if (!body.base64 || !body.title) {
             res.status(HttpStatus.BAD_REQUEST).send({
-                message: "Invalid Body",
-                statusCode: 400
+                statusCode: 400,
+                message: 'Invalid Body',
+                message_ru: 'Неправильное тело запроса'
             });
             return;
         }
@@ -79,8 +80,9 @@ export class WorkshopController {
         if (body.split_type === true) {
             if (!body.base64_slim) {
                 res.status(400).send({
-                    message: "Invalid Body",
-                    statusCode: 400
+                    statusCode: 400,
+                    message: 'Invalid Body',
+                    message_ru: 'Неправильное тело запроса'
                 });
                 return;
             }
@@ -107,7 +109,11 @@ export class WorkshopController {
         /* get bandage by external id (internal endpoint) */
 
         if (request.headers['unique-access'] !== process.env.WORKSHOP_TOKEN) {
-            res.status(403).send({ message: 'Forbidden', statusCode: 403 });
+            res.status(403).send({
+                statusCode: 403,
+                message: 'Forbidden',
+                message_ru: 'У вас нет прав для выполнения этого действия',
+            });
             return;
         }
         const data = await this.bandageService.getBandage(id, request.session);
@@ -124,7 +130,11 @@ export class WorkshopController {
         /* get bandage info by external id (internal endpoint) */
 
         if (request.headers['unique-access'] !== process.env.WORKSHOP_TOKEN) {
-            res.status(403).send({ message: 'Forbidden', statusCode: 403 });
+            res.status(403).send({
+                statusCode: 403,
+                message: 'Forbidden',
+                message_ru: 'У вас нет прав для выполнения этого действия',
+            });
             return;
         }
         const data = await this.bandageService.getDataForOg(id);
@@ -201,8 +211,9 @@ export class WorkshopController {
 
         if (!body) {
             res.status(HttpStatus.BAD_REQUEST).send({
-                message: "Invalid Body",
-                statusCode: 400
+                statusCode: 400,
+                message: 'Invalid Body',
+                message_ru: 'Неправильное тело запроса'
             });
             return;
         }

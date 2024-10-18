@@ -8,9 +8,9 @@ import { RolesGuard } from 'src/guards/roles.guard';
 
 
 export const UNAUTHORIZED = {
-    status: "error",
+    statusCode: 401,
     message: "UNAUTHORIZED",
-    statusCode: 401
+    message_ru: 'Неавторизован',
 }
 
 

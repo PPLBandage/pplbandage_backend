@@ -74,7 +74,7 @@ export class UserService {
 
         if (avatar_buffer[0] === 0x47 && avatar_buffer[1] === 0x49 && avatar_buffer[2] === 0x46) {
             avatar_buffer = await sharp(avatar_buffer)
-                .extract({ left: 0, top: 0, width: 1, height: 1 })
+                .extract({ left: 0, top: 0, width: 512, height: 512 })
                 .toBuffer();
         }
 
@@ -89,8 +89,9 @@ export class UserService {
         if (session.user.UserSettings?.banned) {
             await this.prisma.sessions.deleteMany({ where: { userId: session.user.id } });
             return {
+                statusCode: 401,
                 message: "Unable to get user",
-                statusCode: 401
+                message_ru: 'Не удалось получить профиль пользователя'
             };
         }
 
@@ -98,8 +99,9 @@ export class UserService {
 
         if (!response_data) {
             return {
-                statusCode: 404,
-                message: 'Unable to get user data'
+                statusCode: 500,
+                message: 'Unable to get user data',
+                message_ru: 'Не удалось получить актуальную информацию о профиле пользователя'
             }
         }
         const updated_user = await this.prisma.user.update({
@@ -158,8 +160,9 @@ export class UserService {
 
         if (!current_discord) {
             return {
-                statusCode: 404,
-                message: 'Unable to get user data'
+                statusCode: 500,
+                message: 'Unable to get user data',
+                message_ru: 'Не удалось получить актуальную информацию о профиле пользователя'
             }
         }
 
@@ -242,7 +245,8 @@ export class UserService {
         if (!user) {
             return {
                 statusCode: 404,
-                message: 'User not found'
+                message: 'User not found',
+                message_ru: 'Пользователь не найден'
             }
         }
 
@@ -252,7 +256,8 @@ export class UserService {
         if (!current_discord) {
             return {
                 statusCode: 404,
-                message: 'Unable to get user data'
+                message: 'Unable to get user data',
+                message_ru: 'Не удалось получить актуальную информацию о профиле пользователя'
             }
         }
 
@@ -269,7 +274,8 @@ export class UserService {
         if (bandages.length === 0 && !can_view) {
             return {
                 statusCode: 404,
-                message: 'User not found'
+                message: 'User not found',
+                message_ru: 'Пользователь не найден'
             }
         }
 
@@ -305,7 +311,8 @@ export class UserService {
         if (!user) {
             return {
                 statusCode: 404,
-                message: 'User not found'
+                message: 'User not found',
+                message_ru: 'Пользователь не найден'
             }
         }
         const current_discord = await this.getCurrentData(user.discordId);
@@ -313,7 +320,8 @@ export class UserService {
         if (!current_discord) {
             return {
                 statusCode: 404,
-                message: 'Unable to get user data'
+                message: 'Unable to get user data',
+                message_ru: 'Не удалось получить актуальную информацию о профиле пользователя'
             }
         }
 
@@ -374,7 +382,8 @@ export class UserService {
         if (!user) {
             return {
                 statusCode: 404,
-                message: 'User not found'
+                message: 'User not found',
+                message_ru: 'Пользователь не найден'
             }
         }
 
@@ -385,7 +394,8 @@ export class UserService {
 
         return {
             statusCode: 200,
-            message: 'Updated'
+            message: 'Updated',
+            message_ru: 'Обновлён'
         }
     }
 }

@@ -229,7 +229,12 @@ export class AuthService {
                 }
             }
         });
-        return { message: "logged in", sessionId: token_record.sessionId, statusCode: 200 };
+        return {
+            message: 'logged in',
+            message_ru: 'Вход произведен успешно',
+            sessionId: token_record.sessionId,
+            statusCode: 200
+        };
     }
 
     async validateSession(session: string | undefined, user_agent: string): Promise<Session | null> {
@@ -327,14 +332,16 @@ export class AuthService {
         if (!session_to_delete || session_to_delete.userId !== session.user.id) {
             return {
                 statusCode: 404,
-                message: 'Not found'
+                message: 'Not found',
+                message_ru: 'Сессия не найдена'
             }
         }
 
         await this.prisma.sessions.delete({ where: { id: session_id } });
         return {
             statusCode: 200,
-            message: 'Logged out'
+            message: 'Logged out',
+            message_ru: 'Вы успешно вышли из аккаунта'
         }
     }
 
@@ -347,7 +354,8 @@ export class AuthService {
 
         return {
             statusCode: 200,
-            message: 'Logged out'
+            message: 'Logged out',
+            message_ru: 'Вы успешно вышли со всех устройств'
         }
 
     }

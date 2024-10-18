@@ -124,8 +124,9 @@ export class BandageService {
         const bandage = await this.prisma.bandage.findFirst({ where: { externalId: id } });
         if (!bandage) {
             return {
+                statusCode: 404,
                 message: "Bandage not found",
-                statusCode: 404
+                message_ru: 'Повязка не найдена',
             };
         }
 
@@ -136,9 +137,9 @@ export class BandageService {
         });
 
         return {
+            statusCode: 200,
             new_count: new_data.stars.length,
             action_set: set,
-            statusCode: 200
         }
     }
 
@@ -188,8 +189,8 @@ export class BandageService {
         });
 
         return {
+            statusCode: 201,
             external_id: result.externalId,
-            statusCode: 201
         };
     }
 
@@ -232,8 +233,9 @@ export class BandageService {
 
         if (!bandage) {
             return {
+                statusCode: 404,
                 message: "Bandage not found",
-                statusCode: 404
+                message_ru: 'Повязка не найдена',
             };
         }
 
@@ -271,8 +273,9 @@ export class BandageService {
 
         if (!bandage) {
             return {
+                statusCode: 404,
                 message: "Bandage not found",
-                statusCode: 404
+                message_ru: 'Повязка не найдена',
             };
         }
 
@@ -340,14 +343,16 @@ export class BandageService {
         if (!bandage) {
             return {
                 statusCode: 404,
-                message: "Not found"
+                message: "Not found",
+                message_ru: 'Повязка не найдена',
             }
         }
 
         if (bandage.User?.id !== session.user.id && !hasAccess(session.user, RolesEnum.ManageBandages)) {
             return {
                 statusCode: 403,
-                message: "Forbidden"
+                message: "Forbidden",
+                message_ru: 'У вас нет прав для выполнения этого действия',
             }
         }
 
@@ -357,7 +362,8 @@ export class BandageService {
         ) {
             return {
                 statusCode: 403,
-                message: "Forbidden"
+                message: "Forbidden",
+                message_ru: 'У вас нет прав для выполнения этого действия',
             };
         }
 
@@ -443,14 +449,16 @@ export class BandageService {
         if (!bandage) {
             return {
                 statusCode: 404,
-                message: "Not found"
+                message: "Not found",
+                message_ru: 'Повязка не найдена',
             };
         }
 
         if (!hasAccess(session.user, RolesEnum.ManageBandages) && session.user.id !== bandage.User?.id) {
             return {
                 statusCode: 403,
-                message: "Forbidden"
+                message: "Forbidden",
+                message_ru: 'У вас нет прав для выполнения этого действия',
             };
         }
 
@@ -460,14 +468,16 @@ export class BandageService {
         ) {
             return {
                 statusCode: 403,
-                message: "Forbidden"
+                message: "Forbidden",
+                message_ru: 'У вас нет прав для выполнения этого действия',
             };
         }
 
         await this.prisma.bandage.delete({ where: { id: bandage.id } });
         return {
             statusCode: 200,
-            message: "Deleted"
+            message: "Deleted",
+            message_ru: 'Успешно удалено'
         }
     }
 
@@ -517,14 +527,16 @@ export class BandageService {
         if (!bandage) {
             return {
                 statusCode: 404,
-                message: "Not found"
+                message: 'Not found',
+                message_ru: 'Повязка не найдена',
             };
         }
 
         if (!hasAccess(session.user, RolesEnum.ManageBandages) && session.user.id !== bandage.User?.id) {
             return {
                 statusCode: 403,
-                message: "Forbidden"
+                message: 'Forbidden',
+                message_ru: 'У вас нет прав для выполнения этого действия',
             };
         }
 
@@ -532,7 +544,8 @@ export class BandageService {
 
         return {
             statusCode: 200,
-            message: 'Archived'
+            message: 'Archived',
+            message_ru: 'Успешно архивировано'
         }
     }
 }

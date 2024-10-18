@@ -35,7 +35,7 @@ interface SearchUnit {
 }
 
 interface Search {
-    status: string,
+    statusCode: number,
     requestedFragment: string
     data: SearchUnit[],
     total_count: number,

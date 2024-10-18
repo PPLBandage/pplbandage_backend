@@ -22,8 +22,8 @@ export class minecraftController {
         const cache = await this.minecraftService.updateSkinCache(name);
         if (!cache) {
             res.status(404).send({
-                status: 'error',
-                message: 'Profile not found'
+                message: 'Profile not found',
+                message_ru: 'Профиль не найден'
             });
             return;
         }
@@ -54,8 +54,9 @@ export class minecraftController {
         const cache = await this.minecraftService.updateSkinCache(name);
         if (!cache) {
             throw new HttpException({
-                status: 'error',
-                message: 'Profile not found'
+                statusCode: 404,
+                message: 'Profile not found',
+                message_ru: 'Профиль не найден'
             },
                 HttpStatus.NOT_FOUND
             );
@@ -75,15 +76,17 @@ export class minecraftController {
         const cache = await this.minecraftService.updateSkinCache(name);
         if (!cache) {
             res.status(404).send({
-                status: 'error',
-                message: 'Profile not found'
+                statusCode: 404,
+                message: 'Profile not found',
+                message_ru: 'Профиль не найден'
             });
             return;
         }
         if (!cache.data_cape) {
             res.status(404).send({
-                status: 'error',
-                message: 'No cape on this profile'
+                statusCode: 404,
+                message: 'No cape on this profile',
+                message_ru: 'На этом аккаунте нет плаща'
             });
             return;
         }
@@ -103,7 +106,7 @@ export class minecraftController {
 
         const cache = await this.minecraftService.searchNicks({ fragment: name, take: query.take ?? 20, page: query.page ?? 0 });
         if (!cache) {
-            throw new HttpException({ message: 'No content' }, HttpStatus.NO_CONTENT);
+            throw new HttpException({}, HttpStatus.NO_CONTENT);
         }
         return cache;
     }
@@ -122,8 +125,9 @@ export class minecraftController {
         const cache = await this.minecraftService.updateSkinCache(name);
         if (!cache) {
             throw new HttpException({
-                status: 'error',
-                message: 'Profile not found'
+                statusCode: 404,
+                message: 'Profile not found',
+                message_ru: 'Профиль не найден'
             }, HttpStatus.NOT_FOUND);
         }
         const result = await generateSvg(sharp(Buffer.from(cache.data, "base64")), pixel_width);
