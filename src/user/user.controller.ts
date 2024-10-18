@@ -186,6 +186,7 @@ export class UserController {
         const cache = await this.minecraftService.updateSkinCache(request.session.user.profile.uuid, true);
         if (!cache) {
             res.status(404).send({
+                statusCode: 404,
                 message: 'Profile not found',
                 message_ru: 'Профиль не найден'
             });
@@ -193,6 +194,7 @@ export class UserController {
         }
 
         res.status(200).send({
+            statusCode: 200,
             message: "Successfully purged",
             message_ru: 'Кэш успешно обновлён'
         });

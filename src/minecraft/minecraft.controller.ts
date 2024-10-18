@@ -16,12 +16,13 @@ export class minecraftController {
         @Param('name') name: string,
         @Query() query: CapeQueryDTO,
         @Res({ passthrough: true }) res: Response
-    ): Promise<CapeResponse | void> {
+    ) {
         /* get minecraft skin by nickname / UUID */
 
         const cache = await this.minecraftService.updateSkinCache(name);
         if (!cache) {
             res.status(404).send({
+                statusCode: 404,
                 message: 'Profile not found',
                 message_ru: 'Профиль не найден'
             });
@@ -34,6 +35,7 @@ export class minecraftController {
             return;
         }
         return {
+            statusCode: 200,
             data: {
                 skin: {
                     data: cache.data,
