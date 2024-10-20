@@ -28,13 +28,13 @@ export class RootController {
 
     @Get('/ping')
     @SkipThrottle()
-    async ping(@Res({ passthrough: true }) res: Response) {
+    async ping(@Res() res: Response) {
         /* ping route */
 
         res.status(200).send({
             statusCode: 200,
             message: 'pong'
-        })
+        });
     }
 
     @Get('/sitemap.xml')

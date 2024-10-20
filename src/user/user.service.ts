@@ -213,20 +213,23 @@ export class UserService {
     async getStars(session: Session) {
         /* get user's favorite (stars) */
 
-        const result = await this.prisma.bandage.findMany({
-            where: {
-                stars: {
-                    some: { id: session.user.id }
+        const results = await this.prisma.$queryRaw`SELECT * FROM _UserStars ORDER BY rowid ASC` as [{ A: number, B: string }];
+        const bandages = results.filter(record => record.B === session.user.id);
+
+        const result = await Promise.all(bandages.map(async record => {
+            return await this.prisma.bandage.findFirst({
+                where: {
+                    id: record.A,
+                    User: { UserSettings: { banned: false } }
                 },
-                User: { UserSettings: { banned: false } }
-            },
-            include: {
-                stars: true,
-                categories: true,
-                User: { include: { UserSettings: true } }
-            }
-        });
-        return { statusCode: 200, data: generate_response(result, session) };
+                include: {
+                    stars: true,
+                    categories: true,
+                    User: { include: { UserSettings: true } }
+                }
+            })
+        }));
+        return { statusCode: 200, data: generate_response(result.filter(i => !!i), session) };
     }
 
     async _getUserByNickname(username: string, session: Session | null) {
