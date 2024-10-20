@@ -73,8 +73,15 @@ export class UserService {
         let avatar_buffer = Buffer.from(avatar_response.data);
 
         if (avatar_buffer[0] === 0x47 && avatar_buffer[1] === 0x49 && avatar_buffer[2] === 0x46) {
-            avatar_buffer = await sharp(avatar_buffer)
-                .extract({ left: 0, top: 0, width: 512, height: 512 })
+            const sharp_obj = sharp(avatar_buffer);
+            const meta = await sharp_obj.metadata();
+            avatar_buffer = await sharp_obj
+                .extract({
+                    left: 0,
+                    top: 0,
+                    width: Math.min(meta.width as number, 512),
+                    height: Math.min(meta.height as number, 512)
+                })
                 .toBuffer();
         }
 
