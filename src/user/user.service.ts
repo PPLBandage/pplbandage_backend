@@ -56,7 +56,7 @@ export class UserService {
     }
 
     async getAvatar(session: Session, user_id: string) {
-        const can_view = hasAccess(session?.user, RolesEnum.UpdateUsers);
+        const can_view = hasAccess(session?.user, RolesEnum.UpdateUsers) || session?.user?.id === user_id;
         const user = await this.prisma.user.findFirst({
             where: {
                 discordId: user_id,
