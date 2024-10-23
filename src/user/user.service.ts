@@ -56,7 +56,18 @@ export class UserService {
     }
 
     async getAvatar(user_id: string) {
-        const user = await this.prisma.user.findFirst({ where: { discordId: user_id } });
+        const user = await this.prisma.user.findFirst({
+            where: {
+                discordId: user_id,
+                UserSettings: { banned: false },
+                Bandage: {
+                    some: {
+                        access_level: 2,
+                        categories: { none: { only_admins: true } }
+                    }
+                }
+            }
+        });
         if (!user) return null;
 
         const avatar_cache = await this.cacheManager.get<string>(`avatar:${user_id}`);
