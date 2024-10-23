@@ -55,15 +55,16 @@ export class UserService {
         return data;
     }
 
-    async getAvatar(user_id: string) {
+    async getAvatar(session: Session, user_id: string) {
+        const can_view = hasAccess(session?.user, RolesEnum.UpdateUsers);
         const user = await this.prisma.user.findFirst({
             where: {
                 discordId: user_id,
-                UserSettings: { banned: false },
+                UserSettings: can_view ? undefined : { banned: false },
                 Bandage: {
                     some: {
-                        access_level: 2,
-                        categories: { none: { only_admins: true } }
+                        access_level: can_view ? undefined : 2,
+                        categories: can_view ? undefined : { none: { only_admins: true } }
                     }
                 }
             }

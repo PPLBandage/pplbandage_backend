@@ -275,13 +275,15 @@ export class UserController {
     }
 
     @Get("/avatars/:user_id")
+    @Auth(AuthEnum.Weak)
     async head(
         @Param('user_id') user_id: string,
+        @Req() request: RequestSession,
         @Res({ passthrough: true }) res: Response
     ): Promise<StreamableFile | void> {
         /* get user avatar by id */
 
-        const cache = await this.userService.getAvatar(user_id);
+        const cache = await this.userService.getAvatar(request.session, user_id);
         if (!cache) {
             res.status(500).send({
                 statusCode: 500,
