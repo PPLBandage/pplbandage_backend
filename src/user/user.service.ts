@@ -55,20 +55,8 @@ export class UserService {
         return data;
     }
 
-    async getAvatar(session: Session, user_id: string) {
-        const can_view = hasAccess(session?.user, RolesEnum.UpdateUsers) || session?.user?.id === user_id;
-        const user = await this.prisma.user.findFirst({
-            where: {
-                discordId: user_id,
-                UserSettings: can_view ? undefined : { banned: false },
-                Bandage: {
-                    some: {
-                        access_level: can_view ? undefined : 2,
-                        categories: can_view ? undefined : { none: { only_admins: true } }
-                    }
-                }
-            }
-        });
+    async getAvatar(user_id: string) {
+        const user = await this.prisma.user.findFirst({ where: { discordId: user_id } });
         if (!user) return null;
 
         const avatar_cache = await this.cacheManager.get<string>(`avatar:${user_id}`);
