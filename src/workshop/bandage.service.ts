@@ -205,10 +205,15 @@ export class BandageService {
             } : {
                 only_admins: admin ? undefined : false
             },
-            select: { id: true, name: true, icon: true },
-            orderBy: { order: 'asc' }
+            orderBy: { order: 'asc' },
+            include: { bandages: true }
         });
-        return categories;
+        return categories.map(category => ({
+            id: category.id,
+            name: category.name,
+            icon: category.icon,
+            count: category.bandages.length
+        }));
     }
 
     async _getBandage(id: string, session: Session | null) {

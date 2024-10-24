@@ -286,14 +286,12 @@ export class WorkshopController {
     ): Promise<void> {
         /* get list of categories */
 
-        res
-            .status(200)
-            .send(
-                await this.bandageService.getCategories(
-                    query.for_edit === 'true',
-                    request.session,
-                ),
-            );
+        res.status(200).send(
+            await this.bandageService.getCategories(
+                query.for_edit === 'true',
+                request.session,
+            ),
+        );
     }
 
     @Put('/star/:id')
