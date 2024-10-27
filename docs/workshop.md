@@ -69,7 +69,7 @@
 
   ```json
 {
-"data": [
+  "data": [
       {
           "id": 69,
           "external_id": "coolid",
