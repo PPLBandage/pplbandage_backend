@@ -201,9 +201,11 @@ export class BandageService {
         const categories = await this.prisma.category.findMany({
             where: for_edit ? {
                 reachable: admin ? undefined : true,
-                only_admins: admin ? undefined : false
+                only_admins: admin ? undefined : false,
+                visible: true
             } : {
-                only_admins: admin ? undefined : false
+                only_admins: admin ? undefined : false,
+                visible: true
             },
             orderBy: { order: 'asc' },
             include: { bandages: true }
