@@ -68,37 +68,41 @@
   <summary>Пример JSON ответа</summary>
 
   ```json
-[
-    {
-        "id": 69,
-        "external_id": "coolid",
-        "title": "Повязка",
-        "description": "Описание",
-        "base64": "Base 64",
-        "split_type": false,
-        "creation_date": "2023-07-26T15:55:00.000Z",
-        "stars_count": 1,
-        "starred": false,
-        "author": {
-            "id": "69",
-            "name": "AndcoolSystems",
-            "username": "andcoolsystems",
-            "public": true
-        },
-        "categories": [
-            {
-                "id": 0,
-                "name": "Официальные",
-                "icon": "IconRosetteDiscountCheck"
-            },
-            {
-                "id": 6,
-                "name": "Тематические",
-                "icon": "IconBrush"
-            }
-        ]
-    }
-]
+{
+  "data": [
+      {
+          "id": 69,
+          "external_id": "coolid",
+          "title": "Повязка",
+          "description": "Описание",
+          "base64": "Base 64",
+          "split_type": false,
+          "creation_date": "2023-07-26T15:55:00.000Z",
+          "stars_count": 1,
+          "starred": false,
+          "author": {
+              "id": "69",
+              "name": "AndcoolSystems",
+              "username": "andcoolsystems",
+              "public": true
+          },
+          "categories": [
+              {
+                  "id": 0,
+                  "name": "Официальные",
+                  "icon": "IconRosetteDiscountCheck"
+              },
+              {
+                  "id": 6,
+                  "name": "Тематические",
+                  "icon": "IconBrush"
+              }
+          ]
+      }
+  ],
+  "totalCount": 41,
+  "next_page": 2
+}
   ```
 </details>
 
