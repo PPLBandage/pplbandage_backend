@@ -45,7 +45,7 @@ const componentToHex = (c: number) => {
     return hex.length == 1 ? "0" + hex : hex;
 }
 
-const rgbToHex = (r: number, g: number, b: number) => {
+export const rgbToHex = (r: number, g: number, b: number) => {
     /* convert RGB to HEX */
 
     return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
@@ -125,7 +125,7 @@ export class BandageService {
         if (!bandage) {
             return {
                 statusCode: 404,
-                message: "Bandage not found",
+                message: 'Bandage not found',
                 message_ru: 'Повязка не найдена',
             };
         }
@@ -170,6 +170,14 @@ export class BandageService {
             }
         }
 
+        const buff = Buffer.from(body.base64, 'base64');
+        const { data } = await sharp(buff)
+            .resize(1, 1, { fit: 'inside' })
+            .extract({ left: 0, top: 0, width: 1, height: 1 })
+            .raw()
+            .toBuffer({ resolveWithObject: true });
+        const [r, g, b] = data;
+
         const result = await this.prisma.bandage.create({
             data: {
                 externalId: Math.random().toString(36).substring(2, 8),
@@ -179,11 +187,15 @@ export class BandageService {
                 base64_slim: body.base64_slim ?? '',
                 split_type: body.split_type ?? false,
                 User: { connect: { id: session.user.id } },
-                categories: { connect: categories }
+                categories: { connect: categories },
+                accent_color: rgbToHex(r, g, b)
             }
         });
 
-        await this.discordNotifications.doNotification(`<@&${process.env.MENTION_ROLE_ID}> New bandage "${result.title}" created by ${session.user.name}!\nhttps://pplbandage.ru/workshop/${result.externalId}`);
+        await this.discordNotifications.doNotification(
+            `<@&${process.env.MENTION_ROLE_ID}> New bandage "${result.title}" created by ${session.user.name}\n` +
+            `https://pplbandage.ru/workshop/${result.externalId}`
+        );
         await this.notifications.createNotification(session.user.id, {
             content: `Повязка <a href="/workshop/${result.externalId}"><b>${result.title}</b></a> создана и отправлена на проверку!`
         });
@@ -246,14 +258,6 @@ export class BandageService {
             };
         }
 
-        const buff = Buffer.from(bandage.base64, 'base64');
-        const { data } = await sharp(buff)
-            .resize(1, 1, { fit: 'inside' })
-            .extract({ left: 0, top: 0, width: 1, height: 1 })
-            .raw()
-            .toBuffer({ resolveWithObject: true });
-        const [r, g, b] = data;
-
         return {
             statusCode: 200,
             data: {
@@ -261,7 +265,7 @@ export class BandageService {
                 external_id: bandage.externalId,
                 title: bandage.title,
                 description: bandage.description,
-                average_og_color: rgbToHex(r, g, b),
+                average_og_color: bandage.accent_color,
                 stars_count: bandage.stars.length,
                 author: {
                     id: bandage.User?.id,

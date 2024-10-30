@@ -85,6 +85,7 @@ model Bandage {
     categories   Category[] @relation("Categories")
     access_level Int        @default(2)
     archived     Boolean    @default(false)
+    accent_color String     @default("#000000")
 }
 
 model Category {
