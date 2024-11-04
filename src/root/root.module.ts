@@ -16,6 +16,7 @@ import { AuthController } from 'src/auth/auth.controller';
 import { AuthService } from 'src/auth/auth.service';
 import { DiscordNotificationService } from 'src/notifications/discord.service';
 import { CacheModule } from '@nestjs/cache-manager';
+import { RecommendationsService } from 'src/workshop/recommendations.service';
 
 ConfigModule.forRoot();
 
@@ -28,7 +29,8 @@ ConfigModule.forRoot();
 		AuthService,
 		AuthGuard,
 		NotificationService,
-		DiscordNotificationService
+		DiscordNotificationService,
+		RecommendationsService
 	],
 	controllers: [RootController, WorkshopController, UserController, minecraftController, AuthController],
 	imports: [

@@ -1,5 +1,4 @@
 import { registerDecorator, ValidationOptions, ValidatorConstraint, ValidatorConstraintInterface, ValidationArguments } from 'class-validator';
-import { sort_keys } from 'src/workshop/bandage.service';
 
 @ValidatorConstraint({ async: false })
 export class IsBooleanCustomConstraint implements ValidatorConstraintInterface {
@@ -28,22 +27,24 @@ export function IsBooleanStr(validationOptions?: ValidationOptions) {
 @ValidatorConstraint({ async: false })
 export class IsSortConstraint implements ValidatorConstraintInterface {
     validate(value: any, args: ValidationArguments) {
+        const [sort_keys] = args.constraints;
         return sort_keys.includes(value);
     }
 
     defaultMessage(args: ValidationArguments) {
+        const [sort_keys] = args.constraints;
         return `\`${args.property}\` property must have one of [${sort_keys.join(', ')}] values, but \`${args.value}\` was provided instead`;
     }
 }
 
 
-export function IsSort(validationOptions?: ValidationOptions) {
+export function IsSort(sort_keys: string[], validationOptions?: ValidationOptions) {
     return function (object: Object, propertyName: string) {
         registerDecorator({
             target: object.constructor,
             propertyName: propertyName,
             options: validationOptions,
-            constraints: [],
+            constraints: [sort_keys],
             validator: IsSortConstraint
         });
     };

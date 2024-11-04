@@ -9,9 +9,7 @@ import { CreateBandageDto } from './dto/createBandage.dto';
 import { EditBandageDto } from './dto/editBandage.dto';
 import { DiscordNotificationService } from 'src/notifications/discord.service';
 import { generate_response } from 'src/common/bandage_response';
-
-const moderation_id = [4, 13];  // на проверке, отклонено
-const official_id = 0;
+import { moderation_id, official_id } from 'src/constants';
 
 
 interface BandageSearch {

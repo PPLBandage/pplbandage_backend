@@ -27,7 +27,7 @@ export class AuthGuard implements CanActivate {
             return true;
         }
 
-        const session = await this.oathService.validateSession(sessionId, user_agent);
+        const session = await this.oathService.validateSession(sessionId, user_agent, strict === 'Strict');
         if (!session && strict === 'Strict') {
             response.status(401).send(UNAUTHORIZED);
             return false;

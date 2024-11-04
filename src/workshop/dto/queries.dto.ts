@@ -1,6 +1,7 @@
 import { Transform, Type } from "class-transformer";
 import { IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
 import { IsBooleanStr, IsDivisible, IsSort } from "src/common/types.decorator";
+import { sort_keys } from "../bandage.service";
 
 export class WidthQueryDTO {
     @IsNumber()
@@ -36,7 +37,7 @@ export class WorkshopSearchQueryDTO {
 
     @IsOptional()
     @IsString()
-    @IsSort()
+    @IsSort(sort_keys)
     sort?: string
 
     @IsNumber()

@@ -13,7 +13,7 @@ import {
     Body,
     UseGuards,
     ValidationPipe,
-    UsePipes,
+    UsePipes
 } from '@nestjs/common';
 import type { Response, Request } from 'express';
 import { BandageService } from './bandage.service';
@@ -24,18 +24,22 @@ import { AuthEnum } from 'src/interfaces/types';
 import { Auth } from 'src/decorators/auth.decorator';
 import { CreateBandageDto } from './dto/createBandage.dto';
 import { EditBandageDto } from './dto/editBandage.dto';
-import { RequestSession } from 'src/common/bandage_response';
+import { RequestSession, RequestSessionWeak } from 'src/common/bandage_response';
 import {
     EditQueryDTO,
     WidthQueryDTO,
     WorkshopSearchQueryDTO,
 } from 'src/workshop/dto/queries.dto';
 import { SetQueryDTO } from 'src/user/dto/queries.dto';
+import { RecommendationsService } from './recommendations.service';
 
 @Controller()
 @UseGuards(AuthGuard)
 export class WorkshopController {
-    constructor(private readonly bandageService: BandageService) { }
+    constructor(
+        private readonly bandageService: BandageService,
+        private recs: RecommendationsService
+    ) { }
     @Get('/workshop')
     @Auth(AuthEnum.Weak)
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
@@ -110,6 +114,26 @@ export class WorkshopController {
 
         const data = await this.bandageService.createBandage(body, request.session);
         res.status(data.statusCode).send(data);
+    }
+
+    @Auth(AuthEnum.Strict)
+    @Get('/workshop/recommendations/me')
+    async recommendations(
+        @Res() res: Response,
+        @Req() request: RequestSession
+    ) {
+        const data = await this.recs.getForMySkin(request.session);
+        res.status(data.statusCode).send(data);
+    }
+
+    @Get('/workshop/recommendations/available')
+    @Auth(AuthEnum.Weak)
+    async recs_available(
+        @Req() request: RequestSessionWeak
+    ) {
+        if (!request.session) return { state: false };
+        if (!request.session.user.profile) return { state: false };
+        return { state: true };
     }
 
     @Get('/workshop/:id')
@@ -232,15 +256,6 @@ export class WorkshopController {
         @Body() body: EditBandageDto,
     ) {
         /* edit bandage info */
-
-        if (!body) {
-            res.status(HttpStatus.BAD_REQUEST).send({
-                statusCode: 400,
-                message: 'Invalid Body',
-                message_ru: 'Неправильное тело запроса',
-            });
-            return;
-        }
 
         const data = await this.bandageService.updateBandage(
             id,

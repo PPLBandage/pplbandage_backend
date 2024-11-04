@@ -237,7 +237,11 @@ export class AuthService {
         };
     }
 
-    async validateSession(session: string | undefined, user_agent: string): Promise<Session | null> {
+    async validateSession(
+        session: string | undefined,
+        user_agent: string,
+        update: boolean = true
+    ): Promise<Session | null> {
         /* validate and update user session */
 
         if (!session) return null;
@@ -269,7 +273,7 @@ export class AuthService {
         try {
             const decoded = verify(session, 'ppl_super_secret') as SessionToken;
             const seconds = Math.round(Date.now() / 1000);
-            if (decoded.iat + ((decoded.exp - decoded.iat) / 2) < seconds) {
+            if (decoded.iat + ((decoded.exp - decoded.iat) / 2) < seconds && update) {
                 const sessionId = sign({ userId: sessionDB.userId }, 'ppl_super_secret', { expiresIn: Number(process.env.SESSION_TTL) });
                 const new_tokens = await this.prisma.sessions.update({
                     where: { id: sessionDB.id },
