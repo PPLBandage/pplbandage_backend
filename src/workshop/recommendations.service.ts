@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { getColorFromURL, getPaletteFromURL, Palette } from 'color-thief-node';
-import { colorable } from 'src/constants';
 import { Session } from 'src/auth/auth.service';
 import { getHue } from './color_utils';
 import { rgbToHex } from './bandage.service';
@@ -33,7 +32,7 @@ export class RecommendationsService {
                 access_level: 2,
                 AND: [
                     { categories: { none: { only_admins: true } } },
-                    { categories: { none: { id: colorable } } }
+                    { categories: { none: { colorable: true } } }
                 ],
                 User: { UserSettings: { banned: false } }
             },
