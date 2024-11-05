@@ -41,7 +41,7 @@ export class RecommendationsService {
         });
 
         return Promise.all(bandages.map(async bandage => {
-            const categories = bandage.categories.map(cat => ({ id: cat.id, name: cat.name, icon: cat.icon }));
+            const categories = bandage.categories.map(cat => ({ id: cat.id, name: cat.name, icon: cat.icon, colorable: cat.colorable }));
             const [r, g, b] = await getColorFromURL(`data:image/png;base64,${bandage.base64}`);
             return {
                 id: bandage.id,

@@ -43,7 +43,7 @@ const componentToHex = (c: number) => {
     return hex.length == 1 ? "0" + hex : hex;
 }
 
-const rgbToHex = (r: number, g: number, b: number) => {
+export const rgbToHex = (r: number, g: number, b: number) => {
     /* convert RGB to HEX */
 
     return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
