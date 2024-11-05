@@ -135,11 +135,13 @@ export class AuthService {
     async login(code: string, user_agent: string) {
         /* log in by code */
 
+        const redirect_url = new URL(decodeURI(process.env.LOGIN_URL as string));
+
         // ----------------------- Get access token -------------------------------
         const discord_tokens = await axios.post(discord_url + "/oauth2/token", {
             'grant_type': 'authorization_code',
             'code': code,
-            'redirect_uri': process.env.REDIRECT_URI
+            'redirect_uri': redirect_url.searchParams.get('redirect_uri')
         }, {
             headers: {
                 'Authorization': `Basic ${process.env.BASIC_AUTH}`,
