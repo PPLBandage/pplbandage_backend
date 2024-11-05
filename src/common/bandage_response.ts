@@ -28,7 +28,7 @@ export const generate_response = (data: BandageFull[], session: Session | null, 
 
     const result = data.map(el => {
         if (el.User?.UserSettings?.banned && !suppress_ban) return undefined;
-        const categories = el.categories.map(cat => ({ id: cat.id, name: cat.name, icon: cat.icon }))
+        const categories = el.categories.map(cat => ({ id: cat.id, name: cat.name, icon: cat.icon, colorable: cat.colorable }))
         return {
             id: el.id,
             external_id: el.externalId,

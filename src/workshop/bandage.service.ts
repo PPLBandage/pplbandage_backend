@@ -13,7 +13,6 @@ import { generate_response } from 'src/common/bandage_response';
 const moderation_id = [4, 13];  // на проверке, отклонено
 const official_id = 0;
 
-
 interface BandageSearch {
     title?: { contains: string },
     description?: { contains: string },
@@ -226,7 +225,8 @@ export class BandageService {
             id: category.id,
             name: category.name,
             icon: category.icon,
-            count: category.bandages.length
+            count: category.bandages.length,
+            colorable: category.colorable
         }));
     }
 
@@ -308,7 +308,8 @@ export class BandageService {
             return {
                 id: cat.id,
                 name: cat.name,
-                icon: cat.icon
+                icon: cat.icon,
+                colorable: cat.colorable
             }
         });
 
