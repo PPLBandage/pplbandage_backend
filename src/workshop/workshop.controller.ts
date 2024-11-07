@@ -16,11 +16,11 @@ import {
     UsePipes
 } from '@nestjs/common';
 import type { Response, Request } from 'express';
-import { BandageService } from './bandage.service';
+import { BandageService, rgbToHex } from './bandage.service';
 import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { AuthGuard } from 'src/guards/auth.guard';
 import * as sharp from 'sharp';
-import { AuthEnum } from 'src/interfaces/types';
+import { AuthEnum, RolesEnum } from 'src/interfaces/types';
 import { Auth } from 'src/decorators/auth.decorator';
 import { CreateBandageDto } from './dto/createBandage.dto';
 import { EditBandageDto } from './dto/editBandage.dto';
@@ -32,13 +32,18 @@ import {
 } from 'src/workshop/dto/queries.dto';
 import { SetQueryDTO } from 'src/user/dto/queries.dto';
 import { RecommendationsService } from './recommendations.service';
+import { Roles } from 'src/decorators/access.decorator';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Controller()
 @UseGuards(AuthGuard)
 export class WorkshopController {
     constructor(
+
         private readonly bandageService: BandageService,
         private recs: RecommendationsService
+        ,
+        private prisma: PrismaService
     ) { }
     @Get('/workshop')
     @Auth(AuthEnum.Weak)
@@ -301,14 +306,12 @@ export class WorkshopController {
     ): Promise<void> {
         /* get list of categories */
 
-        res
-            .status(200)
-            .send(
-                await this.bandageService.getCategories(
-                    query.for_edit === 'true',
-                    request.session,
-                ),
-            );
+        res.status(200).send(
+            await this.bandageService.getCategories(
+                query.for_edit === 'true',
+                request.session,
+            ),
+        );
     }
 
     @Put('/star/:id')
@@ -339,5 +342,29 @@ export class WorkshopController {
             message: count.toString(),
             color: 'green',
         });
+    }
+
+    @Auth(AuthEnum.Strict)
+    @Roles([RolesEnum.SuperAdmin])
+    @Get('/trigger')
+    async trigger() {
+        const bandages = await this.prisma.bandage.findMany();
+
+        for (const bandage of bandages) {
+            const buff = Buffer.from(bandage.base64, 'base64');
+            const { data } = await sharp(buff)
+                .resize(1, 1, { fit: 'inside' })
+                .extract({ left: 0, top: 0, width: 1, height: 1 })
+                .raw()
+                .toBuffer({ resolveWithObject: true });
+            const [r, g, b] = data;
+
+            await this.prisma.bandage.update({
+                where: { id: bandage.id },
+                data: { accent_color: rgbToHex(r, g, b) }
+            });
+        }
+
+        return 'Done';
     }
 }

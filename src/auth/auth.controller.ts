@@ -1,4 +1,4 @@
-import { Controller, Get, HttpStatus, Param, Req, Res, Delete, Post, UseGuards } from '@nestjs/common';
+import { Controller, Get, HttpStatus, Param, Req, Res, Delete, Post, UseGuards, Header } from '@nestjs/common';
 import type { Request, Response } from 'express'
 import { UNAUTHORIZED } from 'src/root/root.controller';
 import { AuthService } from './auth.service';
@@ -91,5 +91,20 @@ export class AuthController {
 
         const result = await this.authService.deleteSession(request.session, Number(id));
         res.status(result.statusCode).send(result);
+    }
+
+    @Get("/auth/url")
+    async url(
+        @Req() req: Request,
+        @Res() res: Response
+    ): Promise<void> {
+        /* get discord oauth url */
+
+        if (req.header('Accept')?.toLowerCase() === 'application/json') {
+            res.header('Content-Type', 'application/json');
+            res.send({ url: process.env.LOGIN_URL });
+            return;
+        }
+        res.redirect(process.env.LOGIN_URL as string);
     }
 }

@@ -85,15 +85,18 @@ model Bandage {
     categories   Category[] @relation("Categories")
     access_level Int        @default(2)
     archived     Boolean    @default(false)
+    accent_color String     @default("#000000")
 }
 
 model Category {
     id          Int       @id @default(autoincrement())
     name        String    @default("")
     icon        String    @default("")
+    colorable   Boolean   @default(false)
     bandages    Bandage[] @relation("Categories")
     reachable   Boolean   @default(true)
     only_admins Boolean   @default(false)
+    visible     Boolean   @default(true)
     order       Int       @default(0)
 }
 
