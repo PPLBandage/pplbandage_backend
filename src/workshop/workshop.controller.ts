@@ -55,18 +55,16 @@ export class WorkshopController {
     ): Promise<void> {
         /* get list of works */
 
-        res
-            .status(200)
-            .send(
-                await this.bandageService.getBandages(
-                    request.session,
-                    query.take ?? 20,
-                    query.page ?? 0,
-                    query.search,
-                    query.filters,
-                    query.sort,
-                ),
-            );
+        res.status(200).send(
+            await this.bandageService.getBandages(
+                request.session,
+                query.take ?? 20,
+                query.page ?? 0,
+                query.search,
+                query.filters,
+                query.sort,
+            ),
+        );
     }
 
     @Throttle({ default: { limit: 5, ttl: 60000 } })
