@@ -133,7 +133,7 @@ export class UserService {
             joined_at: session.user.joined_at,
             avatar: response_data.avatar ?
                 `${process.env.DOMAIN}/api/v1/avatars/${session.user.discordId}` :
-                `/static/favicon.ico`,
+                `${process.env.DOMAIN}/static/favicon.ico`,
             banner_color: response_data.banner_color,
             has_unreaded_notifications: session.user.has_unreaded_notifications,
             permissions: session.user.AccessRoles.map(role => role.name.toLowerCase()),
@@ -180,7 +180,7 @@ export class UserService {
             connected_at: session.user.joined_at,
             avatar: current_discord.avatar ?
                 `${process.env.DOMAIN}/api/v1/avatars/${session.user.discordId}` :
-                null
+                `${process.env.DOMAIN}/static/favicon.ico`
         }
 
         return {
@@ -304,7 +304,7 @@ export class UserService {
             joined_at: user.joined_at,
             avatar: current_discord.avatar ?
                 `${process.env.DOMAIN}/api/v1/avatars/${current_discord.id}` :
-                `/static/favicon.ico`,
+                `${process.env.DOMAIN}/static/favicon.ico`,
             banner_color: current_discord.banner_color,
             works: generate_response(bandages, session, can_view),
             is_self: user.id == session?.user?.id,
@@ -342,7 +342,7 @@ export class UserService {
             name: user.reserved_name || user.name,
             avatar: current_discord.avatar ?
                 `${process.env.DOMAIN}/api/v1/avatars/${current_discord.id}` :
-                `/static/favicon.ico`,
+                `${process.env.DOMAIN}/static/favicon.ico`,
             banner_color: current_discord.banner_color,
             works_count: user.Bandage.length,
         }
