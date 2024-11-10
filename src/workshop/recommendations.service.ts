@@ -2,17 +2,21 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { getColorFromURL, getPaletteFromURL, Palette } from 'color-thief-node';
 import { Session } from 'src/auth/auth.service';
-import { getHue } from './color_utils';
+import { hexToRgb, HSV, rgbToHsv } from './color_utils';
 import { rgbToHex } from './bandage.service';
 import * as sharp from 'sharp';
 
 export interface HueBandage {
-    hue: number,
+    color: HSV,
     accuracy?: number,
     nearest_color?: string;
 }
 
 const maskImage = sharp('./src/workshop/mask.png');
+
+function uniqueArray<T>(arr: T[]): T[] {
+    return Array.from(new Set(arr));
+}
 
 @Injectable()
 export class RecommendationsService {
@@ -41,7 +45,7 @@ export class RecommendationsService {
 
         return Promise.all(bandages.map(async bandage => {
             const categories = bandage.categories.map(cat => ({ id: cat.id, name: cat.name, icon: cat.icon, colorable: cat.colorable }));
-            const [r, g, b] = await getColorFromURL(`data:image/png;base64,${bandage.base64}`);
+            const { r, g, b } = hexToRgb(bandage.accent_color);
             return {
                 id: bandage.id,
                 external_id: bandage.externalId,
@@ -60,20 +64,23 @@ export class RecommendationsService {
                     public: bandage.User && Number(bandage.User?.discordId) > 0 ? bandage.User?.UserSettings?.public_profile : false
                 },
                 categories: categories.filter(el => el !== undefined),
-                hue: getHue({ r, g, b })
+                color: rgbToHsv(r, g, b)
             }
         }));
     }
 
     getNearestBandages(color: number[], bandages: HueBandage[], tolerance: number) {
         const [r, g, b] = color;
-        const hue = getHue({ r, g, b });
+        const hsv_color = rgbToHsv(r, g, b);
         return bandages.reduce((acc: HueBandage[], iter: HueBandage) => {
-            const diff = Math.abs(iter.hue - hue);
-            const diff_full = Math.min(diff, 360 - diff);
-            const accuracy = diff_full <= tolerance;
+            const diff = Math.sqrt(
+                Math.pow(iter.color.h - hsv_color.h, 2) +
+                Math.pow(iter.color.s - hsv_color.s, 2) +
+                Math.pow(iter.color.v - hsv_color.v, 2)
+            )
+            const accuracy = diff <= tolerance;
             if (accuracy) {
-                iter.accuracy = (360 - diff_full) / 360;
+                iter.accuracy = 1 - diff;
                 iter.nearest_color = rgbToHex(color[0], color[1], color[2]);
                 acc.push(iter);
             }
@@ -81,6 +88,7 @@ export class RecommendationsService {
         }, []);
     }
 
+    /*
     async getMatchingColors(color: number[], count: number) {
         const [r, g, b] = color;
         let hue = getHue({ r, g, b });
@@ -95,6 +103,7 @@ export class RecommendationsService {
 
         return color_array;
     }
+    */
 
     async getForMySkin(session: Session) {
         const skin = session.user.profile?.data;
@@ -108,12 +117,12 @@ export class RecommendationsService {
         const bandages = await this.calculateBandagesColor(session);
         let result_bandages: HueBandage[] = [];
         for (const color of skin_colors) {
-            result_bandages = result_bandages.concat(this.getNearestBandages(color, bandages, 5))
+            result_bandages = result_bandages.concat(this.getNearestBandages(color, bandages, 0.3))
         }
 
         return {
             statusCode: 200,
-            data: result_bandages.sort((a, b) => (b.accuracy as number) - (a.accuracy as number)),
+            data: uniqueArray(result_bandages.sort((a, b) => (b.accuracy as number) - (a.accuracy as number))),
             skin_accent_colors: skin_colors.map(el => rgbToHex(el[0], el[1], el[2]))
         }
     }

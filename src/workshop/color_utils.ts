@@ -4,30 +4,37 @@ type RGB = {
     b: number;
 };
 
-export const getHue = ({ r, g, b }: RGB): number => {
-    const rNorm = r / 255;
-    const gNorm = g / 255;
-    const bNorm = b / 255;
+export type HSV = {
+    h: number;
+    s: number;
+    v: number;
+};
 
-    const max = Math.max(rNorm, gNorm, bNorm);
-    const min = Math.min(rNorm, gNorm, bNorm);
-    const delta = max - min;
+export const rgbToHsv = (r: number, g: number, b: number): HSV => {
+    r /= 255, g /= 255, b /= 255;
 
-    let h = 0;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h = max;
+    let s = max;
+    let v = max;
 
-    if (delta !== 0) {
-        if (max === rNorm) {
-            h = ((gNorm - bNorm) / delta) % 6;
-        } else if (max === gNorm) {
-            h = (bNorm - rNorm) / delta + 2;
-        } else {
-            h = (rNorm - gNorm) / delta + 4;
+    const d = max - min;
+    s = max == 0 ? 0 : d / max;
+
+    if (max == min) {
+        h = 0;
+    } else {
+        switch (max) {
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
         }
-        h *= 60;
-        if (h < 0) h += 360;
+
+        h /= 6;
     }
 
-    return h;
+    return { h, s, v };
 }
 
 export const hexToRgb = (hex: string): RGB => {
