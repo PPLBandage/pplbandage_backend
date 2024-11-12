@@ -316,7 +316,7 @@ export class UserService {
                 .filter(role => role.public_name)
                 .map(role => ({ id: role.id, name: role.public_name, icon: role.icon })),
             stars_count: stars_count,
-            last_accessed: hasAccess(session?.user, RolesEnum.UpdateUsers) ? last_accessed.last_accessed : undefined
+            last_accessed: hasAccess(session?.user, RolesEnum.UpdateUsers) ? last_accessed?.last_accessed : undefined
         }
     }
 

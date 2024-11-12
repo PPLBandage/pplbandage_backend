@@ -80,8 +80,8 @@ export const hasAccess = (user: UserFull | undefined, level: number, skipSuperAd
     return user_roles.includes(level) || (!skipSuperAdmin ? user_roles.includes(RolesEnum.SuperAdmin) : false);
 }
 
-const generateSnowflake = (increment: bigint): string => {
-    const timestamp = BigInt(Date.now()) - EPOCH;
+export const generateSnowflake = (increment: bigint, date?: Date): string => {
+    const timestamp = BigInt(date ? new Date(date).getTime() : Date.now()) - EPOCH;
     const snowflake = (timestamp << 22n) | increment;
     return snowflake.toString();
 }

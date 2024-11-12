@@ -5,6 +5,10 @@ import { generateSitemap, SitemapProps } from './sitemap';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { RolesGuard } from 'src/guards/roles.guard';
+import { AuthEnum, RolesEnum } from 'src/interfaces/types';
+import { Auth } from 'src/decorators/auth.decorator';
+import { Roles } from 'src/decorators/access.decorator';
+import { generateSnowflake } from 'src/auth/auth.service';
 
 
 export const UNAUTHORIZED = {
@@ -72,5 +76,27 @@ export class RootController {
         })));
 
         return generateSitemap(urls);
+    }
+
+
+    @Get('/trigger/migrate')
+    @Auth(AuthEnum.Strict)
+    @Roles([RolesEnum.SuperAdmin])
+    async trigger_migrate(@Res() res: Response) {
+        const users = await this.prisma.user.findMany();
+        let i = 0;
+
+        for (const user of users) {
+            if (user.id.length <= 3) {
+                const snowflake = generateSnowflake(BigInt(i), user.joined_at);
+                await this.prisma.user.update({
+                    where: { id: user.id },
+                    data: { id: snowflake }
+                })
+            }
+            i++;
+        }
+
+        res.send('Done');
     }
 }
