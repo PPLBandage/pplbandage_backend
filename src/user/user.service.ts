@@ -295,6 +295,9 @@ export class UserService {
         });
         const stars_count = starred_bandages.reduce((acc, current_val) => acc + current_val.stars.length, 0);
 
+        const sessions = await this.prisma.sessions.findMany({ where: { userId: user.id } });
+        const last_accessed = sessions.sort((a, b) => new Date(b.last_accessed).getTime() - new Date(a.last_accessed).getTime())[0];
+
         return {
             statusCode: 200,
             userID: user.id,
@@ -312,7 +315,8 @@ export class UserService {
             roles: user.AccessRoles
                 .filter(role => role.public_name)
                 .map(role => ({ id: role.id, name: role.public_name, icon: role.icon })),
-            stars_count: stars_count
+            stars_count: stars_count,
+            last_accessed: hasAccess(session?.user, RolesEnum.UpdateUsers) ? last_accessed.last_accessed : undefined
         }
     }
 
