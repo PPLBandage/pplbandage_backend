@@ -77,26 +77,4 @@ export class RootController {
 
         return generateSitemap(urls);
     }
-
-
-    @Get('/trigger/migrate')
-    @Auth(AuthEnum.Strict)
-    @Roles([RolesEnum.SuperAdmin])
-    async trigger_migrate(@Res() res: Response) {
-        const users = await this.prisma.user.findMany();
-        let i = 0;
-
-        for (const user of users) {
-            if (user.id.length <= 3) {
-                const snowflake = generateSnowflake(BigInt(i), user.joined_at);
-                await this.prisma.user.update({
-                    where: { id: user.id },
-                    data: { id: snowflake }
-                })
-            }
-            i++;
-        }
-
-        res.send('Done');
-    }
 }
