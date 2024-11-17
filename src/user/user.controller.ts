@@ -99,7 +99,7 @@ export class UserController {
         res.send(data);
     }
 
-    @Put("/user/me/profile_theme")
+    @Put("/user/me/theme")
     @Auth(AuthEnum.Strict)
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async profile_theme(
@@ -116,7 +116,7 @@ export class UserController {
         })
     }
 
-    @Put("/user/me/connections/minecraft/set_valid")
+    @Put("/user/me/connections/minecraft/valid")
     @Auth(AuthEnum.Strict)
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async set_valid(
@@ -130,7 +130,7 @@ export class UserController {
         res.status(data.statusCode).send(data);
     }
 
-    @Put("/user/me/connections/minecraft/set_autoload")
+    @Put("/user/me/connections/minecraft/autoload")
     @Auth(AuthEnum.Strict)
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async set_autoload(
@@ -244,7 +244,7 @@ export class UserController {
         res.status(data.statusCode).send(data);
     }
 
-    @Put("/user/me/settings/set_public")
+    @Put("/user/me/settings/public")
     @Auth(AuthEnum.Strict)
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async set_public(
