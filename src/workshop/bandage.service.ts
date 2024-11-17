@@ -331,12 +331,12 @@ export class BandageService {
                 creation_date: bandage.creationDate,
                 stars_count: bandage.stars.length,
                 starred: bandage.stars.some(val => val.id == session?.user.id),
-                author: {
-                    id: bandage.User?.id,
-                    name: bandage.User?.reserved_name || bandage.User?.name,
-                    username: bandage.User?.username,
-                    public: bandage.User && Number(bandage.User?.discordId) > 0 ? bandage.User?.UserSettings?.public_profile : false
-                },
+                author: bandage.User ? {
+                    id: bandage.User.id,
+                    name: bandage.User.reserved_name || bandage.User.name,
+                    username: bandage.User.username,
+                    public: bandage.User && Number(bandage.User.discordId) > 0 ? bandage.User.UserSettings?.public_profile : false
+                } : null,
                 categories: categories,
                 me_profile: me_profile,
                 permissions_level: permissions_level,
