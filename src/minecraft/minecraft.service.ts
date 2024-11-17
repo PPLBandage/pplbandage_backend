@@ -243,7 +243,7 @@ export class MinecraftService {
             };
         }
 
-        const user_data = await axios.get(`https://api-mc-oauth.andcool.ru/code/${code}`, { validateStatus: () => true });
+        const user_data = await axios.get(`https://mc-oauth.andcool.ru/code/${code}`, { validateStatus: () => true });
         if (user_data.status !== 200) {
             return {
                 statusCode: 404,

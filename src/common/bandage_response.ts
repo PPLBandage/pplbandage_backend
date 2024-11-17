@@ -39,14 +39,14 @@ export const generate_response = (data: BandageFull[], session: Session | null, 
             accent_color: el.accent_color,
             creation_date: el.creationDate,
             stars_count: el.stars.length,
-            starred: el.stars.some(val => val.id == session?.user.id),
+            starred: el.stars.some(val => val.id === session?.user.id),
             author: el.User ? {
                 id: el.User.id,
                 name: el.User.reserved_name || el.User.name,
                 username: el.User.username,
-                public: el.User && Number(el.User.discordId) > 0 ? el.User.UserSettings?.public_profile : false
+                public: Number(el.User.discordId) > 0 ? el.User.UserSettings?.public_profile : false
             } : null,
-            categories: categories.filter(el => el !== undefined)
+            categories: categories
         }
     });
 

@@ -304,14 +304,12 @@ export class BandageService {
             nickname: session.user.profile.nickname
         } : undefined;
 
-        const categories = bandage.categories.map(cat => {
-            return {
-                id: cat.id,
-                name: cat.name,
-                icon: cat.icon,
-                colorable: cat.colorable
-            }
-        });
+        const categories = bandage.categories.map(cat => ({
+            id: cat.id,
+            name: cat.name,
+            icon: cat.icon,
+            colorable: cat.colorable
+        }));
 
         let check = null;
         if (bandage.categories.some(val => val.id === moderation_id[0])) check = "under review";
@@ -330,12 +328,12 @@ export class BandageService {
                 split_type: bandage.split_type,
                 creation_date: bandage.creationDate,
                 stars_count: bandage.stars.length,
-                starred: bandage.stars.some(val => val.id == session?.user.id),
+                starred: bandage.stars.some(val => val.id === session?.user.id),
                 author: bandage.User ? {
                     id: bandage.User.id,
                     name: bandage.User.reserved_name || bandage.User.name,
                     username: bandage.User.username,
-                    public: bandage.User && Number(bandage.User.discordId) > 0 ? bandage.User.UserSettings?.public_profile : false
+                    public: Number(bandage.User.discordId) > 0 ? bandage.User.UserSettings?.public_profile : false
                 } : null,
                 categories: categories,
                 me_profile: me_profile,
