@@ -163,7 +163,7 @@ export class BandageService {
 
         if (count >= 5) {
             return {
-                statusCode: 400,
+                statusCode: 409,
                 message: "You cannot create more than 5 bandages under review",
                 message_ru: "Вы не можете иметь более 5 повязок на проверке, дождитесь проверки остальных и повторите попытку"
             }

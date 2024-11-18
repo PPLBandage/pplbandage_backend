@@ -5,10 +5,6 @@ import { generateSitemap, SitemapProps } from './sitemap';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { RolesGuard } from 'src/guards/roles.guard';
-import { AuthEnum, RolesEnum } from 'src/interfaces/types';
-import { Auth } from 'src/decorators/auth.decorator';
-import { Roles } from 'src/decorators/access.decorator';
-import { generateSnowflake } from 'src/auth/auth.service';
 
 
 export const UNAUTHORIZED = {

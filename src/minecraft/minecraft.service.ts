@@ -220,7 +220,7 @@ export class MinecraftService {
         const minecraft = await this.prisma.minecraft.findFirst({ where: { userId: session.user.id } });
 
         if (!minecraft) return {
-            statusCode: 400,
+            statusCode: 404,
             message: 'Minecraft account not connected',
             message_ru: 'Аккаунт Minecraft не привязан'
         };
@@ -237,7 +237,7 @@ export class MinecraftService {
 
         if (session.user.profile) {
             return {
-                statusCode: 400,
+                statusCode: 409,
                 message: 'Account already connected',
                 message_ru: 'Аккаунт уже подключен'
             };
@@ -288,7 +288,7 @@ export class MinecraftService {
 
         if (!session.user.profile) {
             return {
-                statusCode: 400,
+                statusCode: 404,
                 message: 'Account didn\'t connected',
                 message_ru: 'Аккаунт Minecraft не подключен'
             }

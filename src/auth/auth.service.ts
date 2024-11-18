@@ -151,7 +151,7 @@ export class AuthService {
         });
         if (discord_tokens.status !== 200) {
             return {
-                statusCode: 400,
+                statusCode: 404,
                 message: 'Invalid code',
                 message_ru: 'Недействительный код. Попробуйте еще раз'
             };

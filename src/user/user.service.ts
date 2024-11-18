@@ -265,7 +265,7 @@ export class UserService {
 
         if (!current_discord) {
             return {
-                statusCode: 404,
+                statusCode: 500,
                 message: 'Unable to get user data',
                 message_ru: 'Не удалось получить актуальную информацию о профиле пользователя'
             }
@@ -333,7 +333,7 @@ export class UserService {
 
         if (!current_discord) {
             return {
-                statusCode: 404,
+                statusCode: 500,
                 message: 'Unable to get user data',
                 message_ru: 'Не удалось получить актуальную информацию о профиле пользователя'
             }
