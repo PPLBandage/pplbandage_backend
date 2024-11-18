@@ -260,6 +260,13 @@ export class UserService {
             }
         }
 
+        if (user.id === session?.user?.id) {
+            return {
+                statusCode: 200,
+                is_self: user.id === session?.user?.id
+            }
+        }
+
         const can_view = hasAccess(session?.user, RolesEnum.UpdateUsers);
         const current_discord = await this.getCurrentData(user.discordId);
 
