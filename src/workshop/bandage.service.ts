@@ -20,7 +20,7 @@ interface BandageSearch {
     User?: { name: { contains: string } }
 }
 
-export const sort_keys = ['popular_up', 'date_up', 'name_up'];
+export const sort_keys = ['popular_up', 'date_up', 'name_up', 'relevant_up'];
 
 const constructSort = (sort?: string): Prisma.BandageOrderByWithRelationInput => {
     /* generate sort rule */
@@ -62,12 +62,14 @@ export class BandageService {
         return await this.prisma.bandage.count();
     }
 
-    async getBandages(session: Session,
+    async getBandages(
+        session: Session,
         take: number,
         page: number,
         search?: string,
         filters?: number[],
-        sort?: string) {
+        sort?: string
+    ) {
 
         /* get workshop list */
 
@@ -100,6 +102,10 @@ export class BandageService {
             AND: filters_rule,
         };
 
+        if (sort === sort_keys[3]) {
+            return this.getBandagesRelevance(session, take, page, where, available);
+        }
+
         const data = await this.prisma.bandage.findMany({
             where: where,
             include: {
@@ -114,6 +120,37 @@ export class BandageService {
 
         const count = await this.prisma.bandage.count({ where: where });
         const result = generate_response(data, session, available);
+        return { data: result, totalCount: count, next_page: result.length ? page + 1 : page };
+    }
+
+    async getBandagesRelevance(
+        session: Session,
+        take: number,
+        page: number,
+        where: Prisma.BandageWhereInput,
+        available: boolean
+    ) {
+        const data = await this.prisma.bandage.findMany({
+            where: where,
+            include: {
+                User: { include: { UserSettings: true } },
+                stars: true,
+                categories: true
+            }
+        });
+
+        const count = await this.prisma.bandage.count({ where: where });
+
+        const getRelevance = (bandage: { stars: any[]; creationDate: Date; }) => {
+            const stars = bandage.stars.length;
+            const daysSinceCreation =
+                (Date.now() - new Date(bandage.creationDate).getTime()) / (1000 * 60 * 60 * 24);
+            return stars / Math.pow(daysSinceCreation + 1, 1.5);
+        }
+
+        const startIndex = page * take;
+        const ratedWorks = data.sort((a, b) => getRelevance(b) - getRelevance(a)).slice(startIndex, startIndex + take);
+        const result = generate_response(ratedWorks, session, available);
         return { data: result, totalCount: count, next_page: result.length ? page + 1 : page };
     }
 
