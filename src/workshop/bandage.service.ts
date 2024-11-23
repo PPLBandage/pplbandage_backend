@@ -13,6 +13,10 @@ import { generate_response } from 'src/common/bandage_response';
 const moderation_id = [4, 13];  // на проверке, отклонено
 const official_id = 0;
 
+// Relevance settings
+const downgrade_factor = 1.5;
+const start_boost = 1;
+
 interface BandageSearch {
     title?: { contains: string },
     description?: { contains: string },
@@ -142,10 +146,10 @@ export class BandageService {
         const count = await this.prisma.bandage.count({ where: where });
 
         const getRelevance = (bandage: { stars: any[]; creationDate: Date; }) => {
-            const stars = bandage.stars.length;
+            const stars = bandage.stars.length + start_boost;
             const daysSinceCreation =
                 (Date.now() - new Date(bandage.creationDate).getTime()) / (1000 * 60 * 60 * 24);
-            return stars / Math.pow(daysSinceCreation + 1, 1.5);
+            return stars / Math.pow(daysSinceCreation + 1, downgrade_factor);
         }
 
         const startIndex = page * take;
