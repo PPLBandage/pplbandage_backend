@@ -192,9 +192,14 @@ export class BandageService {
         });
 
         await this.discordNotifications.doNotification(
-            `<@&${process.env.MENTION_ROLE_ID}> New bandage "${result.title}" created by ${session.user.name}\n` +
-            `https://pplbandage.ru/workshop/${result.externalId}`
+            `<@&${process.env.MENTION_ROLE_ID}> new bandage created\n` +
+            `- **Title**: ${result.title}\n` +
+            `- **Description**: ${result.description}\n` +
+            `- **Is split type**: ${result.split_type}\n` +
+            `- **Creator**: ${session.user.name}\n\n` +
+            `**URL**: https://pplbandage.ru/workshop/${result.externalId}`
         );
+
         await this.notifications.createNotification(session.user.id, {
             content: `Повязка <a href="/workshop/${result.externalId}"><b>${result.title}</b></a> создана и отправлена на проверку!`
         });
