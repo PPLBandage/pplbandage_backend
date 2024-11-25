@@ -232,6 +232,12 @@ export class MinecraftService {
         return { statusCode: 200, new_data: result.valid };
     }
 
+    async getByCode(code: string): Promise<{ nickname: string, UUID: string } | null> {
+        const response = await axios.get(`https://mc-oauth.andcool.ru/code/${code}`, { validateStatus: () => true });
+        if (response.status !== 200) return null;
+        return response.data as { nickname: string, UUID: string };
+    }
+
     async connect(session: Session, code: string) {
         /* connect minecraft account to a user profile */
 
@@ -243,16 +249,14 @@ export class MinecraftService {
             };
         }
 
-        const user_data = await axios.get(`https://mc-oauth.andcool.ru/code/${code}`, { validateStatus: () => true });
-        if (user_data.status !== 200) {
+        const data = await this.getByCode(code);
+        if (!data) {
             return {
                 statusCode: 404,
                 message: 'Code not found',
                 message_ru: 'Код не найден'
             };
         }
-
-        const data = user_data.data as { nickname: string, UUID: string };
         const skin_data = await this.updateSkinCache(data.UUID, true);
 
         if (!skin_data) {

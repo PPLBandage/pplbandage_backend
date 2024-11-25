@@ -219,24 +219,30 @@ export class AuthService {
 
         // ----------------------- Create session token ---------------------------
 
-        const sessionId = sign({ userId: user_db.id }, 'ppl_super_secret', { expiresIn: Number(process.env.SESSION_TTL) });
+        const session = await this.createSession(user_db.id, user_agent);
+        return {
+            message: 'logged in',
+            message_ru: 'Вход произведен успешно',
+            sessionId: session.sessionId,
+            statusCode: 200
+        };
+    }
+
+
+    async createSession(user_id: string, user_agent: string) {
+        const sessionId = sign({ userId: user_id }, 'ppl_super_secret', { expiresIn: Number(process.env.SESSION_TTL) });
         const token_record = await this.prisma.sessions.create({
             data: {
                 sessionId: sessionId,
                 User_Agent: user_agent,
                 User: {
                     connect: {
-                        id: user_db.id
+                        id: user_id
                     }
                 }
             }
         });
-        return {
-            message: 'logged in',
-            message_ru: 'Вход произведен успешно',
-            sessionId: token_record.sessionId,
-            statusCode: 200
-        };
+        return token_record;
     }
 
     async validateSession(session: string | undefined, user_agent: string): Promise<Session | null> {
