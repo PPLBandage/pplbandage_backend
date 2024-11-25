@@ -242,7 +242,7 @@ export class BandageService {
         );
 
         await this.notifications.createNotification(session.user.id, {
-            content: `Повязка <a href="/workshop/${result.externalId}?referrer=/me/notifications"><b>${result.title}</b></a> создана и отправлена на проверку!`
+            content: `Повязка <a href="/workshop/${result.externalId}?ref=/me/notifications"><b>${result.title}</b></a> создана и отправлена на проверку!`
         });
 
         return {
@@ -446,14 +446,14 @@ export class BandageService {
             const difference_after = validated_categories.filter(element => !bandage_categories.includes(element));
             if (difference_after.includes(moderation_id[1])) {
                 await this.notifications.createNotification(bandage.userId, {
-                    content: `Повязка <a href="/workshop/${bandage.externalId}?referrer=/me/notifications"><b>${bandage.title}</b></a> была отклонена. Пожалуйста, свяжитесь с <a href="/contacts"><b>администрацией</b></a> для уточнения причин.`,
+                    content: `Повязка <a href="/workshop/${bandage.externalId}?ref=/me/notifications"><b>${bandage.title}</b></a> была отклонена. Пожалуйста, свяжитесь с <a href="/contacts"><b>администрацией</b></a> для уточнения причин.`,
                     type: 2
                 });
             }
 
             else if (moderation_id.some(element => difference.includes(element))) {
                 await this.notifications.createNotification(bandage.userId, {
-                    content: `Повязка <a href="/workshop/${bandage.externalId}?referrer=/me/notifications"><b>${bandage.title}</b></a> успешно прошла проверку и теперь доступна остальным в <a href="/workshop"><b>мастерской</b></a>!`,
+                    content: `Повязка <a href="/workshop/${bandage.externalId}?ref=/me/notifications"><b>${bandage.title}</b></a> успешно прошла проверку и теперь доступна остальным в <a href="/workshop"><b>мастерской</b></a>!`,
                     type: 1
                 });
             }
