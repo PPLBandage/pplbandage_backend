@@ -7,7 +7,7 @@ import { PageTakeQueryDTO } from 'src/user/dto/queries.dto';
 import { CapeQueryDTO, PixelWidthQueryDTO } from './dto/queries.dto';
 
 @Controller('minecraft')
-export class minecraftController {
+export class MinecraftController {
     constructor(private readonly minecraftService: MinecraftService) { }
 
     @Get("/skin/:name")

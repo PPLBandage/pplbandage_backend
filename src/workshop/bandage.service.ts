@@ -16,6 +16,7 @@ const official_id = 0;
 // Relevance settings
 const downgrade_factor = 1.5;
 const start_boost = 1;
+const start_boost_duration = 7;
 
 interface BandageSearch {
     title?: { contains: string },
@@ -146,9 +147,10 @@ export class BandageService {
         const count = await this.prisma.bandage.count({ where: where });
 
         const getRelevance = (bandage: { stars: any[]; creationDate: Date; }) => {
-            const stars = bandage.stars.length + start_boost;
             const daysSinceCreation =
                 (Date.now() - new Date(bandage.creationDate).getTime()) / (1000 * 60 * 60 * 24);
+
+            const stars = bandage.stars.length + (daysSinceCreation < start_boost_duration ? 1 : 0);
             return stars / Math.pow(daysSinceCreation + 1, downgrade_factor);
         }
 
@@ -242,7 +244,8 @@ export class BandageService {
         );
 
         await this.notifications.createNotification(session.user.id, {
-            content: `Повязка <a href="/workshop/${result.externalId}?ref=/me/notifications"><b>${result.title}</b></a> создана и отправлена на проверку!`
+            content: `Повязка <a href="/workshop/${result.externalId}?ref=/me/notifications"><b>${result.title}</b></a> ` +
+                `создана и отправлена на проверку!`
         });
 
         return {
@@ -446,14 +449,16 @@ export class BandageService {
             const difference_after = validated_categories.filter(element => !bandage_categories.includes(element));
             if (difference_after.includes(moderation_id[1])) {
                 await this.notifications.createNotification(bandage.userId, {
-                    content: `Повязка <a href="/workshop/${bandage.externalId}?ref=/me/notifications"><b>${bandage.title}</b></a> была отклонена. Пожалуйста, свяжитесь с <a href="/contacts"><b>администрацией</b></a> для уточнения причин.`,
+                    content: `Повязка <a href="/workshop/${bandage.externalId}?ref=/me/notifications"><b>${bandage.title}</b></a> ` +
+                        `была отклонена. Пожалуйста, свяжитесь с <a href="/contacts"><b>администрацией</b></a> для уточнения причин.`,
                     type: 2
                 });
             }
 
             else if (moderation_id.some(element => difference.includes(element))) {
                 await this.notifications.createNotification(bandage.userId, {
-                    content: `Повязка <a href="/workshop/${bandage.externalId}?ref=/me/notifications"><b>${bandage.title}</b></a> успешно прошла проверку и теперь доступна остальным в <a href="/workshop"><b>мастерской</b></a>!`,
+                    content: `Повязка <a href="/workshop/${bandage.externalId}?ref=/me/notifications"><b>${bandage.title}</b></a> ` +
+                        `успешно прошла проверку и теперь доступна остальным в <a href="/workshop"><b>мастерской</b></a>!`,
                     type: 1
                 });
             }

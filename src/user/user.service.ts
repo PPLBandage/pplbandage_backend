@@ -284,7 +284,11 @@ export class UserService {
         });
 
         const bandages = await this.prisma.bandage.findMany({
-            where: { userId: user.id, access_level: can_view ? undefined : 2, categories: can_view ? undefined : { none: { only_admins: true } } },
+            where: {
+                userId: user.id,
+                access_level: can_view ? undefined : 2,
+                categories: can_view ? undefined : { none: { only_admins: true } }
+            },
             include: { categories: true, stars: true, User: { include: { UserSettings: true } } }
         });
 

@@ -1,4 +1,4 @@
-import { Controller, Get, Header, Req, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Header, Res, UseGuards } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
 import type { Response } from 'express'
 import { generateSitemap, SitemapProps } from './sitemap';

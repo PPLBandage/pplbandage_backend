@@ -11,7 +11,7 @@ import { AuthGuard } from '../guards/auth.guard';
 import { NotificationService } from '../notifications/notifications.service';
 import { WorkshopController } from 'src/workshop/workshop.controller';
 import { UserController } from 'src/user/user.controller';
-import { minecraftController } from 'src/minecraft/minecraft.controller';
+import { MinecraftController } from 'src/minecraft/minecraft.controller';
 import { AuthController } from 'src/auth/auth.controller';
 import { AuthService } from 'src/auth/auth.service';
 import { DiscordNotificationService } from 'src/notifications/discord.service';
@@ -30,7 +30,7 @@ ConfigModule.forRoot();
 		NotificationService,
 		DiscordNotificationService
 	],
-	controllers: [RootController, WorkshopController, UserController, minecraftController, AuthController],
+	controllers: [RootController, WorkshopController, UserController, MinecraftController, AuthController],
 	imports: [
 		ThrottlerModule.forRoot([{
 			ttl: 60000,

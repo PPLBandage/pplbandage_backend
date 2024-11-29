@@ -6,7 +6,7 @@ import * as morgan from 'morgan';
 
 async function bootstrap() {
 	const app = await NestFactory.create<NestExpressApplication>(RootModule);
-	const allowedOrigins = JSON.parse((process.env.CORS_DOMAINS as string).replaceAll(`'`, `"`));
+	const allowedOrigins: string[] = JSON.parse((process.env.CORS_DOMAINS as string).replaceAll(`'`, `"`));
 
 	app.enableCors({
 		origin: (origin, callback) => {
