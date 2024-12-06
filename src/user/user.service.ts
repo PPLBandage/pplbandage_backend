@@ -5,8 +5,7 @@ import { hasAccess, Session } from 'src/auth/auth.service';
 import { UpdateUsersDto } from './dto/updateUser.dto';
 import { generate_response } from 'src/common/bandage_response';
 import { RolesEnum } from 'src/interfaces/types';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
+import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 import * as sharp from 'sharp';
 
 const discord_url = process.env.DISCORD_URL + "/api/v10";
