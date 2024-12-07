@@ -69,23 +69,8 @@ export class UserService {
 
         if (hash === 'none') return null;
 
-        const avatar_response = await axios.get(`${process.env.DISCORD_AVATAR}/${user_id}/${hash}?size=512`, { responseType: 'arraybuffer' });
-        let avatar_buffer = Buffer.from(avatar_response.data);
-
-        if (avatar_buffer[0] === 0x47 && avatar_buffer[1] === 0x49 && avatar_buffer[2] === 0x46) {
-            const sharp_obj = sharp(avatar_buffer);
-            const meta = await sharp_obj.metadata();
-            avatar_buffer = await sharp_obj
-                .extract({
-                    left: 0,
-                    top: 0,
-                    width: Math.min(meta.width as number, 512),
-                    height: Math.min(meta.height as number, 512)
-                })
-                .toBuffer();
-        }
-
-        const avatarB64 = avatar_buffer.toString('base64');
+        const avatar_response = await axios.get(`${process.env.DISCORD_AVATAR}/${user_id}/${hash}.png?size=512`, { responseType: 'arraybuffer' });
+        const avatarB64 = Buffer.from(avatar_response.data).toString('base64');
         await this.cacheManager.set(`avatar:${user_id}`, avatarB64, 1000 * 60 * 60 * 24);
         return avatarB64;
     }
