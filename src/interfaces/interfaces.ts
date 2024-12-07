@@ -34,14 +34,6 @@ interface SearchUnit {
     head: string
 }
 
-interface Search {
-    statusCode: number,
-    requestedFragment: string
-    data: SearchUnit[],
-    total_count: number,
-    next_page: number
-}
-
 interface SearchParams {
     fragment: string,
     take: number,

@@ -3,12 +3,12 @@ import { sort_keys } from 'src/workshop/bandage.service';
 
 @ValidatorConstraint({ async: false })
 export class IsBooleanCustomConstraint implements ValidatorConstraintInterface {
-    validate(value: any, args: ValidationArguments) {
+    validate(value: any, _: ValidationArguments) {
         return value === 'true' || value === 'false';
     }
 
     defaultMessage(args: ValidationArguments) {
-        return `\`${args.property}\` property must be a boolean represented as \`true\` or \`false\``;
+        return `${args.property} property must be a boolean represented as \`true\` or \`false\``;
     }
 }
 
@@ -27,12 +27,12 @@ export function IsBooleanStr(validationOptions?: ValidationOptions) {
 
 @ValidatorConstraint({ async: false })
 export class IsSortConstraint implements ValidatorConstraintInterface {
-    validate(value: any, args: ValidationArguments) {
+    validate(value: any, _: ValidationArguments) {
         return sort_keys.includes(value);
     }
 
     defaultMessage(args: ValidationArguments) {
-        return `\`${args.property}\` property must have one of [${sort_keys.join(', ')}] values, but \`${args.value}\` was provided instead`;
+        return `${args.property} property must have one of [${sort_keys.join(', ')}] values, but ${args.value} was provided instead`;
     }
 }
 
@@ -58,7 +58,7 @@ export class IsDivisibleConstraint implements ValidatorConstraintInterface {
 
     defaultMessage(args: ValidationArguments) {
         const [baseWidth] = args.constraints;
-        return `\`${args.property}\` property must be integers divisible by \`${baseWidth}\``;
+        return `${args.property} property must be integers divisible by ${baseWidth}`;
     }
 }
 

@@ -50,18 +50,17 @@ export class MinecraftController {
     async head(
         @Param('name') name: string,
         @Res({ passthrough: true }) res: Response
-    ): Promise<StreamableFile> {
+    ): Promise<StreamableFile | void> {
         /* get minecraft head by nickname / UUID */
 
         const cache = await this.minecraftService.updateSkinCache(name);
         if (!cache) {
-            throw new HttpException({
+            res.status(404).send({
                 statusCode: 404,
                 message: 'Profile not found',
                 message_ru: 'Профиль не найден'
-            },
-                HttpStatus.NOT_FOUND
-            );
+            });
+            return;
         }
 
         res.setHeader('Content-Type', 'image/png');
@@ -103,7 +102,7 @@ export class MinecraftController {
     async search(
         @Param('name') name: string,
         @Query() query: PageTakeQueryDTO
-    ): Promise<Search> {
+    ) {
         /* search nicknames by requested fragment */
 
         const cache = await this.minecraftService.searchNicks({ fragment: name, take: query.take ?? 20, page: query.page ?? 0 });

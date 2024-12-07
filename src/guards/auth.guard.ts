@@ -37,9 +37,9 @@ export class AuthGuard implements CanActivate {
         if (session) {
             response.setHeader('Access-Control-Expose-Headers', 'SetCookie');
             response.setHeader('SetCookie', session.cookie);
+            await this.prisma.sessions.update({ where: { sessionId: session.sessionId }, data: { last_accessed: new Date() } });
         }
 
-        session && await this.prisma.sessions.update({ where: { sessionId: session.sessionId }, data: { last_accessed: new Date() } })
         return true;
     }
 }

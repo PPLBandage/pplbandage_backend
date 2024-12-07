@@ -47,15 +47,15 @@ export class NotificationService {
         const notification_db = await this.prisma.notifications.create({ data: notification });
         const users = await this.prisma.user.findMany();
 
-        users.forEach(user => {
-            this.prisma.user.update({
+        await Promise.all(users.map(async user => {
+            await this.prisma.user.update({
                 where: { id: user.id },
                 data: {
                     has_unreaded_notifications: true,
                     notifications: { connect: { id: notification_db.id } }
                 }
             });
-        });
+        }));
         return notification_db;
     }
 }

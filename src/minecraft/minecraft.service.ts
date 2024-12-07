@@ -184,7 +184,7 @@ export class MinecraftService {
     }
 
 
-    async searchNicks({ fragment, take, page }: SearchParams): Promise<Search | null> {
+    async searchNicks({ fragment, take, page }: SearchParams) {
         /* search nicks in data base by provided fragment */
 
         if (fragment.length < 3) {
@@ -196,9 +196,11 @@ export class MinecraftService {
             orderBy: { default_nick: "asc" },
             take: take, skip: take * page
         });
-        if (!cache || cache.length === 0) {
+
+        if (cache.length === 0) {
             return null;
         }
+
         const count: number = await this.prisma.minecraft.count({ where: filter_rule });
         const records_list: SearchUnit[] = cache.map(nick => ({ name: nick.default_nick, uuid: nick.uuid, head: nick.data_head }));
         if (!count) {
@@ -206,7 +208,7 @@ export class MinecraftService {
         }
         return {
             statusCode: 200,
-            requestedFragment: fragment,
+            requested_fragment: fragment,
             data: records_list,
             total_count: count,
             next_page: page + 1

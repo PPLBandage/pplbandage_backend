@@ -116,6 +116,8 @@ export class AuthService {
     }
 
     async resolveCollisions(username: string) {
+        /* Resolve usernames collisions in database */
+
         const users = await this.prisma.user.findMany({ where: { username: username } });
         if (users.length <= 1) return;
 
@@ -189,6 +191,7 @@ export class AuthService {
         }
 
         // ----------------------- Upsert user field in DB ------------------------
+
         const users_count = await this.prisma.user.count();
         const user_db = await this.prisma.user.upsert({
             where: { discordId: ds_user.id },
@@ -221,10 +224,10 @@ export class AuthService {
 
         const session = await this.createSession(user_db.id, user_agent);
         return {
-            message: 'logged in',
+            statusCode: 200,
+            message: 'Logged in',
             message_ru: 'Вход произведен успешно',
             sessionId: session.sessionId,
-            statusCode: 200
         };
     }
 
@@ -249,23 +252,28 @@ export class AuthService {
         /* validate and update user session */
 
         if (!session) return null;
+
+        const userInclude = {
+            User: {
+                include: {
+                    profile: true,
+                    notifications: true,
+                    UserSettings: true,
+                    Bandage: true,
+                    stars: true,
+                    AccessRoles: true,
+                },
+            },
+        };
+
         const sessionDB = await this.prisma.sessions.findFirst({
             where: { sessionId: session },
-            include: {
-                User: {
-                    include: {
-                        profile: true,
-                        notifications: true,
-                        UserSettings: true,
-                        Bandage: true,
-                        stars: true,
-                        AccessRoles: true
-                    }
-                }
-            }
+            include: userInclude
         });
+
         if (!sessionDB) return null;
 
+        // User-Agent check
         if (sessionDB.User_Agent !== user_agent) {
             try {
                 await this.prisma.sessions.delete({ where: { id: sessionDB.id } });
@@ -276,35 +284,30 @@ export class AuthService {
 
         try {
             const decoded = verify(session, 'ppl_super_secret') as SessionToken;
-            const seconds = Math.round(Date.now() / 1000);
-            if (decoded.iat + ((decoded.exp - decoded.iat) / 2) < seconds) {
+            const now = Math.round(Date.now() / 1000);
+            if (decoded.iat + ((decoded.exp - decoded.iat) / 2) < now) {
                 const sessionId = sign({ userId: sessionDB.userId }, 'ppl_super_secret', { expiresIn: Number(process.env.SESSION_TTL) });
-                const new_tokens = await this.prisma.sessions.update({
+
+                const updatedSession = await this.prisma.sessions.update({
                     where: { id: sessionDB.id },
                     data: { sessionId: sessionId },
-                    include: {
-                        User: {
-                            include: {
-                                profile: true,
-                                notifications: true,
-                                UserSettings: true,
-                                Bandage: true,
-                                stars: true,
-                                AccessRoles: true
-                            }
-                        }
-                    }
+                    include: userInclude
                 });
 
-                const cookie = generateCookie(sessionId, seconds + Number(process.env.SESSION_TTL));
-
-                return { sessionId: sessionId, cookie: cookie, user: new_tokens.User };
-            } else {
-                const cookie = generateCookie(session, decoded.exp);
-                return { sessionId: sessionDB.sessionId, cookie: cookie, user: sessionDB.User };
+                return {
+                    sessionId: sessionId,
+                    cookie: generateCookie(sessionId, now + Number(process.env.SESSION_TTL)),
+                    user: updatedSession.User
+                }
+            }
+            return {
+                sessionId: sessionDB.sessionId,
+                cookie: generateCookie(session, decoded.exp),
+                user: sessionDB.User
             }
         } catch (err) {
             await this.prisma.sessions.delete({ where: { id: sessionDB.id } });
+            console.error(`Failed to validate tokens: ${err} Exiting...`);
             return null;
         }
     }
@@ -355,10 +358,10 @@ export class AuthService {
 
     async deleteSessionAll(session: Session) {
         const sessions_to_delete = await this.prisma.sessions.findMany({ where: { userId: session.user.id } });
-        sessions_to_delete.forEach(async _session => {
+        await Promise.all(sessions_to_delete.map(async _session => {
             if (_session.sessionId === session.sessionId) return;
             await this.prisma.sessions.delete({ where: { id: _session.id } });
-        });
+        }));
 
         return {
             statusCode: 200,

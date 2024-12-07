@@ -328,28 +328,4 @@ export class WorkshopController {
             color: 'green',
         });
     }
-
-    @Auth(AuthEnum.Strict)
-    @Roles([RolesEnum.SuperAdmin])
-    @Get('/trigger')
-    async trigger() {
-        const bandages = await this.prisma.bandage.findMany();
-
-        for (const bandage of bandages) {
-            const buff = Buffer.from(bandage.base64, 'base64');
-            const { data } = await sharp(buff)
-                .resize(1, 1, { fit: 'inside' })
-                .extract({ left: 0, top: 0, width: 1, height: 1 })
-                .raw()
-                .toBuffer({ resolveWithObject: true });
-            const [r, g, b] = data;
-
-            await this.prisma.bandage.update({
-                where: { id: bandage.id },
-                data: { accent_color: rgbToHex(r, g, b) }
-            });
-        }
-
-        return 'Done';
-    }
 }
