@@ -8,7 +8,7 @@ export interface RequestSession extends Request {
 }
 
 export interface RequestSessionWeak extends Request {
-    session: Session | undefined
+    session?: Session
 }
 
 
@@ -23,7 +23,7 @@ export interface BandageFull extends Bandage {
 }
 
 
-export const generate_response = (data: BandageFull[], session: Session | null, suppress_ban?: boolean) => {
+export const generateResponse = (data: BandageFull[], session: Session | null, suppress_ban?: boolean) => {
     /* generate list of works response by provided array of bandages */
 
     const result = data.map(el => {
@@ -39,14 +39,15 @@ export const generate_response = (data: BandageFull[], session: Session | null, 
             accent_color: el.accent_color,
             creation_date: el.creationDate,
             stars_count: el.stars.length,
-            starred: el.stars.some(val => val.id === session?.user.id),
+            starred: !!el.stars.find(val => val.id === session?.user.id),
             author: el.User ? {
                 id: el.User.id,
                 name: el.User.reserved_name || el.User.name,
                 username: el.User.username,
                 public: Number(el.User.discordId) > 0 ? el.User.UserSettings?.public_profile : false
             } : null,
-            categories: categories
+            categories: categories,
+            access_level: el.access_level
         }
     });
 

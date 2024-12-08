@@ -1,31 +1,32 @@
 name: Deploy to Server
 
 on:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - 'README.md'
-      - 'docs/**'
+    push:
+        branches:
+            - main
+        paths-ignore:
+            - 'README.md'
+            - 'docs/**'
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
+    deploy:
+        runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
 
-      - name: Execute remote commands
-        env:
-          SSHPASS: ${{ secrets.ROOT_SSH_PASSWORD }}
-        run: |
-          sshpass -e ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
-            cd /home/andcoolsystems/PPLBandage_Backend
-            git fetch
-            git stash
-            git merge '@{u}'
-            npx prisma db push
-            docker compose build
-            docker compose up -d
-          EOF
+            - name: Execute remote commands
+              env:
+                  SSHPASS: ${{ secrets.ROOT_SSH_PASSWORD }}
+              run: |
+                  sshpass -e ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
+                    set -e
+                    cd /home/andcoolsystems/PPLBandage_Backend
+                    git fetch
+                    git stash
+                    git merge '@{u}'
+                    npx prisma db push
+                    docker compose build
+                    docker compose up -d
+                  EOF

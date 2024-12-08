@@ -8,7 +8,7 @@ import { RolesEnum } from 'src/interfaces/types';
 import { CreateBandageDto } from './dto/createBandage.dto';
 import { EditBandageDto } from './dto/editBandage.dto';
 import { DiscordNotificationService } from 'src/notifications/discord.service';
-import { generate_response } from 'src/common/bandage_response';
+import { generateResponse } from 'src/common/bandage_response';
 
 const moderation_id = [4, 13];  // на проверке, отклонено
 const official_id = 0;
@@ -124,7 +124,7 @@ export class BandageService {
         });
 
         const count = await this.prisma.bandage.count({ where: where });
-        const result = generate_response(data, session, available);
+        const result = generateResponse(data, session, available);
         return { data: result, totalCount: count, next_page: result.length ? page + 1 : page };
     }
 
@@ -150,13 +150,13 @@ export class BandageService {
             const daysSinceCreation =
                 (Date.now() - new Date(bandage.creationDate).getTime()) / (1000 * 60 * 60 * 24);
 
-            const stars = bandage.stars.length + (daysSinceCreation < start_boost_duration ? 1 : 0);
+            const stars = bandage.stars.length + (daysSinceCreation < start_boost_duration ? start_boost : 0);
             return stars / Math.pow(daysSinceCreation + 1, downgrade_factor);
         }
 
         const startIndex = page * take;
         const ratedWorks = data.sort((a, b) => getRelevance(b) - getRelevance(a)).slice(startIndex, startIndex + take);
-        const result = generate_response(ratedWorks, session, available);
+        const result = generateResponse(ratedWorks, session, available);
         return { data: result, totalCount: count, next_page: result.length ? page + 1 : page };
     }
 

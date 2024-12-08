@@ -3,10 +3,9 @@ import { PrismaService } from '../prisma/prisma.service';
 import axios from 'axios';
 import { hasAccess, Session } from 'src/auth/auth.service';
 import { UpdateUsersDto } from './dto/updateUser.dto';
-import { generate_response } from 'src/common/bandage_response';
+import { generateResponse } from 'src/common/bandage_response';
 import { RolesEnum } from 'src/interfaces/types';
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
-import * as sharp from 'sharp';
 
 const discord_url = process.env.DISCORD_URL + "/api/v10";
 
@@ -192,7 +191,7 @@ export class UserService {
                 User: { include: { UserSettings: true } }
             }
         });
-        return { statusCode: 200, data: generate_response(result, session) };
+        return { statusCode: 200, data: generateResponse(result, session) };
     }
 
     async getStars(session: Session) {
@@ -214,7 +213,7 @@ export class UserService {
                 }
             })
         }));
-        return { statusCode: 200, data: generate_response(result.filter(i => !!i), session) };
+        return { statusCode: 200, data: generateResponse(result.filter(i => !!i), session) };
     }
 
     async _getUserByNickname(username: string, session: Session | null) {
@@ -305,7 +304,7 @@ export class UserService {
                 `${process.env.DOMAIN}/api/v1/avatars/${current_discord.id}` :
                 `${process.env.DOMAIN}/icon.png`,
             banner_color: current_discord.banner_color,
-            works: generate_response(bandages, session, can_view),
+            works: generateResponse(bandages, session, can_view),
             is_self: user.id == session?.user?.id,
             profile_theme: user.UserSettings?.profile_theme,
             roles: user.AccessRoles
