@@ -206,16 +206,17 @@ export class UserController {
         res.status(200).send(await this.userService.getUsers());
     }
 
-    @Put('/users/:username')
+    @Patch('/users/:username')
     @Auth(AuthEnum.Strict)
     @Roles([RolesEnum.UpdateUsers])
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async update_user(
         @Param('username') username: string,
+        @Req() request: RequestSession,
         @Res() res: Response,
         @Body() body: UpdateUsersDto
     ) {
-        const data = await this.userService.updateUser(username, body);
+        const data = await this.userService.updateUser(request.session, username, body);
         res.status(data.statusCode).send(data);
     }
 

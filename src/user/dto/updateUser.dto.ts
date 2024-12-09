@@ -4,6 +4,10 @@ export class UpdateUsersDto {
     @IsOptional()
     @IsBoolean()
     banned?: boolean;
+
+    @IsOptional()
+    @IsBoolean()
+    skip_ppl_check?: boolean;
 }
 
 export class UpdateSelfUserDto {

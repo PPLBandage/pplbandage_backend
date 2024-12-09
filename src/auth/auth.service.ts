@@ -67,6 +67,10 @@ export interface UserFull extends User {
     AccessRoles: AccessRoles[]
 }
 
+export interface UserAccess extends User {
+    AccessRoles: AccessRoles[]
+}
+
 const generateCookie = (session: string, exp: number): string => {
     /* generate cookie string */
 
@@ -74,7 +78,7 @@ const generateCookie = (session: string, exp: number): string => {
     return `sessionId=${session}; Path=/; Expires=${date.toUTCString()}; SameSite=Strict`;
 }
 
-export const hasAccess = (user: UserFull | undefined, level: number, skipSuperAdmin?: boolean) => {
+export const hasAccess = (user: UserFull | UserAccess | undefined, level: number, skipSuperAdmin?: boolean) => {
     if (!user) return false;
     const user_roles = user.AccessRoles.map(role => role.level);
     return user_roles.includes(level) || (!skipSuperAdmin ? user_roles.includes(RolesEnum.SuperAdmin) : false);

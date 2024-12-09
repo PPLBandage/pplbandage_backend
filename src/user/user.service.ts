@@ -358,12 +358,13 @@ export class UserService {
             joined_at: user.joined_at,
             discord_id: user.discordId,
             banned: user.UserSettings?.banned,
-            permissions: user.AccessRoles?.map(role => role.name.toLowerCase())
+            permissions: user.AccessRoles?.map(role => role.name.toLowerCase()),
+            skip_ppl_check: user.UserSettings?.skip_ppl_check
         }));
     }
 
-    async updateUser(username: string, data: UpdateUsersDto) {
-        const user = await this.prisma.user.findFirst({ where: { username: username } });
+    async updateUser(session: Session, username: string, data: UpdateUsersDto) {
+        const user = await this.prisma.user.findFirst({ where: { username: username }, include: { AccessRoles: true } });
         if (!user) {
             return {
                 statusCode: 404,
@@ -372,9 +373,28 @@ export class UserService {
             }
         }
 
+        if (hasAccess(user, RolesEnum.UpdateUsers) && !hasAccess(session.user, RolesEnum.SuperAdmin)) {
+            return {
+                statusCode: 403,
+                message: 'Forbidden',
+                message_ru: 'Недостаточно прав для совершения этого действия'
+            }
+        }
+
+        if (session.user.id === user.id && !!data.banned) {
+            return {
+                statusCode: 400,
+                message: 'You cannot ban yourself',
+                message_ru: 'Вы не можете забанить себя'
+            }
+        }
+
         await this.prisma.userSettings.update({
             where: { userId: user.id },
-            data: { banned: data.banned }
+            data: {
+                banned: data.banned,
+                skip_ppl_check: data.skip_ppl_check
+            }
         });
 
         return {
