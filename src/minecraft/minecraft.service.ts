@@ -215,25 +215,6 @@ export class MinecraftService {
         };
     }
 
-
-    async changeValid(session: Session, state: boolean) {
-        /* switch displaying nick in search */
-
-        const minecraft = await this.prisma.minecraft.findFirst({ where: { userId: session.user.id } });
-
-        if (!minecraft) return {
-            statusCode: 404,
-            message: 'Minecraft account not connected',
-            message_ru: 'Аккаунт Minecraft не привязан'
-        };
-
-        const result = await this.prisma.minecraft.update({
-            where: { id: minecraft.id },
-            data: { valid: state }
-        })
-        return { statusCode: 200, new_data: result.valid };
-    }
-
     async getByCode(code: string): Promise<{ nickname: string, UUID: string } | null> {
         const response = await axios.get(`https://mc-oauth.andcool.ru/code/${code}`, { validateStatus: () => true });
         if (response.status !== 200) return null;

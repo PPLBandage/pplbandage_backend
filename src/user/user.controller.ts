@@ -12,7 +12,8 @@ import {
     UseGuards,
     ValidationPipe,
     UsePipes,
-    StreamableFile
+    StreamableFile,
+    Patch
 } from '@nestjs/common';
 import type { Response } from 'express'
 import { AuthGuard } from 'src/guards/auth.guard';
@@ -24,9 +25,9 @@ import { RolesGuard } from 'src/guards/roles.guard';
 import { AuthEnum, RolesEnum } from 'src/interfaces/types';
 import { Auth } from 'src/decorators/auth.decorator';
 import { Roles } from 'src/decorators/access.decorator';
-import { UpdateUsersDto } from './dto/updateUser.dto';
+import { UpdateSelfUserDto, UpdateUsersDto } from './dto/updateUser.dto';
 import { RequestSession } from 'src/common/bandage_response';
-import { PageTakeQueryDTO, StateQueryDTO, ThemeQueryDTO } from './dto/queries.dto';
+import { PageTakeQueryDTO } from './dto/queries.dto';
 
 @Controller()
 @UseGuards(AuthGuard, RolesGuard)
@@ -96,51 +97,6 @@ export class UserController {
 
         const data = await this.notificationService.get(request.session, query.take || 5, query.page || 0);
         res.send(data);
-    }
-
-    @Put("/user/me/theme")
-    @Auth(AuthEnum.Strict)
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-    async profile_theme(
-        @Req() request: RequestSession,
-        @Res() res: Response,
-        @Body() body: ThemeQueryDTO
-    ): Promise<void> {
-        /* update profile theme */
-
-        await this.userService.setProfileTheme(request.session, body.theme as number);
-        res.status(200).send({
-            statusCode: 200,
-            new_theme: body.theme
-        })
-    }
-
-    @Put("/user/me/connections/minecraft/valid")
-    @Auth(AuthEnum.Strict)
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-    async set_valid(
-        @Req() request: RequestSession,
-        @Res() res: Response,
-        @Query() query: StateQueryDTO
-    ): Promise<void> {
-        /* set displaying nickname in search */
-
-        const data = await this.minecraftService.changeValid(request.session, query.state === 'true');
-        res.status(data.statusCode).send(data);
-    }
-
-    @Put("/user/me/connections/minecraft/autoload")
-    @Auth(AuthEnum.Strict)
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-    async set_autoload(
-        @Req() request: RequestSession,
-        @Res() res: Response,
-        @Query() query: StateQueryDTO
-    ): Promise<void> {
-        /* set skin autoload in editor */
-
-        const data = await this.userService.changeAutoload(request.session, query.state === 'true');
-        res.status(data.statusCode).send(data);
     }
 
     @Post("/user/me/connections/minecraft/connect/:code")
@@ -243,20 +199,6 @@ export class UserController {
         res.status(data.statusCode).send(data);
     }
 
-    @Put("/user/me/settings/public")
-    @Auth(AuthEnum.Strict)
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-    async set_public(
-        @Req() request: RequestSession,
-        @Res() res: Response,
-        @Query() query: StateQueryDTO
-    ): Promise<void> {
-        /* set skin autoload in editor */
-
-        const data = await this.userService.setPublic(request.session, query.state === 'true');
-        res.status(data.statusCode).send(data);
-    }
-
     @Get('/users')
     @Auth(AuthEnum.Strict)
     @Roles([RolesEnum.UpdateUsers])
@@ -268,7 +210,11 @@ export class UserController {
     @Auth(AuthEnum.Strict)
     @Roles([RolesEnum.UpdateUsers])
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-    async update_user(@Param('username') username: string, @Res() res: Response, @Body() body: UpdateUsersDto) {
+    async update_user(
+        @Param('username') username: string,
+        @Res() res: Response,
+        @Body() body: UpdateUsersDto
+    ) {
         const data = await this.userService.updateUser(username, body);
         res.status(data.statusCode).send(data);
     }
@@ -292,5 +238,19 @@ export class UserController {
 
         res.setHeader('Content-Type', 'image/png');
         return new StreamableFile(Buffer.from(cache, "base64"));
+    }
+
+    @Patch('/user/me')
+    @Auth(AuthEnum.Strict)
+    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+    async update_me(
+        @Req() request: RequestSession,
+        @Res() res: Response,
+        @Body() body: UpdateSelfUserDto
+    ) {
+        /* Update self data */
+
+        const data = await this.userService.updateSelfUser(request.session, body);
+        res.status(data.statusCode).send(data);
     }
 }

@@ -20,7 +20,8 @@ import { CacheModule } from '@nestjs/cache-manager';
 ConfigModule.forRoot();
 
 @Module({
-	providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard },
+	providers: [
+		{ provide: APP_GUARD, useClass: ThrottlerGuard },
 		UserService,
 		PrismaService,
 		BandageService,

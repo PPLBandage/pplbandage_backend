@@ -2,10 +2,11 @@ import { Inject, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import axios from 'axios';
 import { hasAccess, Session } from 'src/auth/auth.service';
-import { UpdateUsersDto } from './dto/updateUser.dto';
+import { UpdateSelfUserDto, UpdateUsersDto } from './dto/updateUser.dto';
 import { generateResponse } from 'src/common/bandage_response';
 import { RolesEnum } from 'src/interfaces/types';
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
+import { days } from '@nestjs/throttler';
 
 const discord_url = process.env.DISCORD_URL + "/api/v10";
 
@@ -347,31 +348,6 @@ export class UserService {
         }
     }
 
-    async setProfileTheme(session: Session, theme: number) {
-        await this.prisma.userSettings.update({ where: { userId: session.user.id }, data: { profile_theme: theme } });
-    }
-
-    async changeAutoload(session: Session, state: boolean) {
-        /* switch skin autoload in editor */
-
-        const result = await this.prisma.userSettings.update({
-            where: { userId: session.user.id }, data: { autoload: state }
-        })
-        return {
-            statusCode: 200,
-            new_data: result.autoload
-        };
-    }
-
-    async setPublic(session: Session, state: boolean) {
-        /* change profile visibility */
-
-        const result = await this.prisma.userSettings.update({
-            where: { userId: session.user.id }, data: { public_profile: state }
-        })
-        return { statusCode: 200, new_data: result.public_profile };
-    }
-
     async getUsers() {
         const users = await this.prisma.user.findMany({ include: { UserSettings: true, AccessRoles: true } });
 
@@ -405,6 +381,46 @@ export class UserService {
             statusCode: 200,
             message: 'Updated',
             message_ru: 'Обновлён'
+        }
+    }
+
+    async updateSelfUser(session: Session, body: UpdateSelfUserDto) {
+        /* Update self data */
+        /* TODO: Nickname changing */
+
+        if (
+            body.theme !== undefined ||
+            body.skin_autoload !== undefined ||
+            body.public !== undefined
+        ) {
+            await this.prisma.userSettings.update({
+                where: { userId: session.user.id },
+                data: {
+                    profile_theme: body.theme,
+                    autoload: body.skin_autoload,
+                    public_profile: body.public
+                }
+            });
+        }
+
+        if (body.nick_search !== undefined) {
+            if (!session.user.profile) {
+                return {
+                    statusCode: 400,
+                    message: 'Minecraft profile didn\'t connected',
+                    message_ru: 'К вашему профилю не подключена учетная запись Minecraft'
+                }
+            }
+            await this.prisma.minecraft.update({
+                where: { id: session.user.profile.id },
+                data: { valid: body.nick_search }
+            });
+        }
+
+        return {
+            statusCode: 200,
+            message: 'Patched',
+            message_ru: 'Обновлен'
         }
     }
 }
