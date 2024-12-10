@@ -226,6 +226,7 @@ export class UserController {
     @Post('/users')
     @Auth(AuthEnum.Strict)
     @Roles([RolesEnum.UpdateUsers])
+    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async force_register(
         @Res() res: Response,
         @Body() body: ForceRegisterUserDTO
