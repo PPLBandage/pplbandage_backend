@@ -1,4 +1,4 @@
-import { IsBoolean, IsNumber, IsOptional, Max, Min } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class UpdateUsersDto {
     @IsOptional()
@@ -28,4 +28,10 @@ export class UpdateSelfUserDto {
     @IsBoolean()
     @IsOptional()
     public?: boolean
+}
+
+export class ForceRegisterUserDTO {
+    @IsString()
+    @IsNotEmpty()
+    discord_id!: string;
 }

@@ -25,9 +25,9 @@ import { RolesGuard } from 'src/guards/roles.guard';
 import { AuthEnum, RolesEnum } from 'src/interfaces/types';
 import { Auth } from 'src/decorators/auth.decorator';
 import { Roles } from 'src/decorators/access.decorator';
-import { UpdateSelfUserDto, UpdateUsersDto } from './dto/updateUser.dto';
+import { ForceRegisterUserDTO, UpdateSelfUserDto, UpdateUsersDto } from './dto/updateUser.dto';
 import { RequestSession } from 'src/common/bandage_response';
-import { PageTakeQueryDTO } from './dto/queries.dto';
+import { PageTakeQueryDTO, QueryDTO } from './dto/queries.dto';
 
 @Controller()
 @UseGuards(AuthGuard, RolesGuard)
@@ -202,8 +202,11 @@ export class UserController {
     @Get('/users')
     @Auth(AuthEnum.Strict)
     @Roles([RolesEnum.UpdateUsers])
-    async get_users(@Res() res: Response) {
-        res.status(200).send(await this.userService.getUsers());
+    async get_users(
+        @Res() res: Response,
+        @Query() query: QueryDTO
+    ) {
+        res.status(200).send(await this.userService.getUsers(query.query));
     }
 
     @Patch('/users/:username')
@@ -217,6 +220,19 @@ export class UserController {
         @Body() body: UpdateUsersDto
     ) {
         const data = await this.userService.updateUser(request.session, username, body);
+        res.status(data.statusCode).send(data);
+    }
+
+    @Post('/users')
+    @Auth(AuthEnum.Strict)
+    @Roles([RolesEnum.UpdateUsers])
+    async force_register(
+        @Res() res: Response,
+        @Body() body: ForceRegisterUserDTO
+    ) {
+        /* Force register user */
+
+        const data = await this.userService.forceRegister(body.discord_id);
         res.status(data.statusCode).send(data);
     }
 

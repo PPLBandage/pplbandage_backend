@@ -119,25 +119,6 @@ export class AuthService {
         return data.roles.some(role => roles.includes(role));
     }
 
-    async resolveCollisions(username: string) {
-        /* Resolve usernames collisions in database */
-
-        const users = await this.prisma.user.findMany({ where: { username: username } });
-        if (users.length <= 1) return;
-
-        await Promise.all(users.map(async user => {
-            const current_data = await this.userService.getCurrentData(user.discordId);
-            if (!current_data) return;
-            await this.prisma.user.update({
-                where: { id: user.id },
-                data: {
-                    username: current_data.username,
-                    name: current_data.global_name || current_data.username
-                }
-            });
-        }));
-    }
-
     async login(code: string, user_agent: string) {
         /* log in by code */
 
@@ -213,7 +194,7 @@ export class AuthService {
             include: { UserSettings: true }
         });
 
-        await this.resolveCollisions(user_db.username);
+        await this.userService.resolveCollisions(user_db.username);
 
         if (user_db.UserSettings?.banned) {
             await this.prisma.sessions.deleteMany({ where: { userId: user_db.id } });

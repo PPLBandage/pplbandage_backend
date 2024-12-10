@@ -1,12 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import axios from 'axios';
-import { hasAccess, Session } from 'src/auth/auth.service';
+import { generateSnowflake, hasAccess, Session } from 'src/auth/auth.service';
 import { UpdateSelfUserDto, UpdateUsersDto } from './dto/updateUser.dto';
 import { generateResponse } from 'src/common/bandage_response';
 import { RolesEnum } from 'src/interfaces/types';
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
-import { days } from '@nestjs/throttler';
 
 const discord_url = process.env.DISCORD_URL + "/api/v10";
 
@@ -35,6 +34,25 @@ export class UserService {
         private prisma: PrismaService,
         @Inject(CACHE_MANAGER) private cacheManager: Cache
     ) { }
+
+    async resolveCollisions(username: string) {
+        /* Resolve usernames collisions in database */
+
+        const users = await this.prisma.user.findMany({ where: { username: username } });
+        if (users.length <= 1) return;
+
+        await Promise.all(users.map(async user => {
+            const current_data = await this.getCurrentData(user.discordId);
+            if (!current_data) return;
+            await this.prisma.user.update({
+                where: { id: user.id },
+                data: {
+                    username: current_data.username,
+                    name: current_data.global_name || current_data.username
+                }
+            });
+        }));
+    }
 
     async getCurrentData(user_id: string): Promise<DiscordUser | null> {
         const cache = await this.cacheManager.get<string>(`discord:${user_id}`);
@@ -348,8 +366,18 @@ export class UserService {
         }
     }
 
-    async getUsers() {
-        const users = await this.prisma.user.findMany({ include: { UserSettings: true, AccessRoles: true } });
+    async getUsers(query?: string) {
+        const users = await this.prisma.user.findMany({
+            where: !!query ? {
+                OR: [
+                    { name: { contains: query } },
+                    { reserved_name: { contains: query } },
+                    { username: { contains: query } },
+                    { id: { contains: query } }
+                ]
+            } : undefined,
+            include: { UserSettings: true, AccessRoles: true }
+        });
 
         return users.map(user => ({
             id: user.id,
@@ -441,6 +469,51 @@ export class UserService {
             statusCode: 200,
             message: 'Patched',
             message_ru: 'Обновлен'
+        }
+    }
+
+    async forceRegister(discord_id: string) {
+        const user_data = await this.getCurrentData(discord_id);
+        if (!user_data) {
+            return {
+                statusCode: 404,
+                message: 'User not found',
+                message_ru: 'Не удается найти профиль пользователя'
+            }
+        }
+
+        const existing_user = await this.prisma.user.findFirst({ where: { discordId: discord_id } });
+        if (existing_user) {
+            return {
+                statusCode: 409,
+                message: 'User already registered',
+                message_ru: 'Пользователь уже зарегистрирован'
+            }
+        }
+
+        const users_count = await this.prisma.user.count();
+        const user_db = await this.prisma.user.upsert({
+            where: { discordId: user_data.id },
+            create: {
+                id: generateSnowflake(BigInt(users_count)),
+                discordId: user_data.id,
+                username: user_data.username,
+                name: user_data.global_name || user_data.username,
+                UserSettings: { create: { skip_ppl_check: true } },
+                AccessRoles: {
+                    connect: { level: 0 }
+                }
+            },
+            update: {},
+            include: { UserSettings: true }
+        });
+
+        await this.resolveCollisions(user_db.username);
+
+        return {
+            statusCode: 201,
+            message: 'User created',
+            message_ru: 'Пользователь зарегистрирован'
         }
     }
 }
