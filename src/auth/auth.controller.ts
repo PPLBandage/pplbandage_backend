@@ -1,7 +1,7 @@
 import { Controller, Get, HttpStatus, Param, Req, Res, Delete, Post, UseGuards, Header } from '@nestjs/common';
 import type { Request, Response } from 'express'
 import { UNAUTHORIZED } from 'src/root/root.controller';
-import { AuthService } from './auth.service';
+import { AuthService, generateCookie } from './auth.service';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { Auth } from 'src/decorators/auth.decorator';
 import { AuthEnum } from 'src/interfaces/types';
@@ -14,7 +14,10 @@ export class AuthController {
     ) { }
 
     @Delete("/user/me")
-    async logout(@Req() request: Request, @Res() res: Response): Promise<void> {
+    async logout(
+        @Req() request: Request,
+        @Res() res: Response
+    ): Promise<void> {
         /* log out user */
 
         const user_agent = request.headers['user-agent'];
@@ -30,22 +33,27 @@ export class AuthController {
 
 
     @Post("/auth/discord/:code")
-    async discord(@Param('code') code: string, @Req() request: Request, @Res({ passthrough: true }) res: Response): Promise<void> {
+    async discord(
+        @Param('code') code: string,
+        @Req() request: Request,
+        @Res({ passthrough: true }) res: Response
+    ): Promise<void> {
         /* create session for discord user */
 
         const user_agent = request.headers['user-agent'] as string;
         const data = await this.authService.login(code, user_agent);
 
         if (data.statusCode === 200) {
-            const date = new Date((new Date()).getTime() + (Number(process.env.SESSION_TTL) * 1000));
-            res.setHeader('Access-Control-Expose-Headers', 'SetCookie');
-            res.setHeader('SetCookie', `sessionId=${data.sessionId}; Path=/; Expires=${date.toUTCString()}; SameSite=Strict`);
+            const expires = Math.round(Date.now() / 1000) + Number(process.env.SESSION_TTL);
+            res.setHeader('SetCookie', generateCookie(data.sessionId as string, expires));
         }
         res.status(data.statusCode).send(data);
     }
 
     @Get("/auth/roles")
-    async roles(@Res() res: Response): Promise<void> {
+    async roles(
+        @Res() res: Response
+    ): Promise<void> {
         /* get roles for registration */
 
         res.send(await this.authService.getRoles());
@@ -53,7 +61,10 @@ export class AuthController {
 
     @Get('/user/me/sessions')
     @Auth(AuthEnum.Strict)
-    async getSessions(@Req() request: RequestSession, @Res() res: Response): Promise<void> {
+    async getSessions(
+        @Req() request: RequestSession,
+        @Res() res: Response
+    ): Promise<void> {
         /* get user sessions */
 
         res.send(await this.authService.getSessions(request.session));

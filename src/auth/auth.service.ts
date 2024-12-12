@@ -71,7 +71,7 @@ export interface UserAccess extends User {
     AccessRoles: AccessRoles[]
 }
 
-const generateCookie = (session: string, exp: number): string => {
+export const generateCookie = (session: string, exp: number): string => {
     /* generate cookie string */
 
     const date = new Date(exp * 1000);
