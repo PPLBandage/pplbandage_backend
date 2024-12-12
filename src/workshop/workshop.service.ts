@@ -57,7 +57,7 @@ export const rgbToHex = (r: number, g: number, b: number) => {
 
 
 @Injectable()
-export class BandageService {
+export class WorkshopService {
     constructor(private prisma: PrismaService,
         private notifications: NotificationService,
         private discordNotifications: DiscordNotificationService
@@ -185,6 +185,12 @@ export class BandageService {
         }
     }
 
+    async clearMetadata(base64?: string) {
+        if (!base64) return '';
+        const data = await sharp(Buffer.from(base64, 'base64')).toBuffer({ resolveWithObject: false });
+        return data.toString('base64');
+    }
+
     async createBandage(body: CreateBandageDto, session: Session) {
         /* create bandage */
 
@@ -212,7 +218,10 @@ export class BandageService {
             }
         }
 
-        const buff = Buffer.from(body.base64, 'base64');
+        const bandage_base64 = await this.clearMetadata(body.base64);
+        const bandage_slim_base64 = await this.clearMetadata(body.base64_slim);
+
+        const buff = Buffer.from(bandage_base64, 'base64');
         const { data } = await sharp(buff)
             .resize(1, 1, { fit: 'inside' })
             .extract({ left: 0, top: 0, width: 1, height: 1 })
@@ -225,8 +234,8 @@ export class BandageService {
                 externalId: Math.random().toString(36).substring(2, 8),
                 title: body.title,
                 description: body.description,
-                base64: body.base64,
-                base64_slim: body.base64_slim ?? '',
+                base64: bandage_base64,
+                base64_slim: bandage_slim_base64,
                 split_type: body.split_type ?? false,
                 User: { connect: { id: session.user.id } },
                 categories: { connect: categories },
@@ -234,14 +243,18 @@ export class BandageService {
             }
         });
 
-        await this.discordNotifications.doNotification(
-            `<@&${process.env.MENTION_ROLE_ID}> new bandage created\n` +
-            `- **Title**: ${result.title}\n` +
-            `- **Description**: ${result.description}\n` +
-            `- **Is split type**: ${result.split_type}\n` +
-            `- **Creator**: ${session.user.name}\n\n` +
-            `**URL**: https://pplbandage.ru/workshop/${result.externalId}`
-        );
+        try {
+            await this.discordNotifications.doNotification(
+                `<@&${process.env.MENTION_ROLE_ID}> new bandage created\n` +
+                `- **Title**: ${result.title}\n` +
+                `- **Description**: ${result.description}\n` +
+                `- **Is split type**: ${result.split_type}\n` +
+                `- **Creator**: ${session.user.name}\n\n` +
+                `**URL**: https://pplbandage.ru/workshop/${result.externalId}`
+            );
+        } catch {
+            console.error(`Cannot do Discord notification about https://pplbandage.ru/workshop/${result.externalId}`)
+        }
 
         await this.notifications.createNotification(session.user.id, {
             content: `Повязка <a href="/workshop/${result.externalId}?ref=/me/notifications"><b>${result.title}</b></a> ` +

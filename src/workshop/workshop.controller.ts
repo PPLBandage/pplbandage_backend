@@ -16,7 +16,7 @@ import {
     UsePipes,
 } from '@nestjs/common';
 import type { Response, Request } from 'express';
-import { BandageService, rgbToHex } from './bandage.service';
+import { WorkshopService } from './workshop.service';
 import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { AuthGuard } from 'src/guards/auth.guard';
 import * as sharp from 'sharp';
@@ -31,14 +31,13 @@ import {
     WorkshopSearchQueryDTO,
 } from 'src/workshop/dto/queries.dto';
 import { SetQueryDTO } from 'src/user/dto/queries.dto';
-import { Roles } from 'src/decorators/access.decorator';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Controller()
 @UseGuards(AuthGuard)
 export class WorkshopController {
     constructor(
-        private readonly bandageService: BandageService,
+        private readonly bandageService: WorkshopService,
         private prisma: PrismaService
     ) { }
     @Get('/workshop')

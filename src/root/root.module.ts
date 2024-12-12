@@ -3,7 +3,7 @@ import { RootController } from './root.controller';
 import { ConfigModule } from '@nestjs/config';
 import { UserService } from 'src/user/user.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { BandageService } from 'src/workshop/bandage.service';
+import { WorkshopService } from 'src/workshop/workshop.service';
 import { MinecraftService } from '../minecraft/minecraft.service';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
@@ -24,7 +24,7 @@ ConfigModule.forRoot();
 		{ provide: APP_GUARD, useClass: ThrottlerGuard },
 		UserService,
 		PrismaService,
-		BandageService,
+		WorkshopService,
 		MinecraftService,
 		AuthService,
 		AuthGuard,

@@ -1,5 +1,5 @@
 import { registerDecorator, ValidationOptions, ValidatorConstraint, ValidatorConstraintInterface, ValidationArguments } from 'class-validator';
-import { sort_keys } from 'src/workshop/bandage.service';
+import { sort_keys } from 'src/workshop/workshop.service';
 
 @ValidatorConstraint({ async: false })
 export class IsBooleanCustomConstraint implements ValidatorConstraintInterface {
