@@ -97,6 +97,19 @@ export class AuthService {
         private readonly userService: UserService
     ) { }
 
+    userInclude = {
+        User: {
+            include: {
+                profile: true,
+                notifications: true,
+                UserSettings: true,
+                Bandage: true,
+                stars: true,
+                AccessRoles: true,
+            },
+        },
+    };
+
     async getRoles() {
         return (await this.prisma.roles.findMany()).reverse();
     }
@@ -233,27 +246,18 @@ export class AuthService {
         return token_record;
     }
 
-    async validateSession(session: string | undefined, user_agent: string): Promise<Session | null> {
+    async validateSessionWeak(session: string | undefined, user_agent: string) {
+
+    }
+
+    async validateSession(session: string | undefined, user_agent: string, strict: boolean): Promise<Session | null> {
         /* validate and update user session */
 
         if (!session) return null;
 
-        const userInclude = {
-            User: {
-                include: {
-                    profile: true,
-                    notifications: true,
-                    UserSettings: true,
-                    Bandage: true,
-                    stars: true,
-                    AccessRoles: true,
-                },
-            },
-        };
-
         const sessionDB = await this.prisma.sessions.findFirst({
             where: { sessionId: session },
-            include: userInclude
+            include: this.userInclude
         });
 
         if (!sessionDB) return null;
@@ -270,13 +274,22 @@ export class AuthService {
         try {
             const decoded = verify(session, 'ppl_super_secret') as SessionToken;
             const now = Math.round(Date.now() / 1000);
+
+            if (!strict && decoded.exp > now) {
+                return {
+                    sessionId: sessionDB.sessionId,
+                    cookie: generateCookie(session, decoded.exp),
+                    user: sessionDB.User
+                }
+            }
+
             if (decoded.iat + ((decoded.exp - decoded.iat) / 2) < now) {
                 const sessionId = sign({ userId: sessionDB.userId }, 'ppl_super_secret', { expiresIn: Number(process.env.SESSION_TTL) });
 
                 const updatedSession = await this.prisma.sessions.update({
                     where: { id: sessionDB.id },
                     data: { sessionId: sessionId },
-                    include: userInclude
+                    include: this.userInclude
                 });
 
                 return {

@@ -27,7 +27,7 @@ export class AuthGuard implements CanActivate {
             return true;
         }
 
-        const session = await this.oathService.validateSession(sessionId, user_agent);
+        const session = await this.oathService.validateSession(sessionId, user_agent, strict === 'Strict');
         if (!session && strict === 'Strict') {
             response.status(401).send(UNAUTHORIZED);
             return false;
@@ -36,7 +36,14 @@ export class AuthGuard implements CanActivate {
         request.session = session;
         if (session) {
             response.setHeader('SetCookie', session.cookie);
-            await this.prisma.sessions.update({ where: { sessionId: session.sessionId }, data: { last_accessed: new Date() } });
+            try {
+                await this.prisma.sessions.update({
+                    where: { sessionId: session.sessionId },
+                    data: { last_accessed: new Date() }
+                });
+            } catch (e) {
+                console.error(`Failed to update last access for session: ${e}`);
+            }
         }
 
         return true;

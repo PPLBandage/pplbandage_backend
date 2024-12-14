@@ -21,7 +21,7 @@ export class AuthController {
         /* log out user */
 
         const user_agent = request.headers['user-agent'];
-        const session = await this.authService.validateSession(request.cookies.sessionId, user_agent as string);
+        const session = await this.authService.validateSession(request.cookies.sessionId, user_agent as string, true);
         if (!session) {
             res.status(HttpStatus.UNAUTHORIZED).send(UNAUTHORIZED);
             return;
