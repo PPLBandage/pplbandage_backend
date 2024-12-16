@@ -186,6 +186,8 @@ export class WorkshopService {
     }
 
     async clearMetadata(base64?: string) {
+        /* Clear bandage's image metadata */
+
         if (!base64) return '';
         const data = await sharp(Buffer.from(base64, 'base64')).toBuffer({ resolveWithObject: false });
         return data.toString('base64');
@@ -290,6 +292,8 @@ export class WorkshopService {
     }
 
     async _getBandage(id: string, session: Session | null) {
+        /* Get and validate bandage from data base*/
+
         const bandage = await this.prisma.bandage.findFirst({
             where: { externalId: id },
             include: { User: { include: { UserSettings: true } }, categories: true, stars: true }
@@ -307,6 +311,8 @@ export class WorkshopService {
     }
 
     async getDataForOg(id: string) {
+        /* Get bandage data for Open Graph */
+
         const bandage = await this._getBandage(id, null);
 
         if (!bandage) {
