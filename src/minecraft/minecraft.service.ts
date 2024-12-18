@@ -149,14 +149,18 @@ export class MinecraftService {
 
         const textures = Buffer.from(fetched_skin_data.properties[0].value, 'base64').toString();
         const json_textures = JSON.parse(textures) as EncodedResponse;
-        const skin_response = await axios.get(json_textures.textures.SKIN.url, { responseType: 'arraybuffer' });
+        const skin_response = await axios.get(json_textures.textures.SKIN.url, { responseType: 'arraybuffer', validateStatus: () => true });
+
+        if (skin_response.status !== 200) return null;
         const skin_buff = Buffer.from(skin_response.data, 'binary');
         const head = await this.generateHead(skin_buff);
 
         let cape_b64 = '';
         if (json_textures.textures.CAPE) {
-            const cape_response = await axios.get(json_textures.textures.CAPE.url, { responseType: 'arraybuffer' });
-            cape_b64 = Buffer.from(cape_response.data, 'binary').toString('base64');
+            const cape_response = await axios.get(json_textures.textures.CAPE.url, { responseType: 'arraybuffer', validateStatus: () => true });
+            if (cape_response.status === 200) {
+                cape_b64 = Buffer.from(cape_response.data, 'binary').toString('base64');
+            }
         }
         const updated_data = await this.prisma.minecraft.upsert({
             where: { uuid: fetched_skin_data.id },

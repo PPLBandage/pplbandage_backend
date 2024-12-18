@@ -20,7 +20,7 @@ import { WorkshopService } from './workshop.service';
 import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { AuthGuard } from 'src/guards/auth.guard';
 import * as sharp from 'sharp';
-import { AuthEnum, RolesEnum } from 'src/interfaces/types';
+import { AuthEnum } from 'src/interfaces/types';
 import { Auth } from 'src/decorators/auth.decorator';
 import { CreateBandageDto } from './dto/createBandage.dto';
 import { EditBandageDto } from './dto/editBandage.dto';
@@ -31,14 +31,12 @@ import {
     WorkshopSearchQueryDTO,
 } from 'src/workshop/dto/queries.dto';
 import { SetQueryDTO } from 'src/user/dto/queries.dto';
-import { PrismaService } from 'src/prisma/prisma.service';
 
 @Controller()
 @UseGuards(AuthGuard)
 export class WorkshopController {
     constructor(
-        private readonly bandageService: WorkshopService,
-        private prisma: PrismaService
+        private readonly bandageService: WorkshopService
     ) { }
     @Get('/workshop')
     @Auth(AuthEnum.Weak)
