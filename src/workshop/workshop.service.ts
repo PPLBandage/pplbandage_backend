@@ -15,8 +15,8 @@ const official_id = 0;
 
 // Relevance settings
 const downgrade_factor = 1.5;
-const start_boost = 1;
-const start_boost_duration = 7;
+const start_boost = 0.2;
+const start_boost_duration = 4;
 
 interface BandageSearch {
     title?: { contains: string },
