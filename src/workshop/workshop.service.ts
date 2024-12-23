@@ -15,8 +15,8 @@ const official_id = 0;
 
 // Relevance settings
 const downgrade_factor = 1.5;
-const start_boost = 0.2;
-const start_boost_duration = 4;
+const start_boost = 1;
+const start_boost_duration = 7;
 
 interface BandageSearch {
     title?: { contains: string },
@@ -146,11 +146,11 @@ export class WorkshopService {
 
         const count = await this.prisma.bandage.count({ where: where });
 
-        const getRelevance = (bandage: { stars: any[]; creationDate: Date; }) => {
+        const getRelevance = (bandage: { stars: any[]; creationDate: Date; relevance_modifier: number }) => {
             const daysSinceCreation =
                 (Date.now() - new Date(bandage.creationDate).getTime()) / (1000 * 60 * 60 * 24);
 
-            const stars = bandage.stars.length + (daysSinceCreation < start_boost_duration ? start_boost : 0);
+            const stars = bandage.stars.length + (daysSinceCreation < start_boost_duration ? start_boost : 0) + bandage.relevance_modifier;
             return stars / Math.pow(daysSinceCreation + 1, downgrade_factor);
         }
 
