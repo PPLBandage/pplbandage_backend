@@ -138,9 +138,10 @@ export class WorkshopController {
 
     @Get('/workshop/:id/info')
     @SkipThrottle()
+    @Auth(AuthEnum.Weak)
     async getBandageOg(
         @Param('id') id: string,
-        @Req() request: Request,
+        @Req() request: RequestSession,
         @Res() res: Response,
     ): Promise<void> {
         /* get bandage info by external id (internal endpoint) */
@@ -153,7 +154,7 @@ export class WorkshopController {
             });
             return;
         }
-        const data = await this.bandageService.getDataForOg(id);
+        const data = await this.bandageService.getDataForOg(id, request.session);
         res.status(data.statusCode).send(data);
     }
 

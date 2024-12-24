@@ -310,10 +310,10 @@ export class WorkshopService {
         return bandage;
     }
 
-    async getDataForOg(id: string) {
+    async getDataForOg(id: string, session: Session) {
         /* Get bandage data for Open Graph */
 
-        const bandage = await this._getBandage(id, null);
+        const bandage = await this._getBandage(id, session);
 
         if (!bandage) {
             return {
@@ -377,7 +377,7 @@ export class WorkshopService {
         }));
 
         let check = null;
-        if (bandage.categories.some(val => val.id === moderation_id[0])) check = "under review";
+        if (bandage.categories.some(val => val.id === moderation_id[0])) check = "review";
         if (bandage.categories.some(val => val.id === moderation_id[1])) check = "denied";
 
 
