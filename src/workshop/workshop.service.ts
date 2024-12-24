@@ -140,7 +140,7 @@ export class WorkshopService {
             include: {
                 User: { include: { UserSettings: true } },
                 stars: true,
-                categories: true
+                categories: { orderBy: { order: 'asc' } }
             }
         });
 
