@@ -206,7 +206,7 @@ export class UserService {
             },
             include: {
                 stars: true,
-                categories: true,
+                categories: { orderBy: { order: 'asc' } },
                 User: { include: { UserSettings: true } }
             }
         });
@@ -227,7 +227,7 @@ export class UserService {
                 },
                 include: {
                     stars: true,
-                    categories: true,
+                    categories: { orderBy: { order: 'asc' } },
                     User: { include: { UserSettings: true } }
                 }
             })
@@ -292,7 +292,11 @@ export class UserService {
                 access_level: can_view ? undefined : 2,
                 categories: can_view ? undefined : { none: { only_admins: true } }
             },
-            include: { categories: true, stars: true, User: { include: { UserSettings: true } } }
+            include: {
+                categories: { orderBy: { order: 'asc' } },
+                stars: true,
+                User: { include: { UserSettings: true } }
+            }
         });
 
         if (bandages.length === 0 && !can_view) {

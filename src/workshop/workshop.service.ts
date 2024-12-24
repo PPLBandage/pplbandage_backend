@@ -116,7 +116,7 @@ export class WorkshopService {
             include: {
                 User: { include: { UserSettings: true } },
                 stars: true,
-                categories: true
+                categories: { orderBy: { order: 'asc' } }
             },
             take: Math.min(take, 100),
             skip: take * page,
