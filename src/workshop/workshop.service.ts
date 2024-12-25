@@ -625,4 +625,27 @@ export class WorkshopService {
             message_ru: 'Успешно архивировано'
         }
     }
+
+
+    async addView(external_id: string) {
+        const bandage = await this.prisma.bandage.findFirst({ where: { externalId: external_id } });
+        if (!bandage) {
+            return {
+                statusCode: 404,
+                message: 'Bandage not found',
+                message_ru: 'Повязка не найдена'
+            }
+        }
+
+        await this.prisma.bandage.update({
+            where: { id: bandage.id },
+            data: { views: bandage.views + 1 }
+        });
+
+        return {
+            statusCode: 200,
+            message: 'Success',
+            message_ru: 'Успешно'
+        }
+    }
 }

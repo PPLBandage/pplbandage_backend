@@ -136,6 +136,27 @@ export class WorkshopController {
         res.status(data.statusCode).send(data);
     }
 
+    @Post('/workshop/:id/view')
+    @SkipThrottle()
+    async viewBandage(
+        @Param('id') id: string,
+        @Req() request: Request,
+        @Res() res: Response,
+    ): Promise<void> {
+        /* Add bandage view (internal endpoint) */
+
+        if (request.headers['unique-access'] !== process.env.WORKSHOP_TOKEN) {
+            res.status(403).send({
+                statusCode: 403,
+                message: 'Forbidden',
+                message_ru: 'Доступ запрещен',
+            });
+            return;
+        }
+        const data = await this.bandageService.addView(id);
+        res.status(data.statusCode).send(data);
+    }
+
     @Get('/workshop/:id/info')
     @SkipThrottle()
     @Auth(AuthEnum.Weak)
