@@ -296,4 +296,34 @@ export class MinecraftService {
             message_ru: 'Аккаунт успешно отключен',
         }
     }
+
+    async generateSvg(image: sharp.Sharp, pixel_width: number) {
+        const { data, info } = await image.raw()
+            .ensureAlpha()
+            .toBuffer({ resolveWithObject: true });
+
+        const pixels = [];
+        const coef = 7 / 8;
+        for (let x = 8; x < 16; x++) {
+            for (let y = 8; y < 16; y++) {
+                const pixelIndex = (y * info.width + x) * info.channels;
+                pixels.push(`<rect x="${(x - 8) * (pixel_width * coef) + (pixel_width / 2)}" y="${(y - 8) * (pixel_width * coef) + (pixel_width / 2)}" width="${pixel_width * coef + 1}" height="${pixel_width * coef + 1}" fill="rgba(${data[pixelIndex]}, ${data[pixelIndex + 1]}, ${data[pixelIndex + 2]}, ${data[pixelIndex + 3]})" />`);
+            }
+        }
+
+        for (let x = 40; x < 48; x++) {
+            for (let y = 8; y < 16; y++) {
+                const pixelIndex = (y * info.width + x) * info.channels;
+                if (data[pixelIndex + 3] === 0) continue;
+                pixels.push(`<rect x="${(x - 40) * pixel_width}" y="${(y - 8) * pixel_width}" width="${pixel_width}" height="${pixel_width}" fill="rgba(${data[pixelIndex]}, ${data[pixelIndex + 1]}, ${data[pixelIndex + 2]}, ${data[pixelIndex + 3]})" />`);
+            }
+        }
+
+        const result =
+            `<svg width="${pixel_width * 8}" height="${pixel_width * 8}" xmlns="http://www.w3.org/2000/svg">\n` +
+            `${pixels.join('\n')}\n` +
+            `</svg>`;
+
+        return result;
+    }
 }

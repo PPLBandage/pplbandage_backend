@@ -1,11 +1,8 @@
 import { Controller, Get, Header, Res, UseGuards } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
 import type { Response } from 'express'
-import { generateSitemap, SitemapProps } from './sitemap';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { AuthGuard } from 'src/guards/auth.guard';
-import { RolesGuard } from 'src/guards/roles.guard';
-
+import { RootService, SitemapProps } from './root.service';
 
 export const UNAUTHORIZED = {
     statusCode: 401,
@@ -13,15 +10,15 @@ export const UNAUTHORIZED = {
     message_ru: 'Неавторизован',
 }
 
-
-@Controller()
-@UseGuards(AuthGuard, RolesGuard)
+@Controller({ version: '1' })
 export class RootController {
-    constructor(private prisma: PrismaService) { }
+    constructor(private prisma: PrismaService,
+        private readonly rootService: RootService
+    ) { }
 
     @Get()
     async root(@Res({ passthrough: true }) res: Response) {
-        /* main route */
+        /* Redirect to root path */
 
         res.redirect(308, "/");
     }
@@ -29,7 +26,7 @@ export class RootController {
     @Get('/ping')
     @SkipThrottle()
     async ping(@Res() res: Response) {
-        /* ping route */
+        /* Ping endpoint */
 
         res.status(200).send({
             statusCode: 200,
@@ -40,7 +37,7 @@ export class RootController {
     @Get('/sitemap.xml')
     @Header('Content-Type', 'text/xml')
     async sitemap(): Promise<string> {
-        /* sitemap route */
+        /* Generate sitemap */
 
         let urls: SitemapProps[] = [
             { loc: 'https://pplbandage.ru/', priority: 1 },
@@ -71,6 +68,6 @@ export class RootController {
             priority: 0.5
         })));
 
-        return generateSitemap(urls);
+        return this.rootService.generateSitemap(urls);
     }
 }

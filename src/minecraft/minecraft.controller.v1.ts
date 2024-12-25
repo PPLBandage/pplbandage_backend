@@ -1,12 +1,11 @@
 import { Controller, Get, HttpStatus, Param, Query, Res, StreamableFile, HttpException, ValidationPipe, UsePipes } from '@nestjs/common';
 import type { Response } from 'express';
 import { MinecraftService } from 'src/minecraft/minecraft.service';
-import { generateSvg } from './svg';
 import * as sharp from 'sharp';
 import { PageTakeQueryDTO } from 'src/user/dto/queries.dto';
 import { CapeQueryDTO, PixelWidthQueryDTO } from './dto/queries.dto';
 
-@Controller('minecraft')
+@Controller({ path: 'minecraft', version: '1' })
 export class MinecraftController {
     constructor(private readonly minecraftService: MinecraftService) { }
 
@@ -131,7 +130,7 @@ export class MinecraftController {
                 message_ru: 'Профиль не найден'
             }, HttpStatus.NOT_FOUND);
         }
-        const result = await generateSvg(sharp(Buffer.from(cache.data, "base64")), pixel_width);
+        const result = await this.minecraftService.generateSvg(sharp(Buffer.from(cache.data, "base64")), pixel_width);
         res.set({ 'Content-Type': 'image/svg+xml' });
         return result;
     }

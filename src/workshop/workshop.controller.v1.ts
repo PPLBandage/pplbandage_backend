@@ -32,7 +32,7 @@ import {
 } from 'src/workshop/dto/queries.dto';
 import { SetQueryDTO } from 'src/user/dto/queries.dto';
 
-@Controller()
+@Controller({ version: '1' })
 @UseGuards(AuthGuard)
 export class WorkshopController {
     constructor(

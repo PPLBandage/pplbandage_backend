@@ -1,13 +1,13 @@
 import { Controller, Get, HttpStatus, Param, Req, Res, Delete, Post, UseGuards, Header } from '@nestjs/common';
 import type { Request, Response } from 'express'
-import { UNAUTHORIZED } from 'src/root/root.controller';
 import { AuthService, generateCookie } from './auth.service';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { Auth } from 'src/decorators/auth.decorator';
 import { AuthEnum } from 'src/interfaces/types';
 import { RequestSession } from 'src/common/bandage_response';
+import { UNAUTHORIZED } from 'src/root/root.controller.v1';
 
-@Controller()
+@Controller({ version: '1' })
 @UseGuards(AuthGuard)
 export class AuthController {
     constructor(private readonly authService: AuthService

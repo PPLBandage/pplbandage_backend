@@ -1,11 +1,12 @@
 import { NestFactory } from '@nestjs/core';
-import { RootModule } from './root/root.module';
 import * as cookieParser from 'cookie-parser';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import * as morgan from 'morgan';
+import { AppModule } from './app.module';
+import { VersioningType } from '@nestjs/common';
 
 async function bootstrap() {
-	const app = await NestFactory.create<NestExpressApplication>(RootModule);
+	const app = await NestFactory.create<NestExpressApplication>(AppModule);
 	const allowedOrigins: string[] = JSON.parse((process.env.CORS_DOMAINS as string).replaceAll(`'`, `"`));
 
 	app.enableCors({
@@ -20,7 +21,10 @@ async function bootstrap() {
 	});
 	app.use(morgan(':method :url :status - :response-time ms'));
 	app.useBodyParser('json', { limit: '10mb' });
-	app.setGlobalPrefix('api/v1');
+	app.setGlobalPrefix('api');
+
+	app.enableVersioning({ type: VersioningType.URI });
+
 	app.use(cookieParser());
 	await app.listen(8001);
 }

@@ -29,7 +29,7 @@ import { ForceRegisterUserDTO, UpdateSelfUserDto, UpdateUsersDto } from './dto/u
 import { RequestSession } from 'src/common/bandage_response';
 import { PageTakeQueryDTO, QueryDTO } from './dto/queries.dto';
 
-@Controller()
+@Controller({ version: '1' })
 @UseGuards(AuthGuard, RolesGuard)
 export class UserController {
     constructor(private readonly userService: UserService,

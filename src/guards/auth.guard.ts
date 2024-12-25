@@ -1,10 +1,10 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Response } from 'express';
-import { UNAUTHORIZED } from '../root/root.controller';
 import { AuthService } from 'src/auth/auth.service';
 import { Reflector } from '@nestjs/core';
 import { Auth } from 'src/decorators/auth.decorator';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { UNAUTHORIZED } from 'src/root/root.controller.v1';
 
 @Injectable()
 export class AuthGuard implements CanActivate {

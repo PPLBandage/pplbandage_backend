@@ -23,7 +23,6 @@ export class PageTakeQueryDTO {
     page?: number;
 }
 
-
 export class QueryDTO {
     @IsString()
     @IsOptional()
