@@ -1,4 +1,4 @@
-import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import * as sharp from 'sharp';
@@ -10,6 +10,8 @@ import { EditBandageDto } from './dto/editBandage.dto';
 import { DiscordNotificationService } from 'src/notifications/discord.service';
 import { generateResponse } from 'src/common/bandage_response';
 import responses from 'src/localization/workshop.localization';
+import responses_common from 'src/localization/common.localization';
+import { LocaleException } from 'src/interceptors/localization.interceptor';
 
 const moderation_id = [4, 13];  // на проверке, отклонено
 const official_id = 0;
@@ -66,6 +68,38 @@ export class WorkshopService {
 
     async getBandagesCount() {
         return await this.prisma.bandage.count();
+    }
+
+    async getBandageById(external_id: string) {
+        const bandage = await this.prisma.bandage.findFirst({
+            where: { externalId: external_id },
+            include: { User: true, categories: true, stars: true }
+        });
+
+        if (!bandage) {
+            throw new LocaleException(responses.BANDAGE_NOT_FOUND, 404);
+        }
+
+        return bandage;
+    }
+
+    async getBandageSession(id: string, session: Session | null) {
+        /* Get and validate bandage from data base */
+
+        const bandage = await this.prisma.bandage.findFirst({
+            where: { externalId: id },
+            include: { User: { include: { UserSettings: true } }, categories: true, stars: true }
+        });
+        if (!bandage) {
+            throw new LocaleException(responses.BANDAGE_NOT_FOUND, 404);
+        }
+        const hidden = bandage.categories.some(val => val.only_admins);
+        const no_access = session ? !hasAccess(session.user, RolesEnum.ManageBandages) && session.user.id !== bandage.User?.id : true;
+        if ((hidden || bandage.access_level === 0) && no_access) {
+            throw new LocaleException(responses.BANDAGE_NOT_FOUND, 404);
+        }
+
+        return bandage;
     }
 
     async getBandages(
@@ -164,10 +198,7 @@ export class WorkshopService {
     async setStar(session: Session, set: boolean, id: string) {
         /* set star to bandage by external id */
 
-        const bandage = await this.prisma.bandage.findFirst({ where: { externalId: id } });
-        if (!bandage) {
-            throw new NotFoundException(responses.BANDAGE_NOT_FOUND);
-        }
+        const bandage = await this.getBandageById(id);
 
         const new_data = await this.prisma.bandage.update({
             where: { id: bandage.id },
@@ -209,11 +240,7 @@ export class WorkshopService {
         });  // get count of under review works
 
         if (count >= 5) {
-            return {
-                statusCode: 409,
-                message: "You cannot create more than 5 bandages under review",
-                message_ru: "Вы не можете иметь более 5 повязок на проверке, дождитесь проверки остальных и повторите попытку"
-            }
+            throw new LocaleException(responses.TOO_MANY_BANDAGES, 409);
         }
 
         const bandage_base64 = await this.clearMetadata(body.base64);
@@ -259,10 +286,7 @@ export class WorkshopService {
                 `создана и отправлена на проверку!`
         });
 
-        return {
-            statusCode: 201,
-            external_id: result.externalId,
-        };
+        return { external_id: result.externalId };
     }
 
     async getCategories(for_edit: boolean, session: Session) {
@@ -287,40 +311,12 @@ export class WorkshopService {
         }));
     }
 
-    async _getBandage(id: string, session: Session | null) {
-        /* Get and validate bandage from data base */
-
-        const bandage = await this.prisma.bandage.findFirst({
-            where: { externalId: id },
-            include: { User: { include: { UserSettings: true } }, categories: true, stars: true }
-        });
-        if (!bandage) {
-            return null;
-        }
-        const hidden = bandage.categories.some(val => val.only_admins);
-        const no_access = session ? !hasAccess(session.user, RolesEnum.ManageBandages) && session.user.id !== bandage.User?.id : true;
-        if ((hidden || bandage.access_level === 0) && no_access) {
-            return null;
-        }
-
-        return bandage;
-    }
-
     async getDataForOg(id: string, session: Session) {
         /* Get bandage data for Open Graph */
 
-        const bandage = await this._getBandage(id, session);
-
-        if (!bandage) {
-            return {
-                statusCode: 404,
-                message: "Bandage not found",
-                message_ru: 'Повязка не найдена',
-            };
-        }
+        const bandage = await this.getBandageSession(id, session);
 
         return {
-            statusCode: 200,
             data: {
                 id: bandage.id,
                 external_id: bandage.externalId,
@@ -341,11 +337,7 @@ export class WorkshopService {
     async getBandage(id: string, session: Session) {
         /* get bandage by external id */
 
-        const bandage = await this._getBandage(id, session);
-
-        if (!bandage) {
-            throw new HttpException(responses.BANDAGE_NOT_FOUND, 404);
-        }
+        const bandage = await this.getBandageSession(id, session);
 
         const hidden = bandage.categories.some(val => val.only_admins);
         let permissions_level = 0;
@@ -404,33 +396,17 @@ export class WorkshopService {
     async updateBandage(id: string, body: EditBandageDto, session: Session) {
         /* update bandage info */
 
-        const bandage = await this.prisma.bandage.findFirst({ where: { externalId: id }, include: { User: true, categories: true, stars: true } });
-
-        if (!bandage) {
-            return {
-                statusCode: 404,
-                message: "Not found",
-                message_ru: 'Повязка не найдена',
-            }
-        }
+        const bandage = await this.getBandageById(id);
 
         if (bandage.User?.id !== session.user.id && !hasAccess(session.user, RolesEnum.ManageBandages)) {
-            return {
-                statusCode: 403,
-                message: "Forbidden",
-                message_ru: 'У вас нет прав для выполнения этого действия',
-            }
+            throw new LocaleException(responses_common.FORBIDDEN, 403);
         }
 
         if (
             hasAccess(session.user, RolesEnum.ForbidSelfHarm, true) ||
             (bandage.archived && !hasAccess(session.user, RolesEnum.ManageBandages))
         ) {
-            return {
-                statusCode: 403,
-                message: "Forbidden",
-                message_ru: 'У вас нет прав для выполнения этого действия',
-            };
+            throw new LocaleException(responses_common.FORBIDDEN, 403);
         }
 
         let title = undefined;
@@ -493,8 +469,6 @@ export class WorkshopService {
                 access_level: access_level
             }
         });
-
-        return { statusCode: 200 };
     }
 
     async validateCategories(categories: number[], admin: boolean) {
@@ -513,40 +487,20 @@ export class WorkshopService {
     async deleteBandage(session: Session, externalId: string) {
         /* delete bandage */
 
-        const bandage = await this.prisma.bandage.findFirst({ where: { externalId: externalId }, include: { User: true } });
-        if (!bandage) {
-            return {
-                statusCode: 404,
-                message: "Not found",
-                message_ru: 'Повязка не найдена',
-            };
-        }
+        const bandage = await this.getBandageById(externalId);
 
         if (!hasAccess(session.user, RolesEnum.ManageBandages) && session.user.id !== bandage.User?.id) {
-            return {
-                statusCode: 403,
-                message: "Forbidden",
-                message_ru: 'У вас нет прав для выполнения этого действия',
-            };
+            throw new LocaleException(responses_common.FORBIDDEN, 403);
         }
 
         if (
             hasAccess(session.user, RolesEnum.ForbidSelfHarm, true) ||
             (bandage.archived && !hasAccess(session.user, RolesEnum.ManageBandages))
         ) {
-            return {
-                statusCode: 403,
-                message: "Forbidden",
-                message_ru: 'У вас нет прав для выполнения этого действия',
-            };
+            throw new LocaleException(responses_common.FORBIDDEN, 403);
         }
 
         await this.prisma.bandage.delete({ where: { id: bandage.id } });
-        return {
-            statusCode: 200,
-            message: "Deleted",
-            message_ru: 'Успешно удалено'
-        }
     }
 
     async validateBandage(base64: string, heightInit?: number) {
@@ -559,84 +513,36 @@ export class WorkshopService {
             height = metadata.height as number;
 
             if (width !== 16 || (height < 2 || height > 24 || height % 2 !== 0) || metadata.format !== 'png') {
-                return {
-                    statusCode: 400,
-                    message: "Invalid bandage size or format!",
-                    message_ru: "Повязка должна иметь ширину 16 пикселей, высоту от 2 до 24 пикселей и четную высоту"
-
-                };
+                throw new LocaleException(responses.BAD_BANDAGE_SIZE, 400);
             }
 
             if (heightInit != undefined && height !== heightInit) {
-                return {
-                    statusCode: 400,
-                    message: "The second bandage should be the same height as the first",
-                    message_ru: "Вторая повязка должна иметь такую ​​же высоту, как и первая"
-
-                };
+                throw new LocaleException(responses.BAD_SECOND_BANDAGE_SIZE, 400);
             }
         } catch {
-            return {
-                statusCode: 500,
-                message: "Error while processing base64",
-                message_ru: "Произошла ошибка при обработке base64"
-
-            };
+            throw new LocaleException(responses.ERROR_WHILE_BANDAGE_PROCESSING, 500);
         }
 
-        return {
-            statusCode: 200,
-            height: height
-        };
+        return { height: height };
     }
 
     async archiveBandage(session: Session, externalId: string) {
-        const bandage = await this.prisma.bandage.findFirst({ where: { externalId: externalId }, include: { User: true } });
-        if (!bandage) {
-            return {
-                statusCode: 404,
-                message: 'Not found',
-                message_ru: 'Повязка не найдена',
-            };
-        }
+        const bandage = await this.getBandageById(externalId);
 
         if (!hasAccess(session.user, RolesEnum.ManageBandages) && session.user.id !== bandage.User?.id) {
-            return {
-                statusCode: 403,
-                message: 'Forbidden',
-                message_ru: 'У вас нет прав для выполнения этого действия',
-            };
+            throw new LocaleException(responses_common.FORBIDDEN, 403);
         }
 
         await this.prisma.bandage.update({ where: { externalId: externalId }, data: { archived: true } });
-
-        return {
-            statusCode: 200,
-            message: 'Archived',
-            message_ru: 'Успешно архивировано'
-        }
     }
 
 
     async addView(external_id: string) {
-        const bandage = await this.prisma.bandage.findFirst({ where: { externalId: external_id } });
-        if (!bandage) {
-            return {
-                statusCode: 404,
-                message: 'Bandage not found',
-                message_ru: 'Повязка не найдена'
-            }
-        }
+        const bandage = await this.getBandageById(external_id);
 
         await this.prisma.bandage.update({
             where: { id: bandage.id },
             data: { views: bandage.views + 1 }
         });
-
-        return {
-            statusCode: 200,
-            message: 'Success',
-            message_ru: 'Успешно'
-        }
     }
 }

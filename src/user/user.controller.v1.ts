@@ -14,7 +14,8 @@ import {
     UsePipes,
     StreamableFile,
     Patch,
-    HttpException
+    HttpException,
+    Header
 } from '@nestjs/common';
 import type { Response } from 'express'
 import { AuthGuard } from 'src/guards/auth.guard';
@@ -29,6 +30,7 @@ import { Roles } from 'src/decorators/access.decorator';
 import { ForceRegisterUserDTO, UpdateSelfUserDto, UpdateUsersDto } from './dto/updateUser.dto';
 import { RequestSession } from 'src/common/bandage_response';
 import { PageTakeQueryDTO, QueryDTO } from './dto/queries.dto';
+import { LocaleException } from 'src/interceptors/localization.interceptor';
 
 @Controller({ version: '1' })
 @UseGuards(AuthGuard, RolesGuard)
@@ -239,23 +241,15 @@ export class UserController {
     }
 
     @Get("/avatars/:user_id")
-    async head(
-        @Param('user_id') user_id: string,
-        @Res({ passthrough: true }) res: Response
-    ): Promise<StreamableFile | void> {
+    @Header('Content-Type', 'image/png')
+    async head(@Param('user_id') user_id: string): Promise<StreamableFile | void> {
         /* get user avatar by id */
 
         const cache = await this.userService.getAvatar(user_id);
         if (!cache) {
-            res.status(500).send({
-                statusCode: 500,
-                message: 'Unable to get user avatar',
-                message_ru: 'Не удалось получить изображение профиля'
-            });
-            return;
+            throw new LocaleException('Unable to get user avatar', 500);
         }
 
-        res.setHeader('Content-Type', 'image/png');
         return new StreamableFile(Buffer.from(cache, "base64"));
     }
 
