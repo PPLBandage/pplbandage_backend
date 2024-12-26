@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import * as sharp from 'sharp';
@@ -9,6 +9,7 @@ import { CreateBandageDto } from './dto/createBandage.dto';
 import { EditBandageDto } from './dto/editBandage.dto';
 import { DiscordNotificationService } from 'src/notifications/discord.service';
 import { generateResponse } from 'src/common/bandage_response';
+import responses from 'src/localization/workshop.localization';
 
 const moderation_id = [4, 13];  // на проверке, отклонено
 const official_id = 0;
@@ -165,11 +166,7 @@ export class WorkshopService {
 
         const bandage = await this.prisma.bandage.findFirst({ where: { externalId: id } });
         if (!bandage) {
-            return {
-                statusCode: 404,
-                message: 'Bandage not found',
-                message_ru: 'Повязка не найдена',
-            };
+            throw new NotFoundException(responses.BANDAGE_NOT_FOUND);
         }
 
         const new_data = await this.prisma.bandage.update({
@@ -179,7 +176,6 @@ export class WorkshopService {
         });
 
         return {
-            statusCode: 200,
             new_count: new_data.stars.length,
             action_set: set,
         }
@@ -292,7 +288,7 @@ export class WorkshopService {
     }
 
     async _getBandage(id: string, session: Session | null) {
-        /* Get and validate bandage from data base*/
+        /* Get and validate bandage from data base */
 
         const bandage = await this.prisma.bandage.findFirst({
             where: { externalId: id },
@@ -348,11 +344,7 @@ export class WorkshopService {
         const bandage = await this._getBandage(id, session);
 
         if (!bandage) {
-            return {
-                statusCode: 404,
-                message: "Bandage not found",
-                message_ru: 'Повязка не найдена',
-            };
+            throw new HttpException(responses.BANDAGE_NOT_FOUND, 404);
         }
 
         const hidden = bandage.categories.some(val => val.only_admins);
@@ -382,7 +374,6 @@ export class WorkshopService {
 
 
         return {
-            statusCode: 200,
             data: {
                 id: bandage.id,
                 external_id: bandage.externalId,

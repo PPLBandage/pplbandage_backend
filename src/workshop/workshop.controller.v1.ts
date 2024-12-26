@@ -14,6 +14,7 @@ import {
     UseGuards,
     ValidationPipe,
     UsePipes,
+    HttpException,
 } from '@nestjs/common';
 import type { Response, Request } from 'express';
 import { WorkshopService } from './workshop.service';
@@ -31,14 +32,16 @@ import {
     WorkshopSearchQueryDTO,
 } from 'src/workshop/dto/queries.dto';
 import { SetQueryDTO } from 'src/user/dto/queries.dto';
+import responses from 'src/localization/workshop.localization';
+import responses_common from 'src/localization/common.localization';
 
-@Controller({ version: '1' })
+@Controller({ path: 'workshop', version: '1' })
 @UseGuards(AuthGuard)
 export class WorkshopController {
     constructor(
         private readonly bandageService: WorkshopService
     ) { }
-    @Get('/workshop')
+    @Get()
     @Auth(AuthEnum.Weak)
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async bandages(
@@ -63,7 +66,7 @@ export class WorkshopController {
     }
 
     @Throttle({ default: { limit: 5, ttl: 60000 } })
-    @Post('/workshop')
+    @Post()
     @Auth(AuthEnum.Strict)
     @UsePipes(new ValidationPipe({ whitelist: true }))
     async create_bandage(
@@ -73,24 +76,14 @@ export class WorkshopController {
     ): Promise<void> {
         /* create work */
 
-        if (!body.base64 || !body.title) {
-            res.status(HttpStatus.BAD_REQUEST).send({
-                statusCode: 400,
-                message: 'Invalid Body',
-                message_ru: 'Неправильное тело запроса',
-            });
-            return;
-        }
+        const validate_result = await this.bandageService.validateBandage(body.base64);
 
-        const validate_result = await this.bandageService.validateBandage(
-            body.base64,
-        );
         if (validate_result.statusCode !== 200) {
             res.status(validate_result.statusCode).send(validate_result);
             return;
         }
 
-        if (body.split_type === true) {
+        if (body.split_type) {
             if (!body.base64_slim) {
                 res.status(400).send({
                     statusCode: 400,
@@ -114,29 +107,12 @@ export class WorkshopController {
         res.status(data.statusCode).send(data);
     }
 
-    @Get('/workshop/:id')
-    @SkipThrottle()
-    @Auth(AuthEnum.Weak)
-    async getBandage(
-        @Param('id') id: string,
-        @Req() request: RequestSession,
-        @Res() res: Response,
-    ): Promise<void> {
-        /* get bandage by external id (internal endpoint) */
-
-        if (request.headers['unique-access'] !== process.env.WORKSHOP_TOKEN) {
-            res.status(403).send({
-                statusCode: 403,
-                message: 'Forbidden',
-                message_ru: 'Доступ запрещен',
-            });
-            return;
-        }
-        const data = await this.bandageService.getBandage(id, request.session);
-        res.status(data.statusCode).send(data);
+    @Get('test')
+    async getTestBandage() {
+        throw new HttpException(responses.BANDAGE_NOT_FOUND, 404);
     }
 
-    @Post('/workshop/:id/view')
+    @Post(':id/view')
     @SkipThrottle()
     async viewBandage(
         @Param('id') id: string,
@@ -157,7 +133,7 @@ export class WorkshopController {
         res.status(data.statusCode).send(data);
     }
 
-    @Get('/workshop/:id/info')
+    @Get(':id/info')
     @SkipThrottle()
     @Auth(AuthEnum.Weak)
     async getBandageOg(
@@ -179,7 +155,7 @@ export class WorkshopController {
         res.status(data.statusCode).send(data);
     }
 
-    @Get(['/workshop/:id/as_image', '/workshop/:id/og'])
+    @Get(':id/og')
     @Auth(AuthEnum.Weak)
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async getBandageImage(
@@ -193,10 +169,7 @@ export class WorkshopController {
         const requested_width = query.width ?? 512;
 
         const data = await this.bandageService.getBandage(id, request.session);
-        if (data.statusCode !== 200 || !data.data?.base64) {
-            res.status(data.statusCode).send(data);
-            return;
-        }
+
         const bandage_buff = Buffer.from(data.data.base64, 'base64');
         const metadata = await sharp(bandage_buff).metadata();
         const original_width = metadata.width as number;
@@ -246,7 +219,7 @@ export class WorkshopController {
         return new StreamableFile(await bandage.toBuffer());
     }
 
-    @Put('/workshop/:id')
+    @Put(':id')
     @Auth(AuthEnum.Strict)
     @UsePipes(new ValidationPipe({ whitelist: true }))
     async editBandage(
@@ -274,7 +247,7 @@ export class WorkshopController {
         res.status(data.statusCode).send(data);
     }
 
-    @Put('/workshop/:id/archive')
+    @Put(':id/archive')
     @Auth(AuthEnum.Strict)
     async archiveBandage(
         @Param('id') id: string,
@@ -287,7 +260,7 @@ export class WorkshopController {
         res.status(data.statusCode).send(data);
     }
 
-    @Delete('/workshop/:id')
+    @Delete(':id')
     @Auth(AuthEnum.Strict)
     async deleteBandage(
         @Param('id') id: string,
@@ -300,7 +273,7 @@ export class WorkshopController {
         res.status(data.statusCode).send(data);
     }
 
-    @Get('/categories')
+    @Get('categories')
     @Auth(AuthEnum.Weak)
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async categories(
@@ -318,15 +291,14 @@ export class WorkshopController {
         );
     }
 
-    @Put('/star/:id')
+    @Put('star/:id')
     @Auth(AuthEnum.Strict)
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async setStar(
         @Param('id') id: string,
         @Query() query: SetQueryDTO,
         @Req() request: RequestSession,
-        @Res() res: Response,
-    ): Promise<void> {
+    ) {
         /* set star to work by work external id */
 
         const data = await this.bandageService.setStar(
@@ -334,10 +306,10 @@ export class WorkshopController {
             query.set === 'true',
             id,
         );
-        res.status(data.statusCode).send(data);
+        return data;
     }
 
-    @Get('/workshop/count/badge')
+    @Get('count/badge')
     async getCount(@Res() res: Response) {
         const count = await this.bandageService.getBandagesCount();
         res.status(200).send({
@@ -346,5 +318,20 @@ export class WorkshopController {
             message: count.toString(),
             color: 'green',
         });
+    }
+
+    @Get(':id')
+    @SkipThrottle()
+    @Auth(AuthEnum.Weak)
+    async getBandage(
+        @Param('id') id: string,
+        @Req() request: RequestSession
+    ) {
+        /* get bandage by external id (internal endpoint) */
+
+        if (request.headers['unique-access'] !== process.env.WORKSHOP_TOKEN) {
+            throw new HttpException(responses_common.FORBIDDEN, 403);
+        }
+        return await this.bandageService.getBandage(id, request.session);
     }
 }

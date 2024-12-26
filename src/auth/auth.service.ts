@@ -366,7 +366,6 @@ export class AuthService {
             message: 'Logged out',
             message_ru: 'Вы успешно вышли со всех устройств'
         }
-
     }
 }
 

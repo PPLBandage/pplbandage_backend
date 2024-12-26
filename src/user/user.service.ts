@@ -440,18 +440,15 @@ export class UserService {
         /* Update self data */
         /* TODO: Nickname changing */
 
-        if (
-            body.theme !== undefined ||
-            body.skin_autoload !== undefined ||
-            body.public !== undefined
-        ) {
+        const updates: any = {};
+        if (body.theme !== undefined) updates.profile_theme = body.theme;
+        if (body.skin_autoload !== undefined) updates.autoload = body.skin_autoload;
+        if (body.public !== undefined) updates.public_profile = body.public;
+
+        if (Object.keys(updates).length > 0) {
             await this.prisma.userSettings.update({
                 where: { userId: session.user.id },
-                data: {
-                    profile_theme: body.theme,
-                    autoload: body.skin_autoload,
-                    public_profile: body.public
-                }
+                data: updates
             });
         }
 
@@ -477,21 +474,21 @@ export class UserService {
     }
 
     async forceRegister(discord_id: string) {
-        const user_data = await this.getCurrentData(discord_id);
-        if (!user_data) {
-            return {
-                statusCode: 404,
-                message: 'User not found',
-                message_ru: 'Не удается найти профиль пользователя'
-            }
-        }
-
         const existing_user = await this.prisma.user.findFirst({ where: { discordId: discord_id } });
         if (existing_user) {
             return {
                 statusCode: 409,
                 message: 'User already registered',
                 message_ru: 'Пользователь уже зарегистрирован'
+            }
+        }
+
+        const user_data = await this.getCurrentData(discord_id);
+        if (!user_data) {
+            return {
+                statusCode: 404,
+                message: 'User not found',
+                message_ru: 'Не удается найти профиль пользователя'
             }
         }
 
@@ -521,4 +518,3 @@ export class UserService {
         }
     }
 }
-

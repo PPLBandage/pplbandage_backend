@@ -13,7 +13,8 @@ import {
     ValidationPipe,
     UsePipes,
     StreamableFile,
-    Patch
+    Patch,
+    HttpException
 } from '@nestjs/common';
 import type { Response } from 'express'
 import { AuthGuard } from 'src/guards/auth.guard';
