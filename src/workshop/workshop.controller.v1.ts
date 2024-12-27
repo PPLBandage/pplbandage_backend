@@ -15,6 +15,7 @@ import {
     ValidationPipe,
     UsePipes,
     HttpCode,
+    Header,
 } from '@nestjs/common';
 import type { Response, Request } from 'express';
 import { WorkshopService } from './workshop.service';
@@ -41,6 +42,7 @@ export class WorkshopController {
     constructor(
         private readonly bandageService: WorkshopService
     ) { }
+
     @Get()
     @Auth(AuthEnum.Weak)
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
@@ -87,11 +89,6 @@ export class WorkshopController {
         return await this.bandageService.createBandage(body, request.session);
     }
 
-    @Get('test')
-    async getTestBandage() {
-        throw new LocaleException(responses_common.INTERNAL_ERROR, 500);
-    }
-
     @Post(':id/view')
     @SkipThrottle()
     async viewBandage(
@@ -123,11 +120,11 @@ export class WorkshopController {
 
     @Get(':id/og')
     @Auth(AuthEnum.Weak)
+    @Header('Content-Type', 'image/png')
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async getBandageImage(
         @Param('id') id: string,
         @Req() request: RequestSession,
-        @Res({ passthrough: true }) res: Response,
         @Query() query: WidthQueryDTO,
     ): Promise<StreamableFile | void> {
         /* get bandage image render (for OpenGraph) */
@@ -181,7 +178,6 @@ export class WorkshopController {
             { input: secondLayer, top: 0, left: 0, blend: 'over' },
         ]);
 
-        res.setHeader('Content-Type', 'image/png');
         return new StreamableFile(await bandage.toBuffer());
     }
 
@@ -233,16 +229,13 @@ export class WorkshopController {
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async categories(
         @Req() request: RequestSession,
-        @Res() res: Response,
         @Query() query: EditQueryDTO,
-    ): Promise<void> {
+    ) {
         /* get list of categories */
 
-        res.status(200).send(
-            await this.bandageService.getCategories(
-                query.for_edit === 'true',
-                request.session,
-            ),
+        return await this.bandageService.getCategories(
+            query.for_edit === 'true',
+            request.session,
         );
     }
 
@@ -259,7 +252,7 @@ export class WorkshopController {
         return await this.bandageService.setStar(
             request.session,
             query.set === 'true',
-            id,
+            id
         );
     }
 
