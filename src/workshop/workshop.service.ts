@@ -505,22 +505,24 @@ export class WorkshopService {
 
     async validateBandage(base64: string, heightInit?: number) {
         let height = null;
+        let width = null;
+        let metadata = null;
         try {
             const bandage_buff = Buffer.from(base64, 'base64');
             const bandage_sharp = sharp(bandage_buff);
-            const metadata = await bandage_sharp.metadata();
-            const width = metadata.width as number;
+            metadata = await bandage_sharp.metadata();
+            width = metadata.width as number;
             height = metadata.height as number;
-
-            if (width !== 16 || (height < 2 || height > 24 || height % 2 !== 0) || metadata.format !== 'png') {
-                throw new LocaleException(responses.BAD_BANDAGE_SIZE, 400);
-            }
-
-            if (heightInit != undefined && height !== heightInit) {
-                throw new LocaleException(responses.BAD_SECOND_BANDAGE_SIZE, 400);
-            }
-        } catch {
+        } catch (e) {
             throw new LocaleException(responses.ERROR_WHILE_BANDAGE_PROCESSING, 500);
+        }
+
+        if (width !== 16 || (height < 2 || height > 24 || height % 2 !== 0) || metadata.format !== 'png') {
+            throw new LocaleException(responses.BAD_BANDAGE_SIZE, 400);
+        }
+
+        if (heightInit != undefined && height !== heightInit) {
+            throw new LocaleException(responses.BAD_SECOND_BANDAGE_SIZE, 400);
         }
 
         return { height: height };

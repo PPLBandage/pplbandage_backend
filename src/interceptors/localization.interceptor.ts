@@ -39,6 +39,14 @@ export class LocaleInterceptor implements NestInterceptor {
 
                         return throwError(() => new HttpException(localizedResponse, code));
                     }
+
+                    if (err instanceof HttpException) {
+                        const response = err.getResponse();
+                        const code = err.getStatus();
+
+                        return throwError(() => new HttpException(response, code));
+                    }
+
                     return throwError(() => new HttpException({
                         statusCode: 500,
                         message: this.localizeResponse(locale, responses.INTERNAL_ERROR)
