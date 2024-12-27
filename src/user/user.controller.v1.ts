@@ -4,9 +4,7 @@ import {
     Param,
     Query,
     Req,
-    Res,
     Delete,
-    Put,
     Post,
     Body,
     UseGuards,
@@ -14,10 +12,8 @@ import {
     UsePipes,
     StreamableFile,
     Patch,
-    HttpException,
     Header
 } from '@nestjs/common';
-import type { Response } from 'express'
 import { AuthGuard } from 'src/guards/auth.guard';
 import { UserService } from './user.service';
 import { NotificationService } from 'src/notifications/notifications.service';

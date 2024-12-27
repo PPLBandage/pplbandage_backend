@@ -1,11 +1,9 @@
 import {
     Controller,
     Get,
-    HttpStatus,
     Param,
     Query,
     Req,
-    Res,
     StreamableFile,
     Delete,
     Put,
@@ -17,7 +15,7 @@ import {
     HttpCode,
     Header,
 } from '@nestjs/common';
-import type { Response, Request } from 'express';
+import type { Request } from 'express';
 import { WorkshopService } from './workshop.service';
 import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { AuthGuard } from 'src/guards/auth.guard';

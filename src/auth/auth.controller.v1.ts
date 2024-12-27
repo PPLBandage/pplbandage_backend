@@ -1,4 +1,4 @@
-import { Controller, Get, HttpStatus, Param, Req, Res, Delete, Post, UseGuards, Header, HttpException } from '@nestjs/common';
+import { Controller, Get, Param, Req, Res, Delete, Post, UseGuards, HttpException } from '@nestjs/common';
 import type { Request, Response } from 'express'
 import { AuthService, generateCookie } from './auth.service';
 import { AuthGuard } from 'src/guards/auth.guard';

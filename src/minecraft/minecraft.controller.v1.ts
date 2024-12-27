@@ -1,9 +1,8 @@
-import { Controller, Get, HttpStatus, Param, Query, Res, StreamableFile, HttpException, ValidationPipe, UsePipes, Header } from '@nestjs/common';
-import type { Response } from 'express';
+import { Controller, Get, Param, Query, StreamableFile, ValidationPipe, UsePipes, Header } from '@nestjs/common';
 import { MinecraftService } from 'src/minecraft/minecraft.service';
 import * as sharp from 'sharp';
 import { PageTakeQueryDTO } from 'src/user/dto/queries.dto';
-import { CapeQueryDTO, PixelWidthQueryDTO } from './dto/queries.dto';
+import { PixelWidthQueryDTO } from './dto/queries.dto';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import responses from 'src/localization/minecraft.localization';
 
@@ -63,26 +62,18 @@ export class MinecraftController {
     }
 
     @Get('/head/:name/svg')
+    @Header('Content-Type', 'image/svg+xml')
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-    async beta_head(
+    async headSVG(
         @Param('name') name: string,
-        @Res({ passthrough: true }) res: Response,
         @Query() query: PixelWidthQueryDTO
     ): Promise<string> {
         /* Generate SVG head */
 
-        const pixel_width = query.pixel_width ?? 50;
-
         const cache = await this.minecraftService.updateSkinCache(name);
-        if (!cache) {
-            throw new HttpException({
-                statusCode: 404,
-                message: 'Profile not found',
-                message_ru: 'Профиль не найден'
-            }, HttpStatus.NOT_FOUND);
-        }
-        const result = await this.minecraftService.generateSvg(sharp(Buffer.from(cache.data, "base64")), pixel_width);
-        res.set({ 'Content-Type': 'image/svg+xml' });
-        return result;
+        return await this.minecraftService.generateSvg(
+            sharp(Buffer.from(cache.data, "base64")),
+            query.pixel_width ?? 50
+        );
     }
 }
