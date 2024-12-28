@@ -7,6 +7,7 @@ import { NotificationService } from 'src/notifications/notifications.service';
 import { DiscordNotificationService } from 'src/notifications/discord.service';
 import { AuthService } from 'src/auth/auth.service';
 import { UserService } from 'src/user/user.service';
+import { MinecraftService } from 'src/minecraft/minecraft.service';
 
 @Module({
     controllers: [WorkshopController],
@@ -16,7 +17,8 @@ import { UserService } from 'src/user/user.service';
         NotificationService,
         DiscordNotificationService,
         AuthService,
-        UserService
+        UserService,
+        MinecraftService
     ],
     imports: [CacheModule.register()]
 })

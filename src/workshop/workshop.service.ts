@@ -62,8 +62,8 @@ export const rgbToHex = (r: number, g: number, b: number) => {
 @Injectable()
 export class WorkshopService {
     constructor(private prisma: PrismaService,
-        private notifications: NotificationService,
-        private discordNotifications: DiscordNotificationService
+        private readonly notifications: NotificationService,
+        private readonly discordNotifications: DiscordNotificationService
     ) { }
 
     async getBandagesCount() {

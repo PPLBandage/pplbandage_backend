@@ -22,6 +22,10 @@ const responses = {
     INVALID_OAUTH_CODE: {
         en: 'Invalid code',
         ru: 'Недействительный код. Попробуйте еще раз'
+    },
+    MINECRAFT_USER_NOT_FOUND: {
+        en: 'This account didn\'t connected',
+        ru: 'Этот аккаунт не подключен'
     }
 }
 

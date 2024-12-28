@@ -44,6 +44,23 @@ export class AuthController {
         return data;
     }
 
+    @Post("/auth/minecraft/:code")
+    async minecraftLogin(
+        @Param('code') code: string,
+        @Req() request: Request,
+        @Res({ passthrough: true }) res: Response
+    ) {
+        /* create session for minecraft user */
+
+        const user_agent = request.headers['user-agent'] as string;
+        const data = await this.authService.loginMinecraft(code, user_agent);
+
+        const expires = Math.round(Date.now() / 1000) + Number(process.env.SESSION_TTL);
+        res.setHeader('SetCookie', generateCookie(data.sessionId as string, expires));
+
+        return data;
+    }
+
     @Get("/auth/roles")
     async roles() {
         /* get roles for registration */

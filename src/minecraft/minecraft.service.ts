@@ -219,6 +219,7 @@ export class MinecraftService {
         const response = await axios.get(`https://mc-oauth.andcool.ru/code/${code}`, { validateStatus: () => true });
         if (response.status !== 200)
             throw new LocaleException(responses.CODE_NOT_FOUND, 404);
+
         return response.data as { nickname: string, UUID: string };
     }
 

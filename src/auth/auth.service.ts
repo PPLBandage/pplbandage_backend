@@ -9,6 +9,8 @@ import { UAParser } from 'ua-parser-js'
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import responses from 'src/localization/common.localization';
 import responses_users from 'src/localization/users.localization';
+import responses_minecraft from 'src/localization/minecraft.localization';
+import { MinecraftService } from 'src/minecraft/minecraft.service';
 
 const discord_url = process.env.DISCORD_URL + "/api/v10";
 const pwgood = "447699225078136832";  // pwgood server id
@@ -97,7 +99,8 @@ export const generateSnowflake = (increment: bigint, date?: Date): string => {
 @Injectable()
 export class AuthService {
     constructor(private prisma: PrismaService,
-        private readonly userService: UserService
+        private readonly userService: UserService,
+        private readonly minecraftService: MinecraftService
     ) { }
 
     userInclude = {
@@ -211,6 +214,27 @@ export class AuthService {
         return { sessionId: session.sessionId };
     }
 
+    async loginMinecraft(code: string, user_agent: string) {
+        const minecraft_data = await this.minecraftService.getByCode(code);
+
+        const minecraft_record = await this.prisma.minecraft.findFirst({
+            where: { uuid: minecraft_data.UUID },
+            include: { user: { include: { UserSettings: true } } }
+        });
+        if (!minecraft_record)
+            throw new LocaleException(responses_minecraft.PROFILE_NOT_FOUND, 404);
+
+        if (!minecraft_record.user)
+            throw new LocaleException(responses_users.MINECRAFT_USER_NOT_FOUND, 404);
+
+        if (minecraft_record.user.UserSettings?.banned) {
+            await this.prisma.sessions.deleteMany({ where: { userId: minecraft_record.user.id } });
+            throw new LocaleException(responses.FORBIDDEN, 403);
+        }
+
+        const session = await this.createSession(minecraft_record.user.id, user_agent);
+        return { sessionId: session.sessionId };
+    }
 
     async createSession(user_id: string, user_agent: string) {
         const sessionId = sign({ userId: user_id }, 'ppl_super_secret', { expiresIn: Number(process.env.SESSION_TTL) });
@@ -218,11 +242,7 @@ export class AuthService {
             data: {
                 sessionId: sessionId,
                 User_Agent: user_agent,
-                User: {
-                    connect: {
-                        id: user_id
-                    }
-                }
+                User: { connect: { id: user_id } }
             }
         });
         return token_record;
