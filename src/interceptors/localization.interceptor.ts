@@ -26,6 +26,7 @@ export class LocaleInterceptor implements NestInterceptor {
                 map(data => {
                     if (!!contentType && !contentType.toLowerCase().includes('application/json')) return data;
                     if (data instanceof Array) return data;
+                    if (request.path.includes('badge')) return data;
 
                     return { statusCode: response.statusCode, ...data }
                 }),
