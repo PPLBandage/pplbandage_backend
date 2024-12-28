@@ -4,18 +4,16 @@ import {
     Param,
     Query,
     Req,
-    Res,
     Delete,
-    Put,
     Post,
     Body,
     UseGuards,
     ValidationPipe,
     UsePipes,
     StreamableFile,
-    Patch
+    Patch,
+    Header
 } from '@nestjs/common';
-import type { Response } from 'express'
 import { AuthGuard } from 'src/guards/auth.guard';
 import { UserService } from './user.service';
 import { NotificationService } from 'src/notifications/notifications.service';
@@ -28,6 +26,10 @@ import { Roles } from 'src/decorators/access.decorator';
 import { ForceRegisterUserDTO, UpdateSelfUserDto, UpdateUsersDto } from './dto/updateUser.dto';
 import { RequestSession } from 'src/common/bandage_response';
 import { PageTakeQueryDTO, QueryDTO } from './dto/queries.dto';
+import { LocaleException } from 'src/interceptors/localization.interceptor';
+import responses_minecraft from 'src/localization/minecraft.localization';
+import responses_common from 'src/localization/common.localization';
+
 
 @Controller({ version: '1' })
 @UseGuards(AuthGuard, RolesGuard)
@@ -37,52 +39,36 @@ export class UserController {
         private readonly minecraftService: MinecraftService
     ) { }
 
-    @Get("/user/me")
+    @Get("user/me")
     @Auth(AuthEnum.Strict)
-    async me_profile(
-        @Req() request: RequestSession,
-        @Res() res: Response
-    ): Promise<void> {
+    async me(@Req() request: RequestSession) {
         /* get user data. associated with session */
 
-        const data = await this.userService.getUser(request.session);
-        res.status(data.statusCode).send(data);
+        return await this.userService.getUser(request.session);
     }
 
     @Get("/user/me/works")
     @Auth(AuthEnum.Strict)
-    async getWork(
-        @Req() request: RequestSession,
-        @Res() res: Response
-    ): Promise<void> {
+    async getWorks(@Req() request: RequestSession) {
         /* get user's works */
 
-        const data = await this.userService.getWork(request.session);
-        res.status(data.statusCode).send(data.data);
+        return await this.userService.getWork(request.session);
     }
 
     @Get("/user/me/stars")
     @Auth(AuthEnum.Strict)
-    async getStars(
-        @Req() request: RequestSession,
-        @Res() res: Response
-    ): Promise<void> {
+    async getStars(@Req() request: RequestSession) {
         /* get user's stars */
 
-        const data = await this.userService.getStars(request.session);
-        res.status(data.statusCode).send(data.data);
+        return await this.userService.getStars(request.session);
     }
 
-    @Get("/user/me/settings")
+    @Get("user/me/settings")
     @Auth(AuthEnum.Strict)
-    async minecraft(
-        @Req() request: RequestSession,
-        @Res() res: Response
-    ): Promise<void> {
+    async minecraft(@Req() request: RequestSession) {
         /* get user's settings */
 
-        const data = await this.userService.getUserSettings(request.session);
-        res.status(data.statusCode).send(data);
+        return await this.userService.getUserSettings(request.session);
     }
 
     @Get("/user/me/notifications")
@@ -90,185 +76,121 @@ export class UserController {
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async getNotifications(
         @Req() request: RequestSession,
-        @Res() res: Response,
         @Query() query: PageTakeQueryDTO
-    ): Promise<void> {
+    ) {
         /* get user's connections */
 
-        const data = await this.notificationService.get(request.session, query.take || 5, query.page || 0);
-        res.send(data);
+        return await this.notificationService.get(request.session, query.take || 5, query.page || 0);
     }
 
     @Post("/user/me/connections/minecraft/connect/:code")
     @Auth(AuthEnum.Strict)
     async connectMinecraft(
         @Param('code') code: string,
-        @Req() request: RequestSession,
-        @Res() res: Response
-    ): Promise<void> {
+        @Req() request: RequestSession
+    ) {
         /* connect minecraft profile to account */
 
-        if (code.length != 6) {
-            res.status(400).send({
-                statusCode: 400,
-                message: "Invalid code",
-                message_ru: "Код должен содержать 6 символов!"
-            });
-            return;
-        }
+        if (code.length != 6)
+            throw new LocaleException(responses_minecraft.CODE_NOT_FOUND, 404);
 
-        const data = await this.minecraftService.connect(request.session, code);
-        res.status(data.statusCode).send(data);
+        return await this.minecraftService.connect(request.session, code);
     }
 
     @Throttle({ default: { limit: 5, ttl: 60000 } })
     @Post("/user/me/connections/minecraft/cache/purge")
     @Auth(AuthEnum.Strict)
-    async skinPurge(
-        @Req() request: RequestSession,
-        @Res({ passthrough: true }) res: Response
-    ): Promise<void> {
-        /* purge minecraft skin cache, associated with session's account */
+    async purgeSkinCache(@Req() request: RequestSession): Promise<void> {
+        /* Purge minecraft skin cache, associated with session's account */
 
-        if (!request.session.user.profile) {
-            res.status(404).send({
-                message: "Could not find associated Minecraft account",
-                message_ru: 'Аккаунт Minecraft не привязан'
-            });
-            return;
-        }
+        if (!request.session.user.profile)
+            throw new LocaleException(responses_minecraft.ACCOUNT_NOT_CONNECTED, 404);
 
-        const cache = await this.minecraftService.updateSkinCache(request.session.user.profile.uuid, true);
-        if (!cache) {
-            res.status(404).send({
-                statusCode: 404,
-                message: 'Profile not found',
-                message_ru: 'Профиль не найден'
-            });
-            return;
-        }
-
-        res.status(200).send({
-            statusCode: 200,
-            message: "Successfully purged",
-            message_ru: 'Кэш успешно обновлён'
-        });
+        await this.minecraftService.updateSkinCache(request.session.user.profile.uuid, true);
     }
 
     @Delete("/user/me/connections/minecraft")
     @Auth(AuthEnum.Strict)
-    async disconnectMinecraft(
-        @Req() request: RequestSession,
-        @Res() res: Response
-    ): Promise<void> {
+    async disconnectMinecraft(@Req() request: RequestSession): Promise<void> {
         /* disconnect minecraft profile */
-        const data = await this.minecraftService.disconnect(request.session);
-        res.status(data.statusCode).send(data);
+
+        await this.minecraftService.disconnect(request.session);
     }
 
     @Get("/users/:username")
     @Auth(AuthEnum.Weak)
     async user_profile(
         @Param('username') username: string,
-        @Req() request: RequestSession,
-        @Res() res: Response
-    ): Promise<void> {
+        @Req() request: RequestSession
+    ) {
         /* get user data by nickname */
 
-        if (request.headers['unique-access'] !== process.env.WORKSHOP_TOKEN) {
-            res.status(403).send({
-                statusCode: 403,
-                message: 'Forbidden',
-                message_ru: 'Доступ запрещен'
-            });
-            return;
-        }
+        if (request.headers['unique-access'] !== process.env.WORKSHOP_TOKEN)
+            throw new LocaleException(responses_common.FORBIDDEN, 403);
 
-        const data = await this.userService.getUserByNickname(username, request.session);
-        res.status(data.statusCode).send(data);
+        return await this.userService.getUserByNickname(username, request.session);
     }
 
     @Get("/users/:username/og")
-    async userOg(
-        @Param('username') username: string,
-        @Res() res: Response
-    ): Promise<void> {
+    async userOg(@Param('username') username: string) {
         /* get user data by nickname */
 
-        const data = await this.userService.getUserOg(username);
-        res.status(data.statusCode).send(data);
+        return await this.userService.getUserOg(username);
     }
 
-    @Get('/users')
+    @Get('users')
     @Auth(AuthEnum.Strict)
     @Roles([RolesEnum.UpdateUsers])
-    async get_users(
-        @Res() res: Response,
-        @Query() query: QueryDTO
-    ) {
-        res.status(200).send(await this.userService.getUsers(query.query));
+    async getUsers(@Query() query: QueryDTO) {
+        /* Get list of registered users */
+
+        return await this.userService.getUsers(query.query);
     }
 
     @Patch('/users/:username')
     @Auth(AuthEnum.Strict)
     @Roles([RolesEnum.UpdateUsers])
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-    async update_user(
+    async updateUser(
         @Param('username') username: string,
         @Req() request: RequestSession,
-        @Res() res: Response,
         @Body() body: UpdateUsersDto
     ) {
-        const data = await this.userService.updateUser(request.session, username, body);
-        res.status(data.statusCode).send(data);
+        /* Update user by nickname */
+
+        await this.userService.updateUser(request.session, username, body);
     }
 
     @Post('/users')
     @Auth(AuthEnum.Strict)
     @Roles([RolesEnum.UpdateUsers])
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-    async force_register(
-        @Res() res: Response,
-        @Body() body: ForceRegisterUserDTO
-    ) {
+    async forceRegister(@Body() body: ForceRegisterUserDTO) {
         /* Force register user */
 
-        const data = await this.userService.forceRegister(body.discord_id);
-        res.status(data.statusCode).send(data);
+        return await this.userService.forceRegister(body.discord_id);
     }
 
     @Get("/avatars/:user_id")
-    async head(
-        @Param('user_id') user_id: string,
-        @Res({ passthrough: true }) res: Response
-    ): Promise<StreamableFile | void> {
+    @Header('Content-Type', 'image/png')
+    async head(@Param('user_id') user_id: string): Promise<StreamableFile | void> {
         /* get user avatar by id */
 
-        const cache = await this.userService.getAvatar(user_id);
-        if (!cache) {
-            res.status(500).send({
-                statusCode: 500,
-                message: 'Unable to get user avatar',
-                message_ru: 'Не удалось получить изображение профиля'
-            });
-            return;
-        }
-
-        res.setHeader('Content-Type', 'image/png');
-        return new StreamableFile(Buffer.from(cache, "base64"));
+        return new StreamableFile(Buffer.from(
+            await this.userService.getAvatar(user_id),
+            "base64"
+        ));
     }
 
     @Patch('/user/me')
     @Auth(AuthEnum.Strict)
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-    async update_me(
+    async updateMe(
         @Req() request: RequestSession,
-        @Res() res: Response,
         @Body() body: UpdateSelfUserDto
     ) {
         /* Update self data */
 
-        const data = await this.userService.updateSelfUser(request.session, body);
-        res.status(data.statusCode).send(data);
+        await this.userService.updateSelfUser(request.session, body);
     }
 }

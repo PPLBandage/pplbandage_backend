@@ -1,4 +1,4 @@
-import { Controller, Get, Header, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Header, Res } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
 import type { Response } from 'express'
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -25,13 +25,10 @@ export class RootController {
 
     @Get('/ping')
     @SkipThrottle()
-    async ping(@Res() res: Response) {
+    async ping() {
         /* Ping endpoint */
 
-        res.status(200).send({
-            statusCode: 200,
-            message: 'pong'
-        });
+        return { message: 'pong' };
     }
 
     @Get('/sitemap.xml')

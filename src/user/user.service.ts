@@ -6,6 +6,11 @@ import { UpdateSelfUserDto, UpdateUsersDto } from './dto/updateUser.dto';
 import { generateResponse } from 'src/common/bandage_response';
 import { RolesEnum } from 'src/interfaces/types';
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
+import { LocaleException } from 'src/interceptors/localization.interceptor';
+
+import responses from 'src/localization/users.localization';
+import responses_common from 'src/localization/common.localization';
+import responses_minecraft from 'src/localization/minecraft.localization';
 
 const discord_url = process.env.DISCORD_URL + "/api/v10";
 
@@ -54,7 +59,7 @@ export class UserService {
         }));
     }
 
-    async getCurrentData(user_id: string): Promise<DiscordUser | null> {
+    async getCurrentData(user_id: string): Promise<DiscordUser> {
         const cache = await this.cacheManager.get<string>(`discord:${user_id}`);
         if (cache) return JSON.parse(cache) as DiscordUser;
 
@@ -63,9 +68,9 @@ export class UserService {
             validateStatus: () => true
         });
 
-        if (response.status !== 200) {
-            return null;
-        }
+        if (response.status !== 200)
+            throw new LocaleException(responses.PROFILE_FETCH_ERROR, 500);
+
         const data = response.data as DiscordUser;
 
         await this.cacheManager.set(`avatar_hash:${user_id}`, data.avatar ?? 'none', 1000 * 60 * 10);
@@ -75,17 +80,20 @@ export class UserService {
 
     async getAvatar(user_id: string) {
         const user = await this.prisma.user.findFirst({ where: { discordId: user_id } });
-        if (!user) return null;
+        if (!user)
+            throw new LocaleException('Unable to get user avatar', 500);
 
         const avatar_cache = await this.cacheManager.get<string>(`avatar:${user_id}`);
-        if (avatar_cache) return avatar_cache;
+        if (avatar_cache)
+            return avatar_cache;
 
         let hash = await this.cacheManager.get<string>(`avatar_hash:${user_id}`);
         if (!hash) {
-            hash = (await this.getCurrentData(user_id))?.avatar ?? 'none';
+            hash = (await this.getCurrentData(user_id)).avatar ?? 'none';
         }
 
-        if (hash === 'none') return null;
+        if (hash === 'none')
+            throw new LocaleException('Unable to get user avatar', 500);
 
         const avatar_response = await axios.get(`${process.env.DISCORD_AVATAR}/${user_id}/${hash}.png?size=512`, { responseType: 'arraybuffer' });
         const avatarB64 = Buffer.from(avatar_response.data).toString('base64');
@@ -98,22 +106,11 @@ export class UserService {
 
         if (session.user.UserSettings?.banned) {
             await this.prisma.sessions.deleteMany({ where: { userId: session.user.id } });
-            return {
-                statusCode: 401,
-                message: "Unable to get user",
-                message_ru: 'Не удалось получить профиль пользователя'
-            };
+            throw new LocaleException(responses_common.UNAUTHORIZED, 401);
         }
 
         const response_data = await this.getCurrentData(session.user.discordId);
 
-        if (!response_data) {
-            return {
-                statusCode: 500,
-                message: 'Unable to get user data',
-                message_ru: 'Не удалось получить актуальную информацию о профиле пользователя'
-            }
-        }
         const updated_user = await this.prisma.user.update({
             where: { id: session.user.id },
             data: {
@@ -128,7 +125,6 @@ export class UserService {
         const stars_count = starred_bandages.reduce((acc, current_val) => acc + current_val.stars.length, 0);
 
         return {
-            statusCode: 200,
             userID: session.user.id,
             discordID: session.user.discordId,
             username: updated_user.username,
@@ -168,14 +164,6 @@ export class UserService {
 
         const current_discord = await this.getCurrentData(session.user.discordId);
 
-        if (!current_discord) {
-            return {
-                statusCode: 500,
-                message: 'Unable to get user data',
-                message_ru: 'Не удалось получить актуальную информацию о профиле пользователя'
-            }
-        }
-
         const discord = {
             user_id: session.user.discordId,
             username: session.user.username,
@@ -187,7 +175,6 @@ export class UserService {
         }
 
         return {
-            statusCode: 200,
             public_profile: session.user.UserSettings?.public_profile,
             can_be_public: session.user.Bandage.length !== 0,
             connections: {
@@ -210,7 +197,7 @@ export class UserService {
                 User: { include: { UserSettings: true } }
             }
         });
-        return { statusCode: 200, data: generateResponse(result, session) };
+        return generateResponse(result, session);
     }
 
     async getStars(session: Session) {
@@ -232,7 +219,7 @@ export class UserService {
                 }
             })
         }));
-        return { statusCode: 200, data: generateResponse(result.filter(i => !!i), session) };
+        return generateResponse(result.filter(i => !!i), session);
     }
 
     async _getUserByNickname(username: string, session: Session | null) {
@@ -241,45 +228,25 @@ export class UserService {
             include: { Bandage: true, UserSettings: true, AccessRoles: true }
         });
 
-        if (!user) {
-            return null;
-        }
+        if (!user)
+            throw new LocaleException(responses.USER_NOT_FOUND, 404);
 
         const can_view = hasAccess(session?.user, RolesEnum.UpdateUsers);
-        if ((user.UserSettings?.banned || !user.UserSettings?.public_profile) && !can_view) {
-            return null;
-        }
+        if ((user.UserSettings?.banned || !user.UserSettings?.public_profile) && !can_view)
+            throw new LocaleException(responses.USER_NOT_FOUND, 404);
+
         return user;
     }
 
     async getUserByNickname(username: string, session: Session | null) {
         const user = await this._getUserByNickname(username, session);
 
-        if (!user) {
-            return {
-                statusCode: 404,
-                message: 'User not found',
-                message_ru: 'Пользователь не найден'
-            }
-        }
-
         if (user.id === session?.user?.id) {
-            return {
-                statusCode: 200,
-                is_self: user.id === session?.user?.id
-            }
+            return { is_self: user.id === session?.user?.id };
         }
 
         const can_view = hasAccess(session?.user, RolesEnum.UpdateUsers);
         const current_discord = await this.getCurrentData(user.discordId);
-
-        if (!current_discord) {
-            return {
-                statusCode: 500,
-                message: 'Unable to get user data',
-                message_ru: 'Не удалось получить актуальную информацию о профиле пользователя'
-            }
-        }
 
         const updated_user = await this.prisma.user.update({
             where: { id: user.id },
@@ -299,13 +266,8 @@ export class UserService {
             }
         });
 
-        if (bandages.length === 0 && !can_view) {
-            return {
-                statusCode: 404,
-                message: 'User not found',
-                message_ru: 'Пользователь не найден'
-            }
-        }
+        if (bandages.length === 0 && !can_view)
+            throw new LocaleException(responses.USER_NOT_FOUND, 404);
 
         const starred_bandages = await this.prisma.bandage.findMany({
             where: { userId: user.id, stars: { some: {} } },
@@ -317,7 +279,6 @@ export class UserService {
         const last_accessed = sessions.sort((a, b) => new Date(b.last_accessed).getTime() - new Date(a.last_accessed).getTime())[0];
 
         return {
-            statusCode: 200,
             userID: user.id,
             discordID: user.discordId,
             username: updated_user.username,
@@ -340,25 +301,9 @@ export class UserService {
 
     async getUserOg(username: string) {
         const user = await this._getUserByNickname(username, null);
-        if (!user) {
-            return {
-                statusCode: 404,
-                message: 'User not found',
-                message_ru: 'Пользователь не найден'
-            }
-        }
         const current_discord = await this.getCurrentData(user.discordId);
 
-        if (!current_discord) {
-            return {
-                statusCode: 500,
-                message: 'Unable to get user data',
-                message_ru: 'Не удалось получить актуальную информацию о профиле пользователя'
-            }
-        }
-
         return {
-            statusCode: 200,
             discordID: user.discordId,
             username: user.username,
             name: user.reserved_name || user.name,
@@ -397,29 +342,14 @@ export class UserService {
 
     async updateUser(session: Session, username: string, data: UpdateUsersDto) {
         const user = await this.prisma.user.findFirst({ where: { username: username }, include: { AccessRoles: true } });
-        if (!user) {
-            return {
-                statusCode: 404,
-                message: 'User not found',
-                message_ru: 'Пользователь не найден'
-            }
-        }
+        if (!user)
+            throw new LocaleException(responses.USER_NOT_FOUND, 404);
 
-        if (hasAccess(user, RolesEnum.UpdateUsers) && !hasAccess(session.user, RolesEnum.SuperAdmin)) {
-            return {
-                statusCode: 403,
-                message: 'Forbidden',
-                message_ru: 'Недостаточно прав для совершения этого действия'
-            }
-        }
+        if (hasAccess(user, RolesEnum.UpdateUsers) && !hasAccess(session.user, RolesEnum.SuperAdmin))
+            throw new LocaleException(responses_common.FORBIDDEN, 403);
 
-        if (session.user.id === user.id && !!data.banned) {
-            return {
-                statusCode: 400,
-                message: 'You cannot ban yourself',
-                message_ru: 'Вы не можете забанить себя'
-            }
-        }
+        if (session.user.id === user.id && !!data.banned)
+            throw new LocaleException(responses.SELFBAN, 400);
 
         await this.prisma.userSettings.update({
             where: { userId: user.id },
@@ -428,72 +358,41 @@ export class UserService {
                 skip_ppl_check: data.skip_ppl_check
             }
         });
-
-        return {
-            statusCode: 200,
-            message: 'Updated',
-            message_ru: 'Обновлён'
-        }
     }
 
     async updateSelfUser(session: Session, body: UpdateSelfUserDto) {
         /* Update self data */
         /* TODO: Nickname changing */
 
-        if (
-            body.theme !== undefined ||
-            body.skin_autoload !== undefined ||
-            body.public !== undefined
-        ) {
-            await this.prisma.userSettings.update({
-                where: { userId: session.user.id },
-                data: {
-                    profile_theme: body.theme,
-                    autoload: body.skin_autoload,
-                    public_profile: body.public
-                }
-            });
-        }
+        const updates: any = {};
+        if (body.theme !== undefined) updates.profile_theme = body.theme;
+        if (body.skin_autoload !== undefined) updates.autoload = body.skin_autoload;
+        if (body.public !== undefined) updates.public_profile = body.public;
 
         if (body.nick_search !== undefined) {
-            if (!session.user.profile) {
-                return {
-                    statusCode: 400,
-                    message: 'Minecraft profile didn\'t connected',
-                    message_ru: 'К вашему профилю не подключена учетная запись Minecraft'
-                }
-            }
+            if (!session.user.profile)
+                throw new LocaleException(responses_minecraft.ACCOUNT_NOT_CONNECTED, 400);
+
             await this.prisma.minecraft.update({
                 where: { id: session.user.profile.id },
                 data: { valid: body.nick_search }
             });
         }
 
-        return {
-            statusCode: 200,
-            message: 'Patched',
-            message_ru: 'Обновлен'
+        if (Object.keys(updates).length > 0) {
+            await this.prisma.userSettings.update({
+                where: { userId: session.user.id },
+                data: updates
+            });
         }
     }
 
     async forceRegister(discord_id: string) {
-        const user_data = await this.getCurrentData(discord_id);
-        if (!user_data) {
-            return {
-                statusCode: 404,
-                message: 'User not found',
-                message_ru: 'Не удается найти профиль пользователя'
-            }
-        }
-
         const existing_user = await this.prisma.user.findFirst({ where: { discordId: discord_id } });
-        if (existing_user) {
-            return {
-                statusCode: 409,
-                message: 'User already registered',
-                message_ru: 'Пользователь уже зарегистрирован'
-            }
-        }
+        if (existing_user)
+            throw new LocaleException(responses.ALREADY_REGISTERED, 409);
+
+        const user_data = await this.getCurrentData(discord_id);
 
         const users_count = await this.prisma.user.count();
         const user_db = await this.prisma.user.upsert({
@@ -514,11 +413,6 @@ export class UserService {
 
         await this.resolveCollisions(user_db.username);
 
-        return {
-            statusCode: 201,
-            message: 'User created',
-            message_ru: 'Пользователь зарегистрирован'
-        }
+        return { statusCode: 201 };
     }
 }
-

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Bandage, Minecraft, User, UserSettings, Notifications, AccessRoles } from '@prisma/client';
 import { sign, verify } from 'jsonwebtoken';
@@ -6,6 +6,9 @@ import axios from 'axios';
 import { RolesEnum } from 'src/interfaces/types';
 import { UserService } from 'src/user/user.service';
 import { UAParser } from 'ua-parser-js'
+import { LocaleException } from 'src/interceptors/localization.interceptor';
+import responses from 'src/localization/common.localization';
+import responses_users from 'src/localization/users.localization';
 
 const discord_url = process.env.DISCORD_URL + "/api/v10";
 const pwgood = "447699225078136832";  // pwgood server id
@@ -149,13 +152,9 @@ export class AuthService {
             },
             validateStatus: () => true
         });
-        if (discord_tokens.status !== 200) {
-            return {
-                statusCode: 404,
-                message: 'Invalid code',
-                message_ru: 'Недействительный код. Попробуйте еще раз'
-            };
-        }
+        if (discord_tokens.status !== 200)
+            throw new LocaleException(responses_users.INVALID_OAUTH_CODE, 404);
+
         const data = discord_tokens.data as DiscordResponse;
 
         // ----------------------- Get discord user data --------------------------
@@ -166,13 +165,9 @@ export class AuthService {
             }, validateStatus: () => true
         });
 
-        if (discord_user.status !== 200) {
-            return {
-                statusCode: 500,
-                message: 'Error retrieving user data',
-                message_ru: 'Ошибка при получении данных пользователя'
-            };
-        }
+        if (discord_user.status !== 200)
+            throw new LocaleException(responses_users.PROFILE_FETCH_ERROR, 500);
+
         const ds_user = discord_user.data as DiscordUser;
 
         // ----------------------- Check discord server roles ---------------------
@@ -181,11 +176,7 @@ export class AuthService {
         const on_ppl = await this.check_ppl(`${data.token_type} ${data.access_token}`);
         if (!on_ppl && !user_settings?.skip_ppl_check) {
             await this.prisma.sessions.deleteMany({ where: { User: { discordId: ds_user.id } } });
-            return {
-                statusCode: 403,
-                message: 'You are not on ppl',
-                message_ru: 'У вас нет требуемых ролей для регистрации'
-            };
+            throw new LocaleException(responses_users.MISSING_PPL_ROLES, 403);
         }
 
         // ----------------------- Upsert user field in DB ------------------------
@@ -211,22 +202,13 @@ export class AuthService {
 
         if (user_db.UserSettings?.banned) {
             await this.prisma.sessions.deleteMany({ where: { userId: user_db.id } });
-            return {
-                statusCode: 403,
-                message: 'Unable to login',
-                message_ru: 'Невозможно получить доступ к профилю'
-            };
+            throw new LocaleException(responses.FORBIDDEN, 403);
         }
 
         // ----------------------- Create session token ---------------------------
 
         const session = await this.createSession(user_db.id, user_agent);
-        return {
-            statusCode: 200,
-            message: 'Logged in',
-            message_ru: 'Вход произведен успешно',
-            sessionId: session.sessionId,
-        };
+        return { sessionId: session.sessionId };
     }
 
 
@@ -244,10 +226,6 @@ export class AuthService {
             }
         });
         return token_record;
-    }
-
-    async validateSessionWeak(session: string | undefined, user_agent: string) {
-
     }
 
     async validateSession(session: string | undefined, user_agent: string, strict: boolean): Promise<Session | null> {
@@ -338,20 +316,10 @@ export class AuthService {
 
     async deleteSession(session: Session, session_id: number) {
         const session_to_delete = await this.prisma.sessions.findFirst({ where: { id: session_id } });
-        if (!session_to_delete || session_to_delete.userId !== session.user.id) {
-            return {
-                statusCode: 404,
-                message: 'Not found',
-                message_ru: 'Сессия не найдена'
-            }
-        }
+        if (!session_to_delete || session_to_delete.userId !== session.user.id)
+            throw new HttpException('Session not found', 404);
 
         await this.prisma.sessions.delete({ where: { id: session_id } });
-        return {
-            statusCode: 200,
-            message: 'Logged out',
-            message_ru: 'Вы успешно вышли из аккаунта'
-        }
     }
 
     async deleteSessionAll(session: Session) {
@@ -360,13 +328,6 @@ export class AuthService {
             if (_session.sessionId === session.sessionId) return;
             await this.prisma.sessions.delete({ where: { id: _session.id } });
         }));
-
-        return {
-            statusCode: 200,
-            message: 'Logged out',
-            message_ru: 'Вы успешно вышли со всех устройств'
-        }
-
     }
 }
 

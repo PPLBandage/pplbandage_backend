@@ -1,15 +1,17 @@
 import axios from "axios";
 import * as sharp from 'sharp';
 import { PrismaService } from "../prisma/prisma.service";
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { Buffer } from "buffer";
 import { Session } from "src/auth/auth.service";
+import { LocaleException } from "src/interceptors/localization.interceptor";
+import responses from "src/localization/minecraft.localization";
 
 @Injectable()
 export class MinecraftService {
     constructor(private prisma: PrismaService) { }
 
-    async getUserData(str: string): Promise<Profile | null> {
+    async getUserData(str: string): Promise<Profile> {
         /* get user profile by nickname an UUID (this function duplicate function below, idk) */
 
         const regexp = new RegExp('^[0-9a-fA-F]{32}$');
@@ -20,7 +22,7 @@ export class MinecraftService {
                 { validateStatus: () => true }
             );
             if (!response_uuid || response_uuid?.status !== 200) {
-                return null;
+                throw new LocaleException(responses.PROFILE_NOT_FOUND, 404);
             }
             uuid = response_uuid.data.id;
         }
@@ -29,13 +31,13 @@ export class MinecraftService {
             { validateStatus: () => true }
         );
         if (!response_skin || response_skin?.status !== 200) {
-            return null;
+            throw new LocaleException(responses.PROFILE_NOT_FOUND, 404);
         }
         return response_skin.data;
     }
 
 
-    async getUUID(str: string): Promise<string | null> {
+    async getUUID(str: string): Promise<string> {
         /* get UUID by nickname or validate existing */
 
         const regexp = new RegExp('^[0-9a-fA-F]{32}$');
@@ -46,7 +48,7 @@ export class MinecraftService {
                 { validateStatus: () => true }
             );
             if (!response_uuid || response_uuid?.status !== 200) {
-                return null;
+                throw new LocaleException(responses.PROFILE_NOT_FOUND, 404);
             }
             uuid = response_uuid.data.id;
         }
@@ -110,9 +112,6 @@ export class MinecraftService {
         /* update skin data in data base */
 
         const uuid = await this.getUUID(nickname);  // validate UUID (resolve UUID by nickname also)
-        if (!uuid) {
-            return null;
-        }
 
         const cache = await this.prisma.minecraft.findFirst({ where: { uuid: uuid } });  // get cache if exists
         if (cache && cache.expires > new Date().getTime() && !ignore_cache) {
@@ -120,10 +119,6 @@ export class MinecraftService {
         }
 
         const fetched_skin_data = await this.getUserData(uuid);  // fetch new skin data
-        if (!fetched_skin_data) {
-            return null;
-        }
-
         if (cache && cache?.default_nick !== fetched_skin_data.name) {
             // if the nickname has been changed since the last caching
 
@@ -151,7 +146,9 @@ export class MinecraftService {
         const json_textures = JSON.parse(textures) as EncodedResponse;
         const skin_response = await axios.get(json_textures.textures.SKIN.url, { responseType: 'arraybuffer', validateStatus: () => true });
 
-        if (skin_response.status !== 200) return null;
+        if (skin_response.status !== 200) {
+            throw new LocaleException(responses.PROFILE_NOT_FOUND, 404);
+        }
         const skin_buff = Buffer.from(skin_response.data, 'binary');
         const head = await this.generateHead(skin_buff);
 
@@ -192,7 +189,7 @@ export class MinecraftService {
         /* search nicks in data base by provided fragment */
 
         if (fragment.length < 3) {
-            return null;
+            throw new HttpException('', 204);
         }
         const filter_rule = { OR: [{ nickname: { contains: fragment } }], valid: true };
         const cache = await this.prisma.minecraft.findMany({
@@ -202,16 +199,15 @@ export class MinecraftService {
         });
 
         if (cache.length === 0) {
-            return null;
+            throw new HttpException('', 204);
         }
 
         const count: number = await this.prisma.minecraft.count({ where: filter_rule });
         const records_list: SearchUnit[] = cache.map(nick => ({ name: nick.default_nick, uuid: nick.uuid, head: nick.data_head }));
         if (!count) {
-            return null;
+            throw new HttpException('', 204);
         }
         return {
-            statusCode: 200,
             requested_fragment: fragment,
             data: records_list,
             total_count: count,
@@ -219,82 +215,43 @@ export class MinecraftService {
         };
     }
 
-    async getByCode(code: string): Promise<{ nickname: string, UUID: string } | null> {
+    async getByCode(code: string): Promise<{ nickname: string, UUID: string }> {
         const response = await axios.get(`https://mc-oauth.andcool.ru/code/${code}`, { validateStatus: () => true });
-        if (response.status !== 200) return null;
+        if (response.status !== 200)
+            throw new LocaleException(responses.CODE_NOT_FOUND, 404);
         return response.data as { nickname: string, UUID: string };
     }
 
     async connect(session: Session, code: string) {
         /* connect minecraft account to a user profile */
 
-        if (session.user.profile) {
-            return {
-                statusCode: 409,
-                message: 'Account already connected',
-                message_ru: 'Аккаунт уже подключен'
-            };
-        }
+        if (session.user.profile)
+            throw new LocaleException(responses.ALREADY_CONNECTED, 409);
 
         const data = await this.getByCode(code);
-        if (!data) {
-            return {
-                statusCode: 404,
-                message: 'Code not found',
-                message_ru: 'Код не найден'
-            };
-        }
         const skin_data = await this.updateSkinCache(data.UUID, true);
 
-        if (!skin_data) {
-            return {
-                statusCode: 500,
-                message: 'Error while finding player data',
-                message_ru: 'Не удалось найти и обновить данные о игроке'
-            };
-        }
-        if (skin_data.userId) {
-            return {
-                statusCode: 409,
-                message: 'This account already connected',
-                message_ru: 'Этот аккаунт уже подключен к другой учётной записи'
-            };
-        }
+        if (skin_data.userId)
+            throw new LocaleException(responses.ANOTHER_ALREADY_CONNECTED, 409);
 
         await this.prisma.user.update({
             where: { id: session.user.id },
             data: { profile: { connect: { id: skin_data.id } } }
         });
 
-        return {
-            statusCode: 200,
-            message: 'Success',
-            message_ru: 'Аккаунт успешно подключен!',
-            uuid: skin_data.uuid
-        }
+        return { uuid: skin_data.uuid };
     }
 
     async disconnect(session: Session) {
         /* disconnect minecraft account */
 
-        if (!session.user.profile) {
-            return {
-                statusCode: 404,
-                message: 'Account didn\'t connected',
-                message_ru: 'Аккаунт Minecraft не подключен'
-            }
-        }
+        if (!session.user.profile)
+            throw new LocaleException(responses.ACCOUNT_NOT_CONNECTED, 404);
 
         await this.prisma.user.update({
             where: { id: session.user.id },
             data: { profile: { disconnect: { id: session.user.profile.id } } }
         });
-
-        return {
-            statusCode: 200,
-            message: 'Success',
-            message_ru: 'Аккаунт успешно отключен',
-        }
     }
 
     async generateSvg(image: sharp.Sharp, pixel_width: number) {

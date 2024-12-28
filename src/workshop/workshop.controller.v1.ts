@@ -1,11 +1,9 @@
 import {
     Controller,
     Get,
-    HttpStatus,
     Param,
     Query,
     Req,
-    Res,
     StreamableFile,
     Delete,
     Put,
@@ -14,8 +12,10 @@ import {
     UseGuards,
     ValidationPipe,
     UsePipes,
+    HttpCode,
+    Header,
 } from '@nestjs/common';
-import type { Response, Request } from 'express';
+import type { Request } from 'express';
 import { WorkshopService } from './workshop.service';
 import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { AuthGuard } from 'src/guards/auth.guard';
@@ -31,6 +31,8 @@ import {
     WorkshopSearchQueryDTO,
 } from 'src/workshop/dto/queries.dto';
 import { SetQueryDTO } from 'src/user/dto/queries.dto';
+import responses_common from 'src/localization/common.localization';
+import { LocaleException } from 'src/interceptors/localization.interceptor';
 
 @Controller({ path: 'workshop', version: '1' })
 @UseGuards(AuthGuard)
@@ -38,80 +40,51 @@ export class WorkshopController {
     constructor(
         private readonly bandageService: WorkshopService
     ) { }
+
     @Get()
     @Auth(AuthEnum.Weak)
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async bandages(
         @Req() request: RequestSession,
-        @Res() res: Response,
         @Query() query: WorkshopSearchQueryDTO,
-    ): Promise<void> {
+    ) {
         /* get list of works */
 
-        res
-            .status(200)
-            .send(
-                await this.bandageService.getBandages(
-                    request.session,
-                    query.take ?? 20,
-                    query.page ?? 0,
-                    query.search,
-                    query.filters,
-                    query.sort,
-                ),
-            );
+        return await this.bandageService.getBandages(
+            request.session,
+            query.take ?? 20,
+            query.page ?? 0,
+            query.search,
+            query.filters,
+            query.sort,
+        );
     }
 
     @Throttle({ default: { limit: 5, ttl: 60000 } })
     @Post()
     @Auth(AuthEnum.Strict)
+    @HttpCode(201)
     @UsePipes(new ValidationPipe({ whitelist: true }))
     async create_bandage(
         @Req() request: RequestSession,
-        @Res() res: Response,
         @Body() body: CreateBandageDto,
-    ): Promise<void> {
+    ) {
         /* create work */
 
-        if (!body.base64 || !body.title) {
-            res.status(HttpStatus.BAD_REQUEST).send({
-                statusCode: 400,
-                message: 'Invalid Body',
-                message_ru: 'Неправильное тело запроса',
-            });
-            return;
-        }
+        const validate_result = await this.bandageService.validateBandage(body.base64);
 
-        const validate_result = await this.bandageService.validateBandage(
-            body.base64,
-        );
-        if (validate_result.statusCode !== 200) {
-            res.status(validate_result.statusCode).send(validate_result);
-            return;
-        }
-
-        if (body.split_type === true) {
+        if (body.split_type) {
             if (!body.base64_slim) {
-                res.status(400).send({
-                    statusCode: 400,
-                    message: 'Invalid Body',
-                    message_ru: 'Неправильное тело запроса',
-                });
-                return;
+                throw new LocaleException(responses_common.INVALID_BODY, 400);
             }
 
-            const validate_result_slim = await this.bandageService.validateBandage(
+            await this.bandageService.validateBandage(
                 body.base64_slim,
                 validate_result.height as number,
             );
-            if (validate_result.statusCode !== 200) {
-                res.status(validate_result_slim.statusCode).send(validate_result_slim);
-                return;
-            }
         }
 
-        const data = await this.bandageService.createBandage(body, request.session);
-        res.status(data.statusCode).send(data);
+        return await this.bandageService.createBandage(body, request.session);
     }
 
     @Post(':id/view')
@@ -119,20 +92,13 @@ export class WorkshopController {
     async viewBandage(
         @Param('id') id: string,
         @Req() request: Request,
-        @Res() res: Response,
-    ): Promise<void> {
+    ) {
         /* Add bandage view (internal endpoint) */
 
         if (request.headers['unique-access'] !== process.env.WORKSHOP_TOKEN) {
-            res.status(403).send({
-                statusCode: 403,
-                message: 'Forbidden',
-                message_ru: 'Доступ запрещен',
-            });
-            return;
+            throw new LocaleException(responses_common.FORBIDDEN, 403);
         }
-        const data = await this.bandageService.addView(id);
-        res.status(data.statusCode).send(data);
+        await this.bandageService.addView(id);
     }
 
     @Get(':id/info')
@@ -140,30 +106,23 @@ export class WorkshopController {
     @Auth(AuthEnum.Weak)
     async getBandageOg(
         @Param('id') id: string,
-        @Req() request: RequestSession,
-        @Res() res: Response,
-    ): Promise<void> {
+        @Req() request: RequestSession
+    ) {
         /* get bandage info by external id (internal endpoint) */
 
         if (request.headers['unique-access'] !== process.env.WORKSHOP_TOKEN) {
-            res.status(403).send({
-                statusCode: 403,
-                message: 'Forbidden',
-                message_ru: 'Доступ запрещен',
-            });
-            return;
+            throw new LocaleException(responses_common.FORBIDDEN, 403);
         }
-        const data = await this.bandageService.getDataForOg(id, request.session);
-        res.status(data.statusCode).send(data);
+        return await this.bandageService.getDataForOg(id, request.session);
     }
 
-    @Get('/workshop/:id/og')
+    @Get(':id/og')
     @Auth(AuthEnum.Weak)
+    @Header('Content-Type', 'image/png')
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async getBandageImage(
         @Param('id') id: string,
         @Req() request: RequestSession,
-        @Res({ passthrough: true }) res: Response,
         @Query() query: WidthQueryDTO,
     ): Promise<StreamableFile | void> {
         /* get bandage image render (for OpenGraph) */
@@ -171,10 +130,7 @@ export class WorkshopController {
         const requested_width = query.width ?? 512;
 
         const data = await this.bandageService.getBandage(id, request.session);
-        if (data.statusCode !== 200 || !data.data?.base64) {
-            res.status(data.statusCode).send(data);
-            return;
-        }
+
         const bandage_buff = Buffer.from(data.data.base64, 'base64');
         const metadata = await sharp(bandage_buff).metadata();
         const original_width = metadata.width as number;
@@ -220,7 +176,6 @@ export class WorkshopController {
             { input: secondLayer, top: 0, left: 0, blend: 'over' },
         ]);
 
-        res.setHeader('Content-Type', 'image/png');
         return new StreamableFile(await bandage.toBuffer());
     }
 
@@ -230,26 +185,19 @@ export class WorkshopController {
     async editBandage(
         @Param('id') id: string,
         @Req() request: RequestSession,
-        @Res() res: Response,
         @Body() body: EditBandageDto,
     ) {
         /* edit bandage info */
 
         if (!body) {
-            res.status(HttpStatus.BAD_REQUEST).send({
-                statusCode: 400,
-                message: 'Invalid Body',
-                message_ru: 'Неправильное тело запроса',
-            });
-            return;
+            throw new LocaleException(responses_common.INVALID_BODY, 400);
         }
 
-        const data = await this.bandageService.updateBandage(
+        return await this.bandageService.updateBandage(
             id,
             body,
             request.session,
         );
-        res.status(data.statusCode).send(data);
     }
 
     @Put(':id/archive')
@@ -257,25 +205,21 @@ export class WorkshopController {
     async archiveBandage(
         @Param('id') id: string,
         @Req() request: RequestSession,
-        @Res() res: Response,
     ) {
         /* Archive bandage */
 
-        const data = await this.bandageService.archiveBandage(request.session, id);
-        res.status(data.statusCode).send(data);
+        await this.bandageService.archiveBandage(request.session, id);
     }
 
     @Delete(':id')
     @Auth(AuthEnum.Strict)
     async deleteBandage(
         @Param('id') id: string,
-        @Req() request: RequestSession,
-        @Res() res: Response,
+        @Req() request: RequestSession
     ) {
         /* delete bandage by external id */
 
-        const data = await this.bandageService.deleteBandage(request.session, id);
-        res.status(data.statusCode).send(data);
+        await this.bandageService.deleteBandage(request.session, id);
     }
 
     @Get('categories')
@@ -283,16 +227,13 @@ export class WorkshopController {
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async categories(
         @Req() request: RequestSession,
-        @Res() res: Response,
         @Query() query: EditQueryDTO,
-    ): Promise<void> {
+    ) {
         /* get list of categories */
 
-        res.status(200).send(
-            await this.bandageService.getCategories(
-                query.for_edit === 'true',
-                request.session,
-            ),
+        return await this.bandageService.getCategories(
+            query.for_edit === 'true',
+            request.session,
         );
     }
 
@@ -303,27 +244,25 @@ export class WorkshopController {
         @Param('id') id: string,
         @Query() query: SetQueryDTO,
         @Req() request: RequestSession,
-        @Res() res: Response,
-    ): Promise<void> {
+    ) {
         /* set star to work by work external id */
 
-        const data = await this.bandageService.setStar(
+        return await this.bandageService.setStar(
             request.session,
             query.set === 'true',
-            id,
+            id
         );
-        res.status(data.statusCode).send(data);
     }
 
     @Get('count/badge')
-    async getCount(@Res() res: Response) {
+    async getCount() {
         const count = await this.bandageService.getBandagesCount();
-        res.status(200).send({
+        return {
             schemaVersion: 1,
             label: 'Bandages Count',
             message: count.toString(),
             color: 'green',
-        });
+        };
     }
 
     @Get(':id')
@@ -331,20 +270,13 @@ export class WorkshopController {
     @Auth(AuthEnum.Weak)
     async getBandage(
         @Param('id') id: string,
-        @Req() request: RequestSession,
-        @Res() res: Response,
-    ): Promise<void> {
+        @Req() request: RequestSession
+    ) {
         /* get bandage by external id (internal endpoint) */
 
         if (request.headers['unique-access'] !== process.env.WORKSHOP_TOKEN) {
-            res.status(403).send({
-                statusCode: 403,
-                message: 'Forbidden',
-                message_ru: 'Доступ запрещен',
-            });
-            return;
+            throw new LocaleException(responses_common.FORBIDDEN, 403);
         }
-        const data = await this.bandageService.getBandage(id, request.session);
-        res.status(data.statusCode).send(data);
+        return await this.bandageService.getBandage(id, request.session);
     }
 }

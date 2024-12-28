@@ -4,6 +4,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import * as morgan from 'morgan';
 import { AppModule } from './app.module';
 import { VersioningType } from '@nestjs/common';
+import { LocaleInterceptor } from './interceptors/localization.interceptor';
 
 async function bootstrap() {
 	const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -22,6 +23,7 @@ async function bootstrap() {
 	app.use(morgan(':method :url :status - :response-time ms'));
 	app.useBodyParser('json', { limit: '10mb' });
 	app.setGlobalPrefix('api');
+	app.useGlobalInterceptors(new LocaleInterceptor());
 
 	app.enableVersioning({ type: VersioningType.URI });
 

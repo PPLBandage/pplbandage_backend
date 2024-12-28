@@ -15,6 +15,7 @@ export class NotificationService {
 
     async get(session: Session, take: number, page: number) {
         await this.prisma.user.update({ where: { id: session.user.id }, data: { has_unreaded_notifications: false } });
+
         const notifications = await this.prisma.notifications.findMany({
             where: { users: { some: { id: session.user.id } } },
             take: Math.max(1, take),
