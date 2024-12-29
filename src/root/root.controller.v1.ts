@@ -47,7 +47,12 @@ export class RootController {
             { loc: 'https://pplbandage.ru/contacts', priority: 0.5 }
         ]
 
-        const bandages = await this.prisma.bandage.findMany({ where: { access_level: 2 } });
+        const bandages = await this.prisma.bandage.findMany({
+            where: {
+                access_level: 2,
+                categories: { none: { only_admins: true } }
+            }
+        });
         urls = urls.concat(bandages.map(bandage => ({
             loc: `https://pplbandage.ru/workshop/${bandage.externalId}`,
             priority: 0.6
