@@ -216,7 +216,7 @@ export class MinecraftService {
     }
 
     async getByCode(code: string): Promise<{ nickname: string, UUID: string }> {
-        const response = await axios.get(`https://mc-oauth.andcool.ru/code/${code}`, { validateStatus: () => true });
+        const response = await axios.get(`${process.env.MC_OAUTH_API}/${code}`, { validateStatus: () => true });
         if (response.status !== 200)
             throw new LocaleException(responses.CODE_NOT_FOUND, 404);
 
