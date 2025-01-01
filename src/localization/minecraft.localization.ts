@@ -23,6 +23,10 @@ const responses = {
         en: 'Minecraft account didn\'t connected',
         ru: 'Аккаунт Minecraft не подключен'
     },
+    MOJANG_ERROR: {
+        en: 'Mojang API error',
+        ru: 'Произошла ошибка на стороне Mojang'
+    },
 }
 
 export default responses;

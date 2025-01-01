@@ -18,8 +18,13 @@ export class MinecraftService {
             `https://sessionserver.mojang.com/session/minecraft/profile/${uuid}`,
             { validateStatus: () => true }
         );
-        if (!response_skin || response_skin?.status !== 200) {
-            throw new LocaleException(responses.PROFILE_NOT_FOUND, 404);
+        if (response_skin.status !== 200) {
+            throw new LocaleException(
+                response_skin.status === 404 ?
+                    responses.PROFILE_NOT_FOUND :
+                    responses.MOJANG_ERROR,
+                response_skin.status
+            );
         }
         return response_skin.data;
     }
@@ -35,8 +40,13 @@ export class MinecraftService {
                 `https://api.mojang.com/users/profiles/minecraft/${uuid}`,
                 { validateStatus: () => true }
             );
-            if (!response_uuid || response_uuid.status !== 200) {
-                throw new LocaleException(responses.PROFILE_NOT_FOUND, 404);
+            if (response_uuid.status !== 200) {
+                throw new LocaleException(
+                    response_uuid.status === 404 ?
+                        responses.PROFILE_NOT_FOUND :
+                        responses.MOJANG_ERROR,
+                    response_uuid.status
+                );
             }
             uuid = response_uuid.data.id;
         }
@@ -138,7 +148,12 @@ export class MinecraftService {
             const skin_response = await axios.get(json_textures.textures.SKIN.url, { responseType: 'arraybuffer', validateStatus: () => true });
 
             if (skin_response.status !== 200) {
-                throw new LocaleException(responses.PROFILE_NOT_FOUND, 404);
+                throw new LocaleException(
+                    skin_response.status === 404 ?
+                        responses.PROFILE_NOT_FOUND :
+                        responses.MOJANG_ERROR,
+                    skin_response.status
+                );
             }
             skin_buff = Buffer.from(skin_response.data, 'binary');
         } else {
