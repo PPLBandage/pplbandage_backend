@@ -6,7 +6,6 @@ import { Buffer } from "buffer";
 import { Session } from "src/auth/auth.service";
 import { LocaleException } from "src/interceptors/localization.interceptor";
 import responses from "src/localization/minecraft.localization";
-import { Cron } from "@nestjs/schedule";
 
 @Injectable()
 export class MinecraftService {
@@ -133,12 +132,19 @@ export class MinecraftService {
 
         const textures = Buffer.from(fetched_skin_data.properties[0].value, 'base64').toString();
         const json_textures = JSON.parse(textures) as EncodedResponse;
-        const skin_response = await axios.get(json_textures.textures.SKIN.url, { responseType: 'arraybuffer', validateStatus: () => true });
 
-        if (skin_response.status !== 200) {
-            throw new LocaleException(responses.PROFILE_NOT_FOUND, 404);
+        let skin_buff: Buffer | null = null;
+        if (json_textures.textures.SKIN) {
+            const skin_response = await axios.get(json_textures.textures.SKIN.url, { responseType: 'arraybuffer', validateStatus: () => true });
+
+            if (skin_response.status !== 200) {
+                throw new LocaleException(responses.PROFILE_NOT_FOUND, 404);
+            }
+            skin_buff = Buffer.from(skin_response.data, 'binary');
+        } else {
+            skin_buff = await sharp('./src/minecraft/steve.png').toBuffer();
         }
-        const skin_buff = Buffer.from(skin_response.data, 'binary');
+
         const head = await this.generateHead(skin_buff);
 
         let cape_b64 = '';
@@ -158,7 +164,7 @@ export class MinecraftService {
                 data: skin_buff.toString('base64'),
                 data_cape: cape_b64,
                 data_head: head.toString('base64'),
-                slim: json_textures.textures.SKIN.metadata?.model === 'slim'
+                slim: json_textures.textures.SKIN?.metadata?.model === 'slim'
             },
             update: {
                 nickname: fetched_skin_data.name.toLowerCase(),
@@ -167,7 +173,7 @@ export class MinecraftService {
                 data: skin_buff.toString('base64'),
                 data_cape: cape_b64,
                 data_head: head.toString('base64'),
-                slim: json_textures.textures.SKIN.metadata?.model === 'slim'
+                slim: json_textures.textures.SKIN?.metadata?.model === 'slim'
             }
         });
         return updated_data;
