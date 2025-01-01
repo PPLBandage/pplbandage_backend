@@ -174,20 +174,15 @@ export class MinecraftService {
     }
 
     async revalidateSkins(count: number) {
-        const total_count = await this.prisma.minecraft.count();
-        const maxTTL = (Math.ceil(total_count / count) + 1) * (24 * 60 * 60 * 1000);  // Max skin ttl in revalidating
-
-        const revalidating_time = (new Date().getTime()) - maxTTL + parseInt(process.env.TTL as string);
-
         const skins_for_revalidate = await this.prisma.minecraft.findMany({
-            where: { expires: { lte: revalidating_time } },
+            orderBy: { expires: 'asc' },
             take: count
         });
 
         for (const skin of skins_for_revalidate) {
             try {
                 await this.updateSkinCache(skin.uuid, true);
-                console.log(`Revalidated cache for ${skin.default_nick}`);
+                //console.log(`Revalidated cache for ${skin.default_nick}`);
             } catch (e: LocaleException | unknown) {
                 let cause = e;
                 if (e instanceof LocaleException) {
