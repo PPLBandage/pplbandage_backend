@@ -19,12 +19,10 @@ export class MinecraftService {
             { validateStatus: () => true }
         );
         if (response_skin.status !== 200) {
-            throw new LocaleException(
-                response_skin.status === 404 ?
-                    responses.PROFILE_NOT_FOUND :
-                    responses.MOJANG_ERROR,
-                response_skin.status
-            );
+            if (response_skin.status === 204)
+                throw new LocaleException(responses.PROFILE_NOT_FOUND, 404);
+
+            throw new LocaleException(responses.MOJANG_ERROR, response_skin.status);
         }
         return response_skin.data;
     }

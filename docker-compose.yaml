@@ -8,6 +8,8 @@ services:
             dockerfile: Dockerfile
         networks:
             - nginx
+        environment:
+            - TZ=Europe/Moscow
         restart: always
         command: npm run start
 
