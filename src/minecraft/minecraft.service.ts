@@ -140,12 +140,19 @@ export class MinecraftService {
             await this.resolveCollisions(profiles);
         }
 
-        const textures = Buffer.from(fetched_skin_data.properties[0].value, 'base64').toString();
+        const properties = fetched_skin_data.properties.find(obj => obj.name === 'textures');
+        if (!properties)
+            throw new LocaleException(responses.PROFILE_NOT_FOUND, 404);
+
+        const textures = Buffer.from(properties.value, 'base64').toString();
         const json_textures = JSON.parse(textures) as EncodedResponse;
 
         let skin_buff: Buffer | null = null;
         if (json_textures.textures.SKIN) {
-            const skin_response = await axios.get(json_textures.textures.SKIN.url, { responseType: 'arraybuffer', validateStatus: () => true });
+            const skin_response = await axios.get(
+                json_textures.textures.SKIN.url,
+                { responseType: 'arraybuffer', validateStatus: () => true }
+            );
 
             if (skin_response.status !== 200) {
                 throw new LocaleException(
@@ -164,11 +171,15 @@ export class MinecraftService {
 
         let cape_b64 = '';
         if (json_textures.textures.CAPE) {
-            const cape_response = await axios.get(json_textures.textures.CAPE.url, { responseType: 'arraybuffer', validateStatus: () => true });
+            const cape_response = await axios.get(
+                json_textures.textures.CAPE.url,
+                { responseType: 'arraybuffer', validateStatus: () => true }
+            );
             if (cape_response.status === 200) {
                 cape_b64 = Buffer.from(cape_response.data, 'binary').toString('base64');
             }
         }
+
         const updated_data = await this.prisma.minecraft.upsert({
             where: { uuid: fetched_skin_data.id },
             create: {
