@@ -387,6 +387,7 @@ export class WorkshopService {
                 me_profile: me_profile,
                 permissions_level: permissions_level,
                 access_level: bandage.access_level,
+                accent_color: bandage.accent_color,
                 check_state: check
             }
         }

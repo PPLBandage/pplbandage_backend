@@ -1,20 +1,20 @@
 services:
-  ppl_api:
-    container_name: ppl_api
-    volumes:
-      - ./prisma:/app/prisma
-    build:
-      context: .
-      dockerfile: Dockerfile
-    networks:
-      - nginx
-    restart: unless-stopped
-    command: npm run start
+    ppl_api:
+        container_name: ppl_api
+        volumes:
+            - ./prisma:/app/prisma
+        build:
+            context: .
+            dockerfile: Dockerfile
+        networks:
+            - nginx
+        restart: always
+        command: npm run start
 
 volumes:
-  prisma:
+    prisma:
 
 networks:
-  nginx:
-    external: true
-    name: nginx
+    nginx:
+        external: true
+        name: nginx

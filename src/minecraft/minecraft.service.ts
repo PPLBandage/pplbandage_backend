@@ -6,26 +6,15 @@ import { Buffer } from "buffer";
 import { Session } from "src/auth/auth.service";
 import { LocaleException } from "src/interceptors/localization.interceptor";
 import responses from "src/localization/minecraft.localization";
+import { Cron } from "@nestjs/schedule";
 
 @Injectable()
 export class MinecraftService {
     constructor(private prisma: PrismaService) { }
 
-    async getUserData(str: string): Promise<Profile> {
-        /* get user profile by nickname an UUID (this function duplicate function below, idk) */
+    async getUserData(uuid: string): Promise<Profile> {
+        /* get user profile by UUID */
 
-        const regexp = new RegExp('^[0-9a-fA-F]{32}$');
-        let uuid = str.replace('-', '');
-        if (!regexp.test(uuid)) {
-            const response_uuid = await axios.get(
-                `https://api.mojang.com/users/profiles/minecraft/${uuid}`,
-                { validateStatus: () => true }
-            );
-            if (!response_uuid || response_uuid?.status !== 200) {
-                throw new LocaleException(responses.PROFILE_NOT_FOUND, 404);
-            }
-            uuid = response_uuid.data.id;
-        }
         const response_skin = await axios.get(
             `https://sessionserver.mojang.com/session/minecraft/profile/${uuid}`,
             { validateStatus: () => true }
@@ -47,7 +36,7 @@ export class MinecraftService {
                 `https://api.mojang.com/users/profiles/minecraft/${uuid}`,
                 { validateStatus: () => true }
             );
-            if (!response_uuid || response_uuid?.status !== 200) {
+            if (!response_uuid || response_uuid.status !== 200) {
                 throw new LocaleException(responses.PROFILE_NOT_FOUND, 404);
             }
             uuid = response_uuid.data.id;
@@ -119,7 +108,7 @@ export class MinecraftService {
         }
 
         const fetched_skin_data = await this.getUserData(uuid);  // fetch new skin data
-        if (cache && cache?.default_nick !== fetched_skin_data.name) {
+        if (cache && cache.default_nick !== fetched_skin_data.name) {
             // if the nickname has been changed since the last caching
 
             await this.prisma.minecraft.update({
@@ -131,7 +120,7 @@ export class MinecraftService {
             })
         }
 
-        const profiles = await this.prisma.minecraft.findMany({ where: { nickname: fetched_skin_data?.name.toLowerCase() } });
+        const profiles = await this.prisma.minecraft.findMany({ where: { nickname: fetched_skin_data.name.toLowerCase() } });
         if (profiles.length > 1) {
             /* -- resolve nicknames collision --
             Since the cache of skins and nicknames is not deleted after they expire,
@@ -182,6 +171,33 @@ export class MinecraftService {
             }
         });
         return updated_data;
+    }
+
+    async revalidateSkins(count: number) {
+        const total_count = await this.prisma.minecraft.count();
+        const maxTTL = (Math.ceil(total_count / count) + 1) * (24 * 60 * 60 * 1000);  // Max skin ttl in revalidating
+
+        const revalidating_time = (new Date().getTime()) - maxTTL + parseInt(process.env.TTL as string);
+
+        const skins_for_revalidate = await this.prisma.minecraft.findMany({
+            where: { expires: { lte: revalidating_time } },
+            take: count
+        });
+
+        for (const skin of skins_for_revalidate) {
+            try {
+                await this.updateSkinCache(skin.uuid, true);
+                console.log(`Revalidated cache for ${skin.default_nick}`);
+            } catch (e: LocaleException | unknown) {
+                let cause = e;
+                if (e instanceof LocaleException) {
+                    cause = JSON.stringify(e.getResponse());
+                }
+                console.error(`Cannot revalidate skin cache for ${skin.default_nick}! Cause: ${cause}`);
+            }
+        }
+
+        console.info(`Finished revalidating ${skins_for_revalidate.length} skins`);
     }
 
 
