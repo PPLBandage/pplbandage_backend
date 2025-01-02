@@ -33,6 +33,7 @@ import {
 import { SetQueryDTO } from 'src/user/dto/queries.dto';
 import responses_common from 'src/localization/common.localization';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
+import { LocalAccessGuard } from 'src/guards/localAccess.guard';
 
 @Controller({ path: 'workshop', version: '1' })
 @UseGuards(AuthGuard)
@@ -89,30 +90,23 @@ export class WorkshopController {
 
     @Post(':id/view')
     @SkipThrottle()
-    async viewBandage(
-        @Param('id') id: string,
-        @Req() request: Request,
-    ) {
+    @UseGuards(new LocalAccessGuard())
+    async viewBandage(@Param('id') id: string) {
         /* Add bandage view (internal endpoint) */
 
-        if (request.headers['unique-access'] !== process.env.WORKSHOP_TOKEN) {
-            throw new LocaleException(responses_common.FORBIDDEN, 403);
-        }
         await this.bandageService.addView(id);
     }
 
     @Get(':id/info')
     @SkipThrottle()
     @Auth(AuthEnum.Weak)
+    @UseGuards(new LocalAccessGuard())
     async getBandageOg(
         @Param('id') id: string,
         @Req() request: RequestSession
     ) {
         /* get bandage info by external id (internal endpoint) */
 
-        if (request.headers['unique-access'] !== process.env.WORKSHOP_TOKEN) {
-            throw new LocaleException(responses_common.FORBIDDEN, 403);
-        }
         return await this.bandageService.getDataForOg(id, request.session);
     }
 
@@ -268,15 +262,13 @@ export class WorkshopController {
     @Get(':id')
     @SkipThrottle()
     @Auth(AuthEnum.Weak)
+    @UseGuards(new LocalAccessGuard())
     async getBandage(
         @Param('id') id: string,
         @Req() request: RequestSession
     ) {
         /* get bandage by external id (internal endpoint) */
 
-        if (request.headers['unique-access'] !== process.env.WORKSHOP_TOKEN) {
-            throw new LocaleException(responses_common.FORBIDDEN, 403);
-        }
         return await this.bandageService.getBandage(id, request.session);
     }
 }

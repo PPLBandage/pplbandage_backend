@@ -29,6 +29,7 @@ import { PageTakeQueryDTO, QueryDTO } from './dto/queries.dto';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import responses_minecraft from 'src/localization/minecraft.localization';
 import responses_common from 'src/localization/common.localization';
+import { LocalAccessGuard } from 'src/guards/localAccess.guard';
 
 
 @Controller({ version: '1' })
@@ -119,15 +120,12 @@ export class UserController {
 
     @Get("/users/:username")
     @Auth(AuthEnum.Weak)
+    @UseGuards(new LocalAccessGuard())
     async user_profile(
         @Param('username') username: string,
         @Req() request: RequestSession
     ) {
         /* get user data by nickname */
-
-        if (request.headers['unique-access'] !== process.env.WORKSHOP_TOKEN)
-            throw new LocaleException(responses_common.FORBIDDEN, 403);
-
         return await this.userService.getUserByNickname(username, request.session);
     }
 
