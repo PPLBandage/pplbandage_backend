@@ -17,10 +17,9 @@ export class MinecraftController {
 
         const cache = await this.minecraftService.updateSkinCache(name);
         return {
-            data: {
-                skin: { data: cache.data, slim: cache.slim },
-                cape: cache.data_cape
-            }
+            skin: cache.data,
+            cape: cache.data_cape,
+            slim: cache.slim
         };
     }
 
