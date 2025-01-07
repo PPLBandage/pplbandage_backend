@@ -99,6 +99,10 @@ export class WorkshopService {
             throw new LocaleException(responses.BANDAGE_NOT_FOUND, 404);
         }
 
+        if (bandage.User?.UserSettings?.banned && (!session || !hasAccess(session.user, RolesEnum.ManageBandages))) {
+            throw new LocaleException(responses.BANDAGE_NOT_FOUND, 404);
+        }
+
         return bandage;
     }
 
