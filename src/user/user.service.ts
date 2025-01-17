@@ -303,6 +303,12 @@ export class UserService {
         const user = await this._getUserByNickname(username, null);
         const current_discord = await this.getCurrentData(user.discordId);
 
+        const starred_bandages = await this.prisma.bandage.findMany({
+            where: { userId: user.id, stars: { some: {} } },
+            include: { stars: true }
+        });
+        const stars_count = starred_bandages.reduce((acc, current_val) => acc + current_val.stars.length, 0);
+
         return {
             discordID: user.discordId,
             username: user.username,
@@ -312,6 +318,7 @@ export class UserService {
                 `${process.env.DOMAIN}/icon.png`,
             banner_color: current_discord.banner_color,
             works_count: user.Bandage.length,
+            stars_count: stars_count
         }
     }
 
