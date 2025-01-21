@@ -88,6 +88,7 @@ model Bandage {
     accent_color       String     @default("#000000")
     relevance_modifier Int        @default(0)
     views              Int        @default(0)
+    star_type          Int        @default(0)
 }
 
 model Category {

@@ -47,7 +47,8 @@ export const generateResponse = (data: BandageFull[], session: Session | null, s
                 public: Number(el.User.discordId) > 0 ? el.User.UserSettings?.public_profile : false
             } : null,
             categories: categories,
-            access_level: el.access_level
+            access_level: el.access_level,
+            star_type: el.star_type
         }
     });
 

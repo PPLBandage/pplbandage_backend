@@ -392,7 +392,8 @@ export class WorkshopService {
                 permissions_level: permissions_level,
                 access_level: bandage.access_level,
                 accent_color: bandage.accent_color,
-                check_state: check
+                check_state: check,
+                star_type: bandage.star_type
             }
         }
 
