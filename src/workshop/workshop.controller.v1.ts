@@ -61,7 +61,7 @@ export class WorkshopController {
         );
     }
 
-    @Throttle({ default: { limit: 5, ttl: 60000 } })
+    @Throttle({ default: { limit: 1, ttl: 10000 } })
     @Post()
     @Auth(AuthEnum.Strict)
     @HttpCode(201)
