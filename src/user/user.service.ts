@@ -14,7 +14,6 @@ import responses_minecraft from 'src/localization/minecraft.localization';
 
 const discord_url = process.env.DISCORD_URL + "/api/v10";
 
-
 interface DiscordUser {
     id: string,
     username: string,
@@ -207,7 +206,7 @@ export class UserService {
         const bandages = results.filter(record => record.B === session.user.id);
 
         const result = await Promise.all(bandages.map(async record => {
-            return await this.prisma.bandage.findFirst({
+            const bandage = await this.prisma.bandage.findFirst({
                 where: {
                     id: record.A,
                     User: { UserSettings: { banned: false } }
@@ -217,7 +216,15 @@ export class UserService {
                     categories: { orderBy: { order: 'asc' } },
                     User: { include: { UserSettings: true } }
                 }
-            })
+            });
+            if (
+                bandage?.User?.id !== session.user.id &&
+                !hasAccess(session.user, RolesEnum.ManageBandages) &&
+                bandage?.categories.some(category => category.only_admins)
+            ) {
+                return undefined;
+            }
+            return bandage;
         }));
         return generateResponse(result.filter(i => !!i), session);
     }
