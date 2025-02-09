@@ -185,11 +185,19 @@ export class WorkshopService {
 
         const count = await this.prisma.bandage.count({ where: where });
 
-        const getRelevance = (bandage: { stars: any[]; creationDate: Date; relevance_modifier: number }) => {
+        const getRelevance = (bandage: {
+            stars: any[];
+            creationDate: Date;
+            relevance_modifier: number;
+            views: number
+        }) => {
             const daysSinceCreation =
                 (Date.now() - new Date(bandage.creationDate).getTime()) / (1000 * 60 * 60 * 24);
 
-            const stars = bandage.stars.length + (daysSinceCreation < start_boost_duration ? start_boost : 0) + bandage.relevance_modifier;
+            const stars = bandage.stars.length + // Real stars count
+                (daysSinceCreation < start_boost_duration ? start_boost : 0) + // Start boost
+                bandage.relevance_modifier + // Relevance modifier
+                (bandage.views / 150); // Views count, represented as stars
             return stars / Math.pow(daysSinceCreation + 1, downgrade_factor);
         }
 
