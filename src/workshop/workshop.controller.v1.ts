@@ -34,6 +34,7 @@ import { SetQueryDTO } from 'src/user/dto/queries.dto';
 import responses_common from 'src/localization/common.localization';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import { LocalAccessGuard } from 'src/guards/localAccess.guard';
+import { generateKey } from 'src/guards/throttlerViews';
 
 @Controller({ path: 'workshop', version: '1' })
 @UseGuards(AuthGuard)
@@ -89,8 +90,9 @@ export class WorkshopController {
     }
 
     @Post(':id/view')
-    @SkipThrottle()
+    @Auth(AuthEnum.Strict)
     @UseGuards(new LocalAccessGuard())
+    @Throttle({ default: { limit: 1, ttl: 60000, generateKey: generateKey } })
     async viewBandage(@Param('id') id: string) {
         /* Add bandage view (internal endpoint) */
 
