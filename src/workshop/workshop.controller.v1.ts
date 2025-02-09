@@ -90,9 +90,8 @@ export class WorkshopController {
     }
 
     @Post(':id/view')
-    @Auth(AuthEnum.Strict)
     @UseGuards(new LocalAccessGuard())
-    @Throttle({ default: { limit: 1, ttl: 60000, generateKey: generateKey } })
+    @Throttle({ default: { limit: 1, ttl: 60000, generateKey } })
     async viewBandage(@Param('id') id: string) {
         /* Add bandage view (internal endpoint) */
 
