@@ -3,5 +3,5 @@
     "trailingComma": "none",
     "endOfLine": "crlf",
     "tabWidth": 4,
-    "printWidth": 250
+    "printWidth": 80
 }
