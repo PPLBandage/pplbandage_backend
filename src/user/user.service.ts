@@ -459,7 +459,11 @@ export class UserService {
         /* Update self data */
         /* TODO: Nickname changing */
 
-        const updates: any = {};
+        const updates: {
+            profile_theme?: number;
+            autoload?: boolean;
+            public_profile?: boolean;
+        } = {};
         if (body.theme !== undefined) updates.profile_theme = body.theme;
         if (body.skin_autoload !== undefined)
             updates.autoload = body.skin_autoload;

@@ -50,7 +50,7 @@ const constructSort = (
 const componentToHex = (c: number) => {
     /* convert decimal to hex */
 
-    var hex = c.toString(16);
+    const hex = c.toString(16);
     return hex.length == 1 ? '0' + hex : hex;
 };
 
@@ -218,7 +218,7 @@ export class WorkshopService {
         const count = await this.prisma.bandage.count({ where: where });
 
         const getRelevance = (bandage: {
-            stars: any[];
+            stars: unknown[];
             creationDate: Date;
             relevance_modifier: number;
             views: number;
@@ -624,7 +624,7 @@ export class WorkshopService {
             metadata = await bandage_sharp.metadata();
             width = metadata.width as number;
             height = metadata.height as number;
-        } catch (e) {
+        } catch {
             throw new LocaleException(
                 responses.ERROR_WHILE_BANDAGE_PROCESSING,
                 500

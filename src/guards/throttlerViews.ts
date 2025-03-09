@@ -1,11 +1,7 @@
 import { ExecutionContext } from '@nestjs/common';
 import { Request } from 'express';
 
-export const generateKey = (
-    context: ExecutionContext,
-    _trackerString: string,
-    _throttlerName: string
-): string => {
+export const generateKey = (context: ExecutionContext): string => {
     const request: Request = context.switchToHttp().getRequest();
     return `${request.cookies.accessToken}:${request.params.id}`;
 };

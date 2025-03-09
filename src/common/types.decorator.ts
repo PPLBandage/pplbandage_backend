@@ -9,7 +9,7 @@ import { sort_keys } from 'src/workshop/workshop.service';
 
 @ValidatorConstraint({ async: false })
 export class IsBooleanCustomConstraint implements ValidatorConstraintInterface {
-    validate(value: any, _: ValidationArguments) {
+    validate(value: unknown) {
         return value === 'true' || value === 'false';
     }
 
@@ -19,7 +19,7 @@ export class IsBooleanCustomConstraint implements ValidatorConstraintInterface {
 }
 
 export function IsBooleanStr(validationOptions?: ValidationOptions) {
-    return function (object: Object, propertyName: string) {
+    return function (object: object, propertyName: string) {
         registerDecorator({
             target: object.constructor,
             propertyName: propertyName,
@@ -32,7 +32,7 @@ export function IsBooleanStr(validationOptions?: ValidationOptions) {
 
 @ValidatorConstraint({ async: false })
 export class IsSortConstraint implements ValidatorConstraintInterface {
-    validate(value: any, _: ValidationArguments) {
+    validate(value: string) {
         return sort_keys.includes(value);
     }
 
@@ -42,7 +42,7 @@ export class IsSortConstraint implements ValidatorConstraintInterface {
 }
 
 export function IsSort(validationOptions?: ValidationOptions) {
-    return function (object: Object, propertyName: string) {
+    return function (object: object, propertyName: string) {
         registerDecorator({
             target: object.constructor,
             propertyName: propertyName,
@@ -70,7 +70,7 @@ export function IsDivisible(
     baseWidth: number,
     validationOptions?: ValidationOptions
 ) {
-    return function (object: Object, propertyName: string) {
+    return function (object: object, propertyName: string) {
         registerDecorator({
             target: object.constructor,
             propertyName: propertyName,

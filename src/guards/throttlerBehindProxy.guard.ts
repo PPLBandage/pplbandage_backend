@@ -3,6 +3,7 @@ import { ThrottlerGuard } from '@nestjs/throttler';
 
 @Injectable()
 export class CustomThrottlerGuard extends ThrottlerGuard {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected async getTracker(req: Record<string, any>): Promise<string> {
         const cfIp = req.headers['cf-connecting-ip'];
         if (cfIp) {

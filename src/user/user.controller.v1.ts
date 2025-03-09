@@ -32,7 +32,6 @@ import { RequestSession } from 'src/common/bandage_response';
 import { PageTakeQueryDTO, QueryDTO } from './dto/queries.dto';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import responses_minecraft from 'src/localization/minecraft.localization';
-import responses_common from 'src/localization/common.localization';
 import { LocalAccessGuard } from 'src/guards/localAccess.guard';
 
 @Controller({ version: '1' })
