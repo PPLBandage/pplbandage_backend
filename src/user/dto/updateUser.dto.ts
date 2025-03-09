@@ -1,4 +1,12 @@
-import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
+import {
+    IsBoolean,
+    IsNotEmpty,
+    IsNumber,
+    IsOptional,
+    IsString,
+    Max,
+    Min
+} from 'class-validator';
 
 export class UpdateUsersDto {
     @IsOptional()
@@ -19,15 +27,15 @@ export class UpdateSelfUserDto {
 
     @IsBoolean()
     @IsOptional()
-    skin_autoload?: boolean
+    skin_autoload?: boolean;
 
     @IsBoolean()
     @IsOptional()
-    nick_search?: boolean
+    nick_search?: boolean;
 
     @IsBoolean()
     @IsOptional()
-    public?: boolean
+    public?: boolean;
 }
 
 export class ForceRegisterUserDTO {

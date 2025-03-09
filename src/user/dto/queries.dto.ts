@@ -1,5 +1,12 @@
 import { Type } from 'class-transformer';
-import { IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
+import {
+    IsNotEmpty,
+    IsNumber,
+    IsOptional,
+    IsString,
+    Max,
+    Min
+} from 'class-validator';
 import { IsBooleanStr } from 'src/common/types.decorator';
 
 export class SetQueryDTO {

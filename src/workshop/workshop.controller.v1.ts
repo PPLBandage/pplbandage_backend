@@ -13,7 +13,7 @@ import {
     ValidationPipe,
     UsePipes,
     HttpCode,
-    Header,
+    Header
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { WorkshopService } from './workshop.service';
@@ -28,7 +28,7 @@ import { RequestSession } from 'src/common/bandage_response';
 import {
     EditQueryDTO,
     WidthQueryDTO,
-    WorkshopSearchQueryDTO,
+    WorkshopSearchQueryDTO
 } from 'src/workshop/dto/queries.dto';
 import { SetQueryDTO } from 'src/user/dto/queries.dto';
 import responses_common from 'src/localization/common.localization';
@@ -39,16 +39,14 @@ import { generateKey } from 'src/guards/throttlerViews';
 @Controller({ path: 'workshop', version: '1' })
 @UseGuards(AuthGuard)
 export class WorkshopController {
-    constructor(
-        private readonly bandageService: WorkshopService
-    ) { }
+    constructor(private readonly bandageService: WorkshopService) {}
 
     @Get()
     @Auth(AuthEnum.Weak)
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async bandages(
         @Req() request: RequestSession,
-        @Query() query: WorkshopSearchQueryDTO,
+        @Query() query: WorkshopSearchQueryDTO
     ) {
         /* get list of works */
 
@@ -58,7 +56,7 @@ export class WorkshopController {
             query.page ?? 0,
             query.search,
             query.filters,
-            query.sort,
+            query.sort
         );
     }
 
@@ -69,11 +67,13 @@ export class WorkshopController {
     @UsePipes(new ValidationPipe({ whitelist: true }))
     async create_bandage(
         @Req() request: RequestSession,
-        @Body() body: CreateBandageDto,
+        @Body() body: CreateBandageDto
     ) {
         /* create work */
 
-        const validate_result = await this.bandageService.validateBandage(body.base64);
+        const validate_result = await this.bandageService.validateBandage(
+            body.base64
+        );
 
         if (body.split_type) {
             if (!body.base64_slim) {
@@ -82,7 +82,7 @@ export class WorkshopController {
 
             await this.bandageService.validateBandage(
                 body.base64_slim,
-                validate_result.height as number,
+                validate_result.height as number
             );
         }
 
@@ -118,7 +118,7 @@ export class WorkshopController {
     async getBandageImage(
         @Param('id') id: string,
         @Req() request: RequestSession,
-        @Query() query: WidthQueryDTO,
+        @Query() query: WidthQueryDTO
     ): Promise<StreamableFile | void> {
         /* get bandage image render (for OpenGraph) */
 
@@ -140,8 +140,8 @@ export class WorkshopController {
                 width: width,
                 height: height / 2,
                 channels: 4,
-                background: { r: 0, g: 0, b: 0, alpha: 0 },
-            },
+                background: { r: 0, g: 0, b: 0, alpha: 0 }
+            }
         }).png();
 
         const firstLayer = await sharp(bandage_buff)
@@ -149,7 +149,7 @@ export class WorkshopController {
                 left: 0,
                 top: original_height / 2,
                 width: original_width,
-                height: original_height / 2,
+                height: original_height / 2
             })
             .resize(width, height / 2, { kernel: sharp.kernel.nearest })
             .png()
@@ -160,7 +160,7 @@ export class WorkshopController {
                 left: 0,
                 top: 0,
                 width: original_width,
-                height: original_height / 2,
+                height: original_height / 2
             })
             .resize(width, height / 2, { kernel: sharp.kernel.nearest })
             .png()
@@ -168,7 +168,7 @@ export class WorkshopController {
 
         bandage.composite([
             { input: firstLayer, top: 0, left: 0, blend: 'over' },
-            { input: secondLayer, top: 0, left: 0, blend: 'over' },
+            { input: secondLayer, top: 0, left: 0, blend: 'over' }
         ]);
 
         return new StreamableFile(await bandage.toBuffer());
@@ -180,7 +180,7 @@ export class WorkshopController {
     async editBandage(
         @Param('id') id: string,
         @Req() request: RequestSession,
-        @Body() body: EditBandageDto,
+        @Body() body: EditBandageDto
     ) {
         /* edit bandage info */
 
@@ -191,7 +191,7 @@ export class WorkshopController {
         return await this.bandageService.updateBandage(
             id,
             body,
-            request.session,
+            request.session
         );
     }
 
@@ -199,7 +199,7 @@ export class WorkshopController {
     @Auth(AuthEnum.Strict)
     async archiveBandage(
         @Param('id') id: string,
-        @Req() request: RequestSession,
+        @Req() request: RequestSession
     ) {
         /* Archive bandage */
 
@@ -222,13 +222,13 @@ export class WorkshopController {
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async categories(
         @Req() request: RequestSession,
-        @Query() query: EditQueryDTO,
+        @Query() query: EditQueryDTO
     ) {
         /* get list of categories */
 
         return await this.bandageService.getCategories(
             query.for_edit === 'true',
-            request.session,
+            request.session
         );
     }
 
@@ -238,7 +238,7 @@ export class WorkshopController {
     async setStar(
         @Param('id') id: string,
         @Query() query: SetQueryDTO,
-        @Req() request: RequestSession,
+        @Req() request: RequestSession
     ) {
         /* set star to work by work external id */
 
@@ -256,7 +256,7 @@ export class WorkshopController {
             schemaVersion: 1,
             label: 'Bandages Count',
             message: count.toString(),
-            color: 'green',
+            color: 'green'
         };
     }
 
@@ -264,10 +264,7 @@ export class WorkshopController {
     @SkipThrottle()
     @Auth(AuthEnum.Weak)
     @UseGuards(new LocalAccessGuard())
-    async getBandage(
-        @Param('id') id: string,
-        @Req() request: RequestSession
-    ) {
+    async getBandage(@Param('id') id: string, @Req() request: RequestSession) {
         /* get bandage by external id (internal endpoint) */
 
         return await this.bandageService.getBandage(id, request.session);

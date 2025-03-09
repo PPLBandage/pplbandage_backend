@@ -1,6 +1,6 @@
-import { Type } from "class-transformer";
-import { IsNumber, IsOptional, Max, Min } from "class-validator";
-import { IsBooleanStr } from "src/common/types.decorator";
+import { Type } from 'class-transformer';
+import { IsNumber, IsOptional, Max, Min } from 'class-validator';
+import { IsBooleanStr } from 'src/common/types.decorator';
 
 export class CapeQueryDTO {
     @IsBooleanStr()

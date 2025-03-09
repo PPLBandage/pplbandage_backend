@@ -1,6 +1,6 @@
-import { Transform, Type } from "class-transformer";
-import { IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
-import { IsBooleanStr, IsDivisible, IsSort } from "src/common/types.decorator";
+import { Transform, Type } from 'class-transformer';
+import { IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsBooleanStr, IsDivisible, IsSort } from 'src/common/types.decorator';
 
 export class WidthQueryDTO {
     @IsNumber()
@@ -25,19 +25,24 @@ export class WorkshopSearchQueryDTO {
 
     @IsOptional()
     @Transform(({ value }) => value.split(',').map(Number))
-    @IsNumber({}, {
-        each: true,
-        message(validationArguments) {
-            return `\`${validationArguments.property}\` property must be an array of categories IDs, ` +
-                `like \`1,2,10\`, but \`${validationArguments.value}\` was provided instead`
-        },
-    })
-    filters?: number[]
+    @IsNumber(
+        {},
+        {
+            each: true,
+            message(validationArguments) {
+                return (
+                    `\`${validationArguments.property}\` property must be an array of categories IDs, ` +
+                    `like \`1,2,10\`, but \`${validationArguments.value}\` was provided instead`
+                );
+            }
+        }
+    )
+    filters?: number[];
 
     @IsOptional()
     @IsString()
     @IsSort()
-    sort?: string
+    sort?: string;
 
     @IsNumber()
     @IsOptional()

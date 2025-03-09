@@ -11,4 +11,4 @@ import { MinecraftScheduler } from './scheduler.service';
     providers: [MinecraftService, PrismaService, MinecraftScheduler],
     imports: [CacheModule.register(), ScheduleModule.forRoot()]
 })
-export class MinecraftModule { }
+export class MinecraftModule {}

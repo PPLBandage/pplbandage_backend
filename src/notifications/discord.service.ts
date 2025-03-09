@@ -1,20 +1,24 @@
 import { Injectable } from '@nestjs/common';
 import axios from 'axios';
 
-const discord_url = process.env.DISCORD_URL + "/api/v10";
+const discord_url = process.env.DISCORD_URL + '/api/v10';
 
 @Injectable()
 export class DiscordNotificationService {
-    constructor() { }
+    constructor() {}
 
     async doNotification(content: string, channel?: string) {
-        await axios.post(`${discord_url}/channels/${channel || process.env.MODERATION_CHANNEL_ID}/messages`, {
-            content: content
-        }, {
-            validateStatus: () => true,
-            headers: {
-                Authorization: `Bot ${process.env.BOT_TOKEN}`
+        await axios.post(
+            `${discord_url}/channels/${channel || process.env.MODERATION_CHANNEL_ID}/messages`,
+            {
+                content: content
+            },
+            {
+                validateStatus: () => true,
+                headers: {
+                    Authorization: `Bot ${process.env.BOT_TOKEN}`
+                }
             }
-        });
+        );
     }
 }

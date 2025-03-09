@@ -7,15 +7,15 @@ import { RolesEnum } from 'src/interfaces/types';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
-    constructor(
-        private reflector: Reflector
-    ) { }
+    constructor(private reflector: Reflector) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request: RequestSessionWeak = context.switchToHttp().getRequest();
         const response: Response = context.switchToHttp().getResponse();
         const roles = this.reflector.get(Roles, context.getHandler());
-        const user_roles = request.session?.user.AccessRoles.map((role) => role.level);
+        const user_roles = request.session?.user.AccessRoles.map(
+            role => role.level
+        );
         if (!roles) {
             return true;
         }
@@ -24,7 +24,7 @@ export class RolesGuard implements CanActivate {
             return true;
         }
 
-        if (roles.some((role) => user_roles?.includes(role))) {
+        if (roles.some(role => user_roles?.includes(role))) {
             return true;
         }
 

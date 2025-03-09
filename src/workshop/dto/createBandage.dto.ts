@@ -1,4 +1,13 @@
-import { IsArray, IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import {
+    IsArray,
+    IsBoolean,
+    IsNotEmpty,
+    IsNumber,
+    IsOptional,
+    IsString,
+    MaxLength,
+    MinLength
+} from 'class-validator';
 
 export class CreateBandageDto {
     @IsString({ message: 'Поле `base64` должно иметь тип string' })
@@ -17,12 +26,17 @@ export class CreateBandageDto {
 
     @IsOptional()
     @IsString({ message: 'Поле `description` должно иметь тип string' })
-    @MaxLength(300, { message: 'Описание слишком длинное (макс. 300 символов)' })
+    @MaxLength(300, {
+        message: 'Описание слишком длинное (макс. 300 символов)'
+    })
     description?: string;
 
     @IsOptional()
     @IsArray({ message: 'Поле `categories` должно иметь тип array' })
-    @IsNumber({}, { each: true, message: 'Поле `categories` должно иметь тип number[]' })
+    @IsNumber(
+        {},
+        { each: true, message: 'Поле `categories` должно иметь тип number[]' }
+    )
     categories?: number[];
 
     @IsOptional()

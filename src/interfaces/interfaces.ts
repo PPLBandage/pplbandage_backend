@@ -1,20 +1,19 @@
 interface EncodedResponse {
-    timestamp: number,
-    profileId: string,
-    profileName: string,
+    timestamp: number;
+    profileId: string;
+    profileName: string;
     textures: {
         SKIN?: {
             url: string;
             metadata?: {
                 model: string;
-            }
+            };
         };
         CAPE?: {
             url: string;
         };
-    }
+    };
 }
-
 
 interface Profile {
     id: string;
@@ -26,22 +25,21 @@ interface Profile {
 }
 
 interface SearchUnit {
-    name: string,
-    uuid: string,
-    head: string
+    name: string;
+    uuid: string;
+    head: string;
 }
 
 interface SearchParams {
-    fragment: string,
-    take: number,
-    page: number
+    fragment: string;
+    take: number;
+    page: number;
 }
 
-
 interface Notifications {
-    id?: number,
-    content: string,
-    author?: string,
-    type?: number,
-    creation_date?: Date
+    id?: number;
+    content: string;
+    author?: string;
+    type?: number;
+    creation_date?: Date;
 }

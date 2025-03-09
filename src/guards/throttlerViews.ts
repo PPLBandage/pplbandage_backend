@@ -1,5 +1,5 @@
-import { ExecutionContext } from "@nestjs/common";
-import { Request } from "express";
+import { ExecutionContext } from '@nestjs/common';
+import { Request } from 'express';
 
 export const generateKey = (
     context: ExecutionContext,
@@ -8,4 +8,4 @@ export const generateKey = (
 ): string => {
     const request: Request = context.switchToHttp().getRequest();
     return `${request.cookies.accessToken}:${request.params.id}`;
-}
+};

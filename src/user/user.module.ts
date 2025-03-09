@@ -18,4 +18,4 @@ import { MinecraftService } from 'src/minecraft/minecraft.service';
     ],
     imports: [CacheModule.register()]
 })
-export class UsersModule { }
+export class UsersModule {}

@@ -22,4 +22,4 @@ import { MinecraftService } from 'src/minecraft/minecraft.service';
     ],
     imports: [CacheModule.register()]
 })
-export class WorkshopModule { }
+export class WorkshopModule {}

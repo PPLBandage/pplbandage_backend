@@ -1,26 +1,27 @@
 import { Controller, Get, Header, Res } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
-import type { Response } from 'express'
+import type { Response } from 'express';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RootService, SitemapProps } from './root.service';
 
 export const UNAUTHORIZED = {
     statusCode: 401,
-    message: "UNAUTHORIZED",
-    message_ru: 'Неавторизован',
-}
+    message: 'UNAUTHORIZED',
+    message_ru: 'Неавторизован'
+};
 
 @Controller({ version: '1' })
 export class RootController {
-    constructor(private prisma: PrismaService,
+    constructor(
+        private prisma: PrismaService,
         private readonly rootService: RootService
-    ) { }
+    ) {}
 
     @Get()
     async root(@Res({ passthrough: true }) res: Response) {
         /* Redirect to root path */
 
-        res.redirect(308, "/");
+        res.redirect(308, '/');
     }
 
     @Get('/ping')
@@ -45,7 +46,7 @@ export class RootController {
             { loc: 'https://pplbandage.ru/me', priority: 0.5 },
             { loc: 'https://pplbandage.ru/tos', priority: 0.5 },
             { loc: 'https://pplbandage.ru/contacts', priority: 0.5 }
-        ]
+        ];
 
         const bandages = await this.prisma.bandage.findMany({
             where: {
@@ -53,10 +54,12 @@ export class RootController {
                 categories: { none: { only_admins: true } }
             }
         });
-        urls = urls.concat(bandages.map(bandage => ({
-            loc: `https://pplbandage.ru/workshop/${bandage.externalId}`,
-            priority: 0.6
-        })));
+        urls = urls.concat(
+            bandages.map(bandage => ({
+                loc: `https://pplbandage.ru/workshop/${bandage.externalId}`,
+                priority: 0.6
+            }))
+        );
 
         const users = await this.prisma.user.findMany({
             where: {
@@ -65,10 +68,12 @@ export class RootController {
                 UserSettings: { banned: false, public_profile: true }
             }
         });
-        urls = urls.concat(users.map(user => ({
-            loc: `https://pplbandage.ru/users/${user.username}`,
-            priority: 0.5
-        })));
+        urls = urls.concat(
+            users.map(user => ({
+                loc: `https://pplbandage.ru/users/${user.username}`,
+                priority: 0.5
+            }))
+        );
 
         return this.rootService.generateSitemap(urls);
     }

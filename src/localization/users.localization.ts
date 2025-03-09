@@ -24,9 +24,9 @@ const responses = {
         ru: 'Недействительный код. Попробуйте еще раз'
     },
     MINECRAFT_USER_NOT_FOUND: {
-        en: 'This account didn\'t connected',
+        en: "This account didn't connected",
         ru: 'Этот аккаунт не подключен'
     }
-}
+};
 
 export default responses;

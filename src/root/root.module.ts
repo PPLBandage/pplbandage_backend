@@ -4,7 +4,7 @@ import { RootService } from './root.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Module({
-	controllers: [RootController],
-	providers: [RootService, PrismaService]
+    controllers: [RootController],
+    providers: [RootService, PrismaService]
 })
-export class RootModule { }
+export class RootModule {}

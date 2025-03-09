@@ -1,15 +1,15 @@
-import axios from "axios";
+import axios from 'axios';
 import * as sharp from 'sharp';
-import { PrismaService } from "../prisma/prisma.service";
+import { PrismaService } from '../prisma/prisma.service';
 import { HttpException, Injectable } from '@nestjs/common';
-import { Buffer } from "buffer";
-import { Session } from "src/auth/auth.service";
-import { LocaleException } from "src/interceptors/localization.interceptor";
-import responses from "src/localization/minecraft.localization";
+import { Buffer } from 'buffer';
+import { Session } from 'src/auth/auth.service';
+import { LocaleException } from 'src/interceptors/localization.interceptor';
+import responses from 'src/localization/minecraft.localization';
 
 @Injectable()
 export class MinecraftService {
-    constructor(private prisma: PrismaService) { }
+    constructor(private prisma: PrismaService) {}
 
     async getUserData(uuid: string): Promise<Profile> {
         /* get user profile by UUID */
@@ -22,11 +22,13 @@ export class MinecraftService {
             if (response_skin.status === 204)
                 throw new LocaleException(responses.PROFILE_NOT_FOUND, 404);
 
-            throw new LocaleException(responses.MOJANG_ERROR, response_skin.status);
+            throw new LocaleException(
+                responses.MOJANG_ERROR,
+                response_skin.status
+            );
         }
         return response_skin.data;
     }
-
 
     async getUUID(str: string): Promise<string> {
         /* get UUID by nickname or validate existing */
@@ -40,9 +42,9 @@ export class MinecraftService {
             );
             if (response_uuid.status !== 200) {
                 throw new LocaleException(
-                    response_uuid.status === 404 ?
-                        responses.PROFILE_NOT_FOUND :
-                        responses.MOJANG_ERROR,
+                    response_uuid.status === 404
+                        ? responses.PROFILE_NOT_FOUND
+                        : responses.MOJANG_ERROR,
                     response_uuid.status
                 );
             }
@@ -50,7 +52,6 @@ export class MinecraftService {
         }
         return uuid;
     }
-
 
     async generateHead(skinBuffer: Buffer): Promise<Buffer> {
         /* generate head from buffer */
@@ -83,7 +84,6 @@ export class MinecraftService {
         return await head.toBuffer();
     }
 
-
     async resolveCollisions(profiles: { uuid: string }[]) {
         /* resolve nicknames collisions in data base */
 
@@ -103,18 +103,19 @@ export class MinecraftService {
         }
     }
 
-
     async updateSkinCache(nickname: string, ignore_cache: boolean = false) {
         /* update skin data in data base */
 
-        const uuid = await this.getUUID(nickname);  // validate UUID (resolve UUID by nickname also)
+        const uuid = await this.getUUID(nickname); // validate UUID (resolve UUID by nickname also)
 
-        const cache = await this.prisma.minecraft.findFirst({ where: { uuid: uuid } });  // get cache if exists
+        const cache = await this.prisma.minecraft.findFirst({
+            where: { uuid: uuid }
+        }); // get cache if exists
         if (cache && cache.expires > new Date().getTime() && !ignore_cache) {
             return cache;
         }
 
-        const fetched_skin_data = await this.getUserData(uuid);  // fetch new skin data
+        const fetched_skin_data = await this.getUserData(uuid); // fetch new skin data
         if (cache && cache.default_nick !== fetched_skin_data.name) {
             // if the nickname has been changed since the last caching
 
@@ -124,10 +125,12 @@ export class MinecraftService {
                     default_nick: fetched_skin_data.name,
                     nickname: fetched_skin_data.name.toLowerCase()
                 }
-            })
+            });
         }
 
-        const profiles = await this.prisma.minecraft.findMany({ where: { nickname: fetched_skin_data.name.toLowerCase() } });
+        const profiles = await this.prisma.minecraft.findMany({
+            where: { nickname: fetched_skin_data.name.toLowerCase() }
+        });
         if (profiles.length > 1) {
             /* -- resolve nicknames collision --
             Since the cache of skins and nicknames is not deleted after they expire,
@@ -138,7 +141,9 @@ export class MinecraftService {
             await this.resolveCollisions(profiles);
         }
 
-        const properties = fetched_skin_data.properties.find(obj => obj.name === 'textures');
+        const properties = fetched_skin_data.properties.find(
+            obj => obj.name === 'textures'
+        );
         if (!properties)
             throw new LocaleException(responses.PROFILE_NOT_FOUND, 404);
 
@@ -154,9 +159,9 @@ export class MinecraftService {
 
             if (skin_response.status !== 200) {
                 throw new LocaleException(
-                    skin_response.status === 404 ?
-                        responses.PROFILE_NOT_FOUND :
-                        responses.MOJANG_ERROR,
+                    skin_response.status === 404
+                        ? responses.PROFILE_NOT_FOUND
+                        : responses.MOJANG_ERROR,
                     skin_response.status
                 );
             }
@@ -174,7 +179,9 @@ export class MinecraftService {
                 { responseType: 'arraybuffer', validateStatus: () => true }
             );
             if (cape_response.status === 200) {
-                cape_b64 = Buffer.from(cape_response.data, 'binary').toString('base64');
+                cape_b64 = Buffer.from(cape_response.data, 'binary').toString(
+                    'base64'
+                );
             }
         }
 
@@ -184,7 +191,8 @@ export class MinecraftService {
                 uuid: fetched_skin_data.id,
                 nickname: fetched_skin_data.name.toLowerCase(),
                 default_nick: fetched_skin_data.name,
-                expires: new Date().getTime() + parseInt(process.env.TTL as string),
+                expires:
+                    new Date().getTime() + parseInt(process.env.TTL as string),
                 data: skin_buff.toString('base64'),
                 data_cape: cape_b64,
                 data_head: head.toString('base64'),
@@ -193,7 +201,8 @@ export class MinecraftService {
             update: {
                 nickname: fetched_skin_data.name.toLowerCase(),
                 default_nick: fetched_skin_data.name,
-                expires: new Date().getTime() + parseInt(process.env.TTL as string),
+                expires:
+                    new Date().getTime() + parseInt(process.env.TTL as string),
                 data: skin_buff.toString('base64'),
                 data_cape: cape_b64,
                 data_head: head.toString('base64'),
@@ -218,13 +227,16 @@ export class MinecraftService {
                 if (e instanceof LocaleException) {
                     cause = JSON.stringify(e.getResponse());
                 }
-                console.error(`Cannot revalidate skin cache for ${skin.default_nick}! Cause: ${cause}`);
+                console.error(
+                    `Cannot revalidate skin cache for ${skin.default_nick}! Cause: ${cause}`
+                );
             }
         }
 
-        console.info(`Finished revalidating ${skins_for_revalidate.length} skins`);
+        console.info(
+            `Finished revalidating ${skins_for_revalidate.length} skins`
+        );
     }
-
 
     async searchNicks({ fragment, take, page }: SearchParams) {
         /* search nicks in data base by provided fragment */
@@ -232,19 +244,29 @@ export class MinecraftService {
         if (fragment.length < 3) {
             throw new HttpException('', 204);
         }
-        const filter_rule = { OR: [{ nickname: { contains: fragment } }], valid: true };
+        const filter_rule = {
+            OR: [{ nickname: { contains: fragment } }],
+            valid: true
+        };
         const cache = await this.prisma.minecraft.findMany({
             where: filter_rule,
-            orderBy: { default_nick: "asc" },
-            take: take, skip: take * page
+            orderBy: { default_nick: 'asc' },
+            take: take,
+            skip: take * page
         });
 
         if (cache.length === 0) {
             throw new HttpException('', 204);
         }
 
-        const count: number = await this.prisma.minecraft.count({ where: filter_rule });
-        const records_list: SearchUnit[] = cache.map(nick => ({ name: nick.default_nick, uuid: nick.uuid, head: nick.data_head }));
+        const count: number = await this.prisma.minecraft.count({
+            where: filter_rule
+        });
+        const records_list: SearchUnit[] = cache.map(nick => ({
+            name: nick.default_nick,
+            uuid: nick.uuid,
+            head: nick.data_head
+        }));
         if (!count) {
             throw new HttpException('', 204);
         }
@@ -256,12 +278,15 @@ export class MinecraftService {
         };
     }
 
-    async getByCode(code: string): Promise<{ nickname: string, UUID: string }> {
-        const response = await axios.get(`${process.env.MC_OAUTH_API}/${code}`, { validateStatus: () => true });
+    async getByCode(code: string): Promise<{ nickname: string; UUID: string }> {
+        const response = await axios.get(
+            `${process.env.MC_OAUTH_API}/${code}`,
+            { validateStatus: () => true }
+        );
         if (response.status !== 200)
             throw new LocaleException(responses.CODE_NOT_FOUND, 404);
 
-        return response.data as { nickname: string, UUID: string };
+        return response.data as { nickname: string; UUID: string };
     }
 
     async connect(session: Session, code: string) {
@@ -297,7 +322,8 @@ export class MinecraftService {
     }
 
     async generateSvg(image: sharp.Sharp, pixel_width: number) {
-        const { data, info } = await image.raw()
+        const { data, info } = await image
+            .raw()
             .ensureAlpha()
             .toBuffer({ resolveWithObject: true });
 
@@ -306,7 +332,9 @@ export class MinecraftService {
         for (let x = 8; x < 16; x++) {
             for (let y = 8; y < 16; y++) {
                 const pixelIndex = (y * info.width + x) * info.channels;
-                pixels.push(`<rect x="${(x - 8) * (pixel_width * coef) + (pixel_width / 2)}" y="${(y - 8) * (pixel_width * coef) + (pixel_width / 2)}" width="${pixel_width * coef + 1}" height="${pixel_width * coef + 1}" fill="rgba(${data[pixelIndex]}, ${data[pixelIndex + 1]}, ${data[pixelIndex + 2]}, ${data[pixelIndex + 3]})" />`);
+                pixels.push(
+                    `<rect x="${(x - 8) * (pixel_width * coef) + pixel_width / 2}" y="${(y - 8) * (pixel_width * coef) + pixel_width / 2}" width="${pixel_width * coef + 1}" height="${pixel_width * coef + 1}" fill="rgba(${data[pixelIndex]}, ${data[pixelIndex + 1]}, ${data[pixelIndex + 2]}, ${data[pixelIndex + 3]})" />`
+                );
             }
         }
 
@@ -314,7 +342,9 @@ export class MinecraftService {
             for (let y = 8; y < 16; y++) {
                 const pixelIndex = (y * info.width + x) * info.channels;
                 if (data[pixelIndex + 3] === 0) continue;
-                pixels.push(`<rect x="${(x - 40) * pixel_width}" y="${(y - 8) * pixel_width}" width="${pixel_width}" height="${pixel_width}" fill="rgba(${data[pixelIndex]}, ${data[pixelIndex + 1]}, ${data[pixelIndex + 2]}, ${data[pixelIndex + 3]})" />`);
+                pixels.push(
+                    `<rect x="${(x - 40) * pixel_width}" y="${(y - 8) * pixel_width}" width="${pixel_width}" height="${pixel_width}" fill="rgba(${data[pixelIndex]}, ${data[pixelIndex + 1]}, ${data[pixelIndex + 2]}, ${data[pixelIndex + 3]})" />`
+                );
             }
         }
 

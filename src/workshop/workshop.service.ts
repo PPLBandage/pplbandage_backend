@@ -99,7 +99,7 @@ export class WorkshopService {
         if (!bandage) {
             throw new LocaleException(responses.BANDAGE_NOT_FOUND, 404);
         }
-        const hidden = bandage.categories.some((val) => val.only_admins);
+        const hidden = bandage.categories.some(val => val.only_admins);
         const no_access = session
             ? !hasAccess(session.user, RolesEnum.ManageBandages) &&
               session.user.id !== bandage.User?.id
@@ -138,7 +138,7 @@ export class WorkshopService {
             ];
         }
 
-        const filters_rule = filters?.map((el) => ({
+        const filters_rule = filters?.map(el => ({
             categories: { some: { id: el } }
         }));
 
@@ -153,7 +153,7 @@ export class WorkshopService {
             const data = await this.prisma.category.findMany({
                 where: { only_admins: true }
             });
-            available = data.some((val) => filters?.includes(val.id));
+            available = data.some(val => filters?.includes(val.id));
         }
 
         const category = available
@@ -288,7 +288,7 @@ export class WorkshopService {
                 hasAccess(session.user, RolesEnum.SuperAdmin)
             );
             categories = [
-                ...validated_categories.map((el) => ({ id: el })),
+                ...validated_categories.map(el => ({ id: el })),
                 ...categories
             ];
         }
@@ -366,7 +366,7 @@ export class WorkshopService {
             orderBy: { order: 'asc' },
             include: { bandages: true }
         });
-        return categories.map((category) => ({
+        return categories.map(category => ({
             id: category.id,
             name: category.name,
             icon: category.icon,
@@ -406,7 +406,7 @@ export class WorkshopService {
 
         const bandage = await this.getBandageSession(id, session);
 
-        const hidden = bandage.categories.some((val) => val.only_admins);
+        const hidden = bandage.categories.some(val => val.only_admins);
         let permissions_level = 0;
         if (session) {
             if (session.user.id === bandage.User?.id) permissions_level = 1;
@@ -434,7 +434,7 @@ export class WorkshopService {
                   }
                 : undefined;
 
-        const categories = bandage.categories.map((cat) => ({
+        const categories = bandage.categories.map(cat => ({
             id: cat.id,
             name: cat.name,
             icon: cat.icon,
@@ -442,9 +442,9 @@ export class WorkshopService {
         }));
 
         let check = null;
-        if (bandage.categories.some((val) => val.id === moderation_id[0]))
+        if (bandage.categories.some(val => val.id === moderation_id[0]))
             check = 'review';
-        if (bandage.categories.some((val) => val.id === moderation_id[1]))
+        if (bandage.categories.some(val => val.id === moderation_id[1]))
             check = 'denied';
 
         return {
@@ -460,9 +460,7 @@ export class WorkshopService {
                 split_type: bandage.split_type,
                 creation_date: bandage.creationDate,
                 stars_count: bandage.stars.length,
-                starred: bandage.stars.some(
-                    (val) => val.id === session?.user.id
-                ),
+                starred: bandage.stars.some(val => val.id === session?.user.id),
                 author: bandage.User
                     ? {
                           id: bandage.User.id,
@@ -510,7 +508,7 @@ export class WorkshopService {
         let categories = undefined;
         let access_level = undefined;
 
-        const hidden = bandage.categories.some((val) => val.only_admins);
+        const hidden = bandage.categories.some(val => val.only_admins);
         const admin = hasAccess(session.user, RolesEnum.ManageBandages);
 
         if (admin || hidden) {
@@ -523,7 +521,7 @@ export class WorkshopService {
                 body.categories,
                 admin
             );
-            const bandage_categories = bandage?.categories.map((el) => el.id);
+            const bandage_categories = bandage?.categories.map(el => el.id);
             if (!admin) {
                 if (bandage_categories?.includes(moderation_id[0]))
                     validated_categories.push(moderation_id[0]);
@@ -534,10 +532,10 @@ export class WorkshopService {
             }
 
             const difference = bandage_categories.filter(
-                (element) => !validated_categories.includes(element)
+                element => !validated_categories.includes(element)
             );
             const difference_after = validated_categories.filter(
-                (element) => !bandage_categories.includes(element)
+                element => !bandage_categories.includes(element)
             );
             if (difference_after.includes(moderation_id[1])) {
                 await this.notifications.createNotification(bandage.userId, {
@@ -547,7 +545,7 @@ export class WorkshopService {
                     type: 2
                 });
             } else if (
-                moderation_id.some((element) => difference.includes(element))
+                moderation_id.some(element => difference.includes(element))
             ) {
                 await this.notifications.createNotification(bandage.userId, {
                     content:
@@ -556,7 +554,7 @@ export class WorkshopService {
                     type: 1
                 });
             }
-            categories = validated_categories.map((el) => ({ id: el }));
+            categories = validated_categories.map(el => ({ id: el }));
         }
 
         if (body.access_level !== undefined) {
@@ -589,8 +587,8 @@ export class WorkshopService {
             }
         });
 
-        const reachable_ids = reachable_categories.map((el) => el.id);
-        return categories.filter((el) => reachable_ids.includes(el));
+        const reachable_ids = reachable_categories.map(el => el.id);
+        return categories.filter(el => reachable_ids.includes(el));
     }
 
     async deleteBandage(session: Session, externalId: string) {

@@ -1,11 +1,10 @@
-
-import { Injectable } from "@nestjs/common";
-import { Cron } from "@nestjs/schedule";
-import { MinecraftService } from "./minecraft.service";
+import { Injectable } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
+import { MinecraftService } from './minecraft.service';
 
 @Injectable()
 export class MinecraftScheduler {
-    constructor(private readonly minecraftService: MinecraftService) { }
+    constructor(private readonly minecraftService: MinecraftService) {}
 
     @Cron('0 0 0 * * *')
     async scheduleSkinRevalidate() {

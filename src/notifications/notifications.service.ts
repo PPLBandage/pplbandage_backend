@@ -11,10 +11,13 @@ import { Session } from 'src/auth/auth.service';
 
 @Injectable()
 export class NotificationService {
-    constructor(private prisma: PrismaService) { }
+    constructor(private prisma: PrismaService) {}
 
     async get(session: Session, take: number, page: number) {
-        await this.prisma.user.update({ where: { id: session.user.id }, data: { has_unreaded_notifications: false } });
+        await this.prisma.user.update({
+            where: { id: session.user.id },
+            data: { has_unreaded_notifications: false }
+        });
 
         const notifications = await this.prisma.notifications.findMany({
             where: { users: { some: { id: session.user.id } } },
@@ -25,11 +28,16 @@ export class NotificationService {
             }
         });
 
-        const count = await this.prisma.notifications.count({ where: { users: { some: { id: session.user.id } } } });
+        const count = await this.prisma.notifications.count({
+            where: { users: { some: { id: session.user.id } } }
+        });
         return { data: notifications, total_count: count };
     }
 
-    async createNotification(userId: string | null, notification: Notifications) {
+    async createNotification(
+        userId: string | null,
+        notification: Notifications
+    ) {
         if (!userId) return;
         const notification_db = await this.prisma.notifications.create({
             data: {
@@ -40,23 +48,30 @@ export class NotificationService {
             }
         });
 
-        await this.prisma.user.update({ where: { id: userId }, data: { has_unreaded_notifications: true } });
+        await this.prisma.user.update({
+            where: { id: userId },
+            data: { has_unreaded_notifications: true }
+        });
         return notification_db;
     }
 
     async createNotificationEveryone(notification: Notifications) {
-        const notification_db = await this.prisma.notifications.create({ data: notification });
+        const notification_db = await this.prisma.notifications.create({
+            data: notification
+        });
         const users = await this.prisma.user.findMany();
 
-        await Promise.all(users.map(async user => {
-            await this.prisma.user.update({
-                where: { id: user.id },
-                data: {
-                    has_unreaded_notifications: true,
-                    notifications: { connect: { id: notification_db.id } }
-                }
-            });
-        }));
+        await Promise.all(
+            users.map(async user => {
+                await this.prisma.user.update({
+                    where: { id: user.id },
+                    data: {
+                        has_unreaded_notifications: true,
+                        notifications: { connect: { id: notification_db.id } }
+                    }
+                });
+            })
+        );
         return notification_db;
     }
 }

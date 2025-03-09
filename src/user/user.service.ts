@@ -12,24 +12,24 @@ import responses from 'src/localization/users.localization';
 import responses_common from 'src/localization/common.localization';
 import responses_minecraft from 'src/localization/minecraft.localization';
 
-const discord_url = process.env.DISCORD_URL + "/api/v10";
+const discord_url = process.env.DISCORD_URL + '/api/v10';
 
 interface DiscordUser {
-    id: string,
-    username: string,
-    avatar: string | null,
-    discriminator: string,
-    public_flags: number,
-    flags: number,
-    banner: string | null,
-    accent_color: number,
-    global_name: string | null,
-    avatar_decoration_data: number | null,
-    banner_color: string | null,
-    clan: string | null,
-    mfa_enabled: boolean,
-    locale: string,
-    premium_type: number
+    id: string;
+    username: string;
+    avatar: string | null;
+    discriminator: string;
+    public_flags: number;
+    flags: number;
+    banner: string | null;
+    accent_color: number;
+    global_name: string | null;
+    avatar_decoration_data: number | null;
+    banner_color: string | null;
+    clan: string | null;
+    mfa_enabled: boolean;
+    locale: string;
+    premium_type: number;
 }
 
 @Injectable()
@@ -37,25 +37,29 @@ export class UserService {
     constructor(
         private prisma: PrismaService,
         @Inject(CACHE_MANAGER) private cacheManager: Cache
-    ) { }
+    ) {}
 
     async resolveCollisions(username: string) {
         /* Resolve usernames collisions in database */
 
-        const users = await this.prisma.user.findMany({ where: { username: username } });
+        const users = await this.prisma.user.findMany({
+            where: { username: username }
+        });
         if (users.length <= 1) return;
 
-        await Promise.all(users.map(async user => {
-            const current_data = await this.getCurrentData(user.discordId);
-            if (!current_data) return;
-            await this.prisma.user.update({
-                where: { id: user.id },
-                data: {
-                    username: current_data.username,
-                    name: current_data.global_name || current_data.username
-                }
-            });
-        }));
+        await Promise.all(
+            users.map(async user => {
+                const current_data = await this.getCurrentData(user.discordId);
+                if (!current_data) return;
+                await this.prisma.user.update({
+                    where: { id: user.id },
+                    data: {
+                        username: current_data.username,
+                        name: current_data.global_name || current_data.username
+                    }
+                });
+            })
+        );
     }
 
     async getCurrentData(user_id: string): Promise<DiscordUser> {
@@ -72,21 +76,33 @@ export class UserService {
 
         const data = response.data as DiscordUser;
 
-        await this.cacheManager.set(`avatar_hash:${user_id}`, data.avatar ?? 'none', 1000 * 60 * 10);
-        await this.cacheManager.set(`discord:${user_id}`, JSON.stringify(response.data), 1000 * 60 * 60);
+        await this.cacheManager.set(
+            `avatar_hash:${user_id}`,
+            data.avatar ?? 'none',
+            1000 * 60 * 10
+        );
+        await this.cacheManager.set(
+            `discord:${user_id}`,
+            JSON.stringify(response.data),
+            1000 * 60 * 60
+        );
         return data;
     }
 
     async getAvatar(user_id: string) {
-        const user = await this.prisma.user.findFirst({ where: { discordId: user_id } });
-        if (!user)
-            throw new LocaleException('Unable to get user avatar', 500);
+        const user = await this.prisma.user.findFirst({
+            where: { discordId: user_id }
+        });
+        if (!user) throw new LocaleException('Unable to get user avatar', 500);
 
-        const avatar_cache = await this.cacheManager.get<string>(`avatar:${user_id}`);
-        if (avatar_cache)
-            return avatar_cache;
+        const avatar_cache = await this.cacheManager.get<string>(
+            `avatar:${user_id}`
+        );
+        if (avatar_cache) return avatar_cache;
 
-        let hash = await this.cacheManager.get<string>(`avatar_hash:${user_id}`);
+        let hash = await this.cacheManager.get<string>(
+            `avatar_hash:${user_id}`
+        );
         if (!hash) {
             hash = (await this.getCurrentData(user_id)).avatar ?? 'none';
         }
@@ -94,9 +110,16 @@ export class UserService {
         if (hash === 'none')
             throw new LocaleException('Unable to get user avatar', 500);
 
-        const avatar_response = await axios.get(`${process.env.DISCORD_AVATAR}/${user_id}/${hash}.png?size=512`, { responseType: 'arraybuffer' });
+        const avatar_response = await axios.get(
+            `${process.env.DISCORD_AVATAR}/${user_id}/${hash}.png?size=512`,
+            { responseType: 'arraybuffer' }
+        );
         const avatarB64 = Buffer.from(avatar_response.data).toString('base64');
-        await this.cacheManager.set(`avatar:${user_id}`, avatarB64, 1000 * 60 * 60 * 24);
+        await this.cacheManager.set(
+            `avatar:${user_id}`,
+            avatarB64,
+            1000 * 60 * 60 * 24
+        );
         return avatarB64;
     }
 
@@ -104,7 +127,9 @@ export class UserService {
         /* get user, associated with session */
 
         if (session.user.UserSettings?.banned) {
-            await this.prisma.sessions.deleteMany({ where: { userId: session.user.id } });
+            await this.prisma.sessions.deleteMany({
+                where: { userId: session.user.id }
+            });
             throw new LocaleException(responses_common.UNAUTHORIZED, 401);
         }
 
@@ -121,7 +146,10 @@ export class UserService {
             where: { userId: session.user.id, stars: { some: {} } },
             include: { stars: true }
         });
-        const stars_count = starred_bandages.reduce((acc, current_val) => acc + current_val.stars.length, 0);
+        const stars_count = starred_bandages.reduce(
+            (acc, current_val) => acc + current_val.stars.length,
+            0
+        );
 
         return {
             userID: session.user.id,
@@ -129,15 +157,21 @@ export class UserService {
             username: updated_user.username,
             name: updated_user.reserved_name || updated_user.name,
             joined_at: session.user.joined_at,
-            avatar: response_data.avatar ?
-                `${process.env.DOMAIN}/api/v1/avatars/${session.user.discordId}` :
-                `${process.env.DOMAIN}/icon.png`,
+            avatar: response_data.avatar
+                ? `${process.env.DOMAIN}/api/v1/avatars/${session.user.discordId}`
+                : `${process.env.DOMAIN}/icon.png`,
             banner_color: response_data.banner_color,
             has_unreaded_notifications: session.user.has_unreaded_notifications,
-            permissions: session.user.AccessRoles.map(role => role.name.toLowerCase()),
-            roles: session.user.AccessRoles
-                .filter(role => role.public_name)
-                .map(role => ({ id: role.id, name: role.public_name, icon: role.icon })),
+            permissions: session.user.AccessRoles.map(role =>
+                role.name.toLowerCase()
+            ),
+            roles: session.user.AccessRoles.filter(
+                role => role.public_name
+            ).map(role => ({
+                id: role.id,
+                name: role.public_name,
+                icon: role.icon
+            })),
             profile_theme: session.user.UserSettings?.profile_theme,
             stars_count: stars_count
         };
@@ -146,32 +180,40 @@ export class UserService {
     async logout(session: Session) {
         /* user log out */
 
-        await this.prisma.sessions.delete({ where: { sessionId: session.sessionId } });
+        await this.prisma.sessions.delete({
+            where: { sessionId: session.sessionId }
+        });
     }
 
     async getUserSettings(session: Session) {
         /* get user's settings */
 
-        const minecraft = session.user.profile ? {
-            nickname: session.user.profile.default_nick,
-            uuid: session.user.profile.uuid,
-            last_cached: Number(session.user.profile.expires) - parseInt(process.env.TTL as string),
-            head: session.user.profile.data_head,
-            valid: session.user.profile.valid,
-            autoload: session.user.UserSettings?.autoload
-        } : null;
+        const minecraft = session.user.profile
+            ? {
+                  nickname: session.user.profile.default_nick,
+                  uuid: session.user.profile.uuid,
+                  last_cached:
+                      Number(session.user.profile.expires) -
+                      parseInt(process.env.TTL as string),
+                  head: session.user.profile.data_head,
+                  valid: session.user.profile.valid,
+                  autoload: session.user.UserSettings?.autoload
+              }
+            : null;
 
-        const current_discord = await this.getCurrentData(session.user.discordId);
+        const current_discord = await this.getCurrentData(
+            session.user.discordId
+        );
 
         const discord = {
             user_id: session.user.discordId,
             username: session.user.username,
             name: session.user.reserved_name || session.user.name,
             connected_at: session.user.joined_at,
-            avatar: current_discord.avatar ?
-                `${process.env.DOMAIN}/api/v1/avatars/${session.user.discordId}` :
-                `${process.env.DOMAIN}/icon.png`
-        }
+            avatar: current_discord.avatar
+                ? `${process.env.DOMAIN}/api/v1/avatars/${session.user.discordId}`
+                : `${process.env.DOMAIN}/icon.png`
+        };
 
         return {
             public_profile: session.user.UserSettings?.public_profile,
@@ -180,7 +222,7 @@ export class UserService {
                 discord: discord,
                 minecraft: minecraft
             }
-        }
+        };
     }
 
     async getWork(session: Session) {
@@ -202,31 +244,39 @@ export class UserService {
     async getStars(session: Session) {
         /* get user's favorite (stars) */
 
-        const results = await this.prisma.$queryRaw`SELECT * FROM _UserStars ORDER BY rowid ASC` as [{ A: number, B: string }];
+        const results = (await this.prisma
+            .$queryRaw`SELECT * FROM _UserStars ORDER BY rowid ASC`) as [
+            { A: number; B: string }
+        ];
         const bandages = results.filter(record => record.B === session.user.id);
 
-        const result = await Promise.all(bandages.map(async record => {
-            const bandage = await this.prisma.bandage.findFirst({
-                where: {
-                    id: record.A,
-                    User: { UserSettings: { banned: false } }
-                },
-                include: {
-                    stars: true,
-                    categories: { orderBy: { order: 'asc' } },
-                    User: { include: { UserSettings: true } }
+        const result = await Promise.all(
+            bandages.map(async record => {
+                const bandage = await this.prisma.bandage.findFirst({
+                    where: {
+                        id: record.A,
+                        User: { UserSettings: { banned: false } }
+                    },
+                    include: {
+                        stars: true,
+                        categories: { orderBy: { order: 'asc' } },
+                        User: { include: { UserSettings: true } }
+                    }
+                });
+                if (
+                    bandage?.User?.id !== session.user.id &&
+                    !hasAccess(session.user, RolesEnum.ManageBandages) &&
+                    bandage?.categories.some(category => category.only_admins)
+                ) {
+                    return undefined;
                 }
-            });
-            if (
-                bandage?.User?.id !== session.user.id &&
-                !hasAccess(session.user, RolesEnum.ManageBandages) &&
-                bandage?.categories.some(category => category.only_admins)
-            ) {
-                return undefined;
-            }
-            return bandage;
-        }));
-        return generateResponse(result.filter(i => !!i), session);
+                return bandage;
+            })
+        );
+        return generateResponse(
+            result.filter(i => !!i),
+            session
+        );
     }
 
     async _getUserByNickname(username: string, session: Session | null) {
@@ -235,11 +285,13 @@ export class UserService {
             include: { Bandage: true, UserSettings: true, AccessRoles: true }
         });
 
-        if (!user)
-            throw new LocaleException(responses.USER_NOT_FOUND, 404);
+        if (!user) throw new LocaleException(responses.USER_NOT_FOUND, 404);
 
         const can_view = hasAccess(session?.user, RolesEnum.UpdateUsers);
-        if ((user.UserSettings?.banned || !user.UserSettings?.public_profile) && !can_view)
+        if (
+            (user.UserSettings?.banned || !user.UserSettings?.public_profile) &&
+            !can_view
+        )
             throw new LocaleException(responses.USER_NOT_FOUND, 404);
 
         return user;
@@ -257,14 +309,18 @@ export class UserService {
 
         const updated_user = await this.prisma.user.update({
             where: { id: user.id },
-            data: { name: current_discord.global_name || current_discord.username }
+            data: {
+                name: current_discord.global_name || current_discord.username
+            }
         });
 
         const bandages = await this.prisma.bandage.findMany({
             where: {
                 userId: user.id,
                 access_level: can_view ? undefined : 2,
-                categories: can_view ? undefined : { none: { only_admins: true } }
+                categories: can_view
+                    ? undefined
+                    : { none: { only_admins: true } }
             },
             include: {
                 categories: { orderBy: { order: 'asc' } },
@@ -280,10 +336,19 @@ export class UserService {
             where: { userId: user.id, stars: { some: {} } },
             include: { stars: true }
         });
-        const stars_count = starred_bandages.reduce((acc, current_val) => acc + current_val.stars.length, 0);
+        const stars_count = starred_bandages.reduce(
+            (acc, current_val) => acc + current_val.stars.length,
+            0
+        );
 
-        const sessions = await this.prisma.sessions.findMany({ where: { userId: user.id } });
-        const last_accessed = sessions.sort((a, b) => new Date(b.last_accessed).getTime() - new Date(a.last_accessed).getTime())[0];
+        const sessions = await this.prisma.sessions.findMany({
+            where: { userId: user.id }
+        });
+        const last_accessed = sessions.sort(
+            (a, b) =>
+                new Date(b.last_accessed).getTime() -
+                new Date(a.last_accessed).getTime()
+        )[0];
 
         return {
             userID: user.id,
@@ -291,19 +356,25 @@ export class UserService {
             username: updated_user.username,
             name: updated_user.reserved_name || updated_user.name,
             joined_at: user.joined_at,
-            avatar: current_discord.avatar ?
-                `${process.env.DOMAIN}/api/v1/avatars/${current_discord.id}` :
-                `${process.env.DOMAIN}/icon.png`,
+            avatar: current_discord.avatar
+                ? `${process.env.DOMAIN}/api/v1/avatars/${current_discord.id}`
+                : `${process.env.DOMAIN}/icon.png`,
             banner_color: current_discord.banner_color,
             works: generateResponse(bandages, session, can_view),
             is_self: user.id == session?.user?.id,
             profile_theme: user.UserSettings?.profile_theme,
-            roles: user.AccessRoles
-                .filter(role => role.public_name)
-                .map(role => ({ id: role.id, name: role.public_name, icon: role.icon })),
+            roles: user.AccessRoles.filter(role => role.public_name).map(
+                role => ({
+                    id: role.id,
+                    name: role.public_name,
+                    icon: role.icon
+                })
+            ),
             stars_count: stars_count,
-            last_accessed: hasAccess(session?.user, RolesEnum.UpdateUsers) ? last_accessed?.last_accessed : undefined
-        }
+            last_accessed: hasAccess(session?.user, RolesEnum.UpdateUsers)
+                ? last_accessed?.last_accessed
+                : undefined
+        };
     }
 
     async getUserOg(username: string) {
@@ -314,31 +385,36 @@ export class UserService {
             where: { userId: user.id, stars: { some: {} } },
             include: { stars: true }
         });
-        const stars_count = starred_bandages.reduce((acc, current_val) => acc + current_val.stars.length, 0);
+        const stars_count = starred_bandages.reduce(
+            (acc, current_val) => acc + current_val.stars.length,
+            0
+        );
 
         return {
             discordID: user.discordId,
             username: user.username,
             name: user.reserved_name || user.name,
-            avatar: current_discord.avatar ?
-                `${process.env.DOMAIN}/api/v1/avatars/${current_discord.id}` :
-                `${process.env.DOMAIN}/icon.png`,
+            avatar: current_discord.avatar
+                ? `${process.env.DOMAIN}/api/v1/avatars/${current_discord.id}`
+                : `${process.env.DOMAIN}/icon.png`,
             banner_color: current_discord.banner_color,
             works_count: user.Bandage.length,
             stars_count: stars_count
-        }
+        };
     }
 
     async getUsers(query?: string) {
         const users = await this.prisma.user.findMany({
-            where: !!query ? {
-                OR: [
-                    { name: { contains: query } },
-                    { reserved_name: { contains: query } },
-                    { username: { contains: query } },
-                    { id: { contains: query } }
-                ]
-            } : undefined,
+            where: !!query
+                ? {
+                      OR: [
+                          { name: { contains: query } },
+                          { reserved_name: { contains: query } },
+                          { username: { contains: query } },
+                          { id: { contains: query } }
+                      ]
+                  }
+                : undefined,
             include: { UserSettings: true, AccessRoles: true }
         });
 
@@ -355,11 +431,16 @@ export class UserService {
     }
 
     async updateUser(session: Session, username: string, data: UpdateUsersDto) {
-        const user = await this.prisma.user.findFirst({ where: { username: username }, include: { AccessRoles: true } });
-        if (!user)
-            throw new LocaleException(responses.USER_NOT_FOUND, 404);
+        const user = await this.prisma.user.findFirst({
+            where: { username: username },
+            include: { AccessRoles: true }
+        });
+        if (!user) throw new LocaleException(responses.USER_NOT_FOUND, 404);
 
-        if (hasAccess(user, RolesEnum.UpdateUsers) && !hasAccess(session.user, RolesEnum.SuperAdmin))
+        if (
+            hasAccess(user, RolesEnum.UpdateUsers) &&
+            !hasAccess(session.user, RolesEnum.SuperAdmin)
+        )
             throw new LocaleException(responses_common.FORBIDDEN, 403);
 
         if (session.user.id === user.id && !!data.banned)
@@ -380,12 +461,16 @@ export class UserService {
 
         const updates: any = {};
         if (body.theme !== undefined) updates.profile_theme = body.theme;
-        if (body.skin_autoload !== undefined) updates.autoload = body.skin_autoload;
+        if (body.skin_autoload !== undefined)
+            updates.autoload = body.skin_autoload;
         if (body.public !== undefined) updates.public_profile = body.public;
 
         if (body.nick_search !== undefined) {
             if (!session.user.profile)
-                throw new LocaleException(responses_minecraft.ACCOUNT_NOT_CONNECTED, 400);
+                throw new LocaleException(
+                    responses_minecraft.ACCOUNT_NOT_CONNECTED,
+                    400
+                );
 
             await this.prisma.minecraft.update({
                 where: { id: session.user.profile.id },
@@ -402,7 +487,9 @@ export class UserService {
     }
 
     async forceRegister(discord_id: string) {
-        const existing_user = await this.prisma.user.findFirst({ where: { discordId: discord_id } });
+        const existing_user = await this.prisma.user.findFirst({
+            where: { discordId: discord_id }
+        });
         if (existing_user)
             throw new LocaleException(responses.ALREADY_REGISTERED, 409);
 

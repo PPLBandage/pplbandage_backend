@@ -1,4 +1,10 @@
-import { registerDecorator, ValidationOptions, ValidatorConstraint, ValidatorConstraintInterface, ValidationArguments } from 'class-validator';
+import {
+    registerDecorator,
+    ValidationOptions,
+    ValidatorConstraint,
+    ValidatorConstraintInterface,
+    ValidationArguments
+} from 'class-validator';
 import { sort_keys } from 'src/workshop/workshop.service';
 
 @ValidatorConstraint({ async: false })
@@ -11,7 +17,6 @@ export class IsBooleanCustomConstraint implements ValidatorConstraintInterface {
         return `${args.property} property must be a boolean represented as \`true\` or \`false\``;
     }
 }
-
 
 export function IsBooleanStr(validationOptions?: ValidationOptions) {
     return function (object: Object, propertyName: string) {
@@ -35,7 +40,6 @@ export class IsSortConstraint implements ValidatorConstraintInterface {
         return `${args.property} property must have one of [${sort_keys.join(', ')}] values, but ${args.value} was provided instead`;
     }
 }
-
 
 export function IsSort(validationOptions?: ValidationOptions) {
     return function (object: Object, propertyName: string) {
@@ -62,8 +66,10 @@ export class IsDivisibleConstraint implements ValidatorConstraintInterface {
     }
 }
 
-
-export function IsDivisible(baseWidth: number, validationOptions?: ValidationOptions) {
+export function IsDivisible(
+    baseWidth: number,
+    validationOptions?: ValidationOptions
+) {
     return function (object: Object, propertyName: string) {
         registerDecorator({
             target: object.constructor,

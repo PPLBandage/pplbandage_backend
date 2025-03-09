@@ -17,6 +17,6 @@ const responses = {
         en: 'Invalid Body',
         ru: 'Неправильное тело запроса'
     }
-}
+};
 
 export default responses;

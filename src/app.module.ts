@@ -21,4 +21,4 @@ import { CustomThrottlerGuard } from './guards/throttlerBehindProxy.guard';
         WorkshopModule
     ]
 })
-export class AppModule { }
+export class AppModule {}

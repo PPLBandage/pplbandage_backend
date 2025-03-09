@@ -11,4 +11,4 @@ import { MinecraftService } from 'src/minecraft/minecraft.service';
     providers: [AuthService, PrismaService, UserService, MinecraftService],
     imports: [CacheModule.register()]
 })
-export class AuthModule { }
+export class AuthModule {}

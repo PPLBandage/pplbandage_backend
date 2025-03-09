@@ -23,7 +23,11 @@ import { RolesGuard } from 'src/guards/roles.guard';
 import { AuthEnum, RolesEnum } from 'src/interfaces/types';
 import { Auth } from 'src/decorators/auth.decorator';
 import { Roles } from 'src/decorators/access.decorator';
-import { ForceRegisterUserDTO, UpdateSelfUserDto, UpdateUsersDto } from './dto/updateUser.dto';
+import {
+    ForceRegisterUserDTO,
+    UpdateSelfUserDto,
+    UpdateUsersDto
+} from './dto/updateUser.dto';
 import { RequestSession } from 'src/common/bandage_response';
 import { PageTakeQueryDTO, QueryDTO } from './dto/queries.dto';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
@@ -31,16 +35,16 @@ import responses_minecraft from 'src/localization/minecraft.localization';
 import responses_common from 'src/localization/common.localization';
 import { LocalAccessGuard } from 'src/guards/localAccess.guard';
 
-
 @Controller({ version: '1' })
 @UseGuards(AuthGuard, RolesGuard)
 export class UserController {
-    constructor(private readonly userService: UserService,
+    constructor(
+        private readonly userService: UserService,
         private readonly notificationService: NotificationService,
         private readonly minecraftService: MinecraftService
-    ) { }
+    ) {}
 
-    @Get("user/me")
+    @Get('user/me')
     @Auth(AuthEnum.Strict)
     async me(@Req() request: RequestSession) {
         /* get user data. associated with session */
@@ -48,7 +52,7 @@ export class UserController {
         return await this.userService.getUser(request.session);
     }
 
-    @Get("/user/me/works")
+    @Get('/user/me/works')
     @Auth(AuthEnum.Strict)
     async getWorks(@Req() request: RequestSession) {
         /* get user's works */
@@ -56,7 +60,7 @@ export class UserController {
         return await this.userService.getWork(request.session);
     }
 
-    @Get("/user/me/stars")
+    @Get('/user/me/stars')
     @Auth(AuthEnum.Strict)
     async getStars(@Req() request: RequestSession) {
         /* get user's stars */
@@ -64,7 +68,7 @@ export class UserController {
         return await this.userService.getStars(request.session);
     }
 
-    @Get("user/me/settings")
+    @Get('user/me/settings')
     @Auth(AuthEnum.Strict)
     async minecraft(@Req() request: RequestSession) {
         /* get user's settings */
@@ -72,7 +76,7 @@ export class UserController {
         return await this.userService.getUserSettings(request.session);
     }
 
-    @Get("/user/me/notifications")
+    @Get('/user/me/notifications')
     @Auth(AuthEnum.Strict)
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async getNotifications(
@@ -81,10 +85,14 @@ export class UserController {
     ) {
         /* get user's connections */
 
-        return await this.notificationService.get(request.session, query.take || 5, query.page || 0);
+        return await this.notificationService.get(
+            request.session,
+            query.take || 5,
+            query.page || 0
+        );
     }
 
-    @Post("/user/me/connections/minecraft/connect/:code")
+    @Post('/user/me/connections/minecraft/connect/:code')
     @Auth(AuthEnum.Strict)
     async connectMinecraft(
         @Param('code') code: string,
@@ -99,18 +107,24 @@ export class UserController {
     }
 
     @Throttle({ default: { limit: 5, ttl: 60000 } })
-    @Post("/user/me/connections/minecraft/cache/purge")
+    @Post('/user/me/connections/minecraft/cache/purge')
     @Auth(AuthEnum.Strict)
     async purgeSkinCache(@Req() request: RequestSession): Promise<void> {
         /* Purge minecraft skin cache, associated with session's account */
 
         if (!request.session.user.profile)
-            throw new LocaleException(responses_minecraft.ACCOUNT_NOT_CONNECTED, 404);
+            throw new LocaleException(
+                responses_minecraft.ACCOUNT_NOT_CONNECTED,
+                404
+            );
 
-        await this.minecraftService.updateSkinCache(request.session.user.profile.uuid, true);
+        await this.minecraftService.updateSkinCache(
+            request.session.user.profile.uuid,
+            true
+        );
     }
 
-    @Delete("/user/me/connections/minecraft")
+    @Delete('/user/me/connections/minecraft')
     @Auth(AuthEnum.Strict)
     async disconnectMinecraft(@Req() request: RequestSession): Promise<void> {
         /* disconnect minecraft profile */
@@ -118,7 +132,7 @@ export class UserController {
         await this.minecraftService.disconnect(request.session);
     }
 
-    @Get("/users/:username")
+    @Get('/users/:username')
     @Auth(AuthEnum.Weak)
     @UseGuards(new LocalAccessGuard())
     async user_profile(
@@ -126,10 +140,13 @@ export class UserController {
         @Req() request: RequestSession
     ) {
         /* get user data by nickname */
-        return await this.userService.getUserByNickname(username, request.session);
+        return await this.userService.getUserByNickname(
+            username,
+            request.session
+        );
     }
 
-    @Get("/users/:username/og")
+    @Get('/users/:username/og')
     async userOg(@Param('username') username: string) {
         /* get user data by nickname */
 
@@ -169,15 +186,16 @@ export class UserController {
         return await this.userService.forceRegister(body.discord_id);
     }
 
-    @Get("/avatars/:user_id")
+    @Get('/avatars/:user_id')
     @Header('Content-Type', 'image/png')
-    async head(@Param('user_id') user_id: string): Promise<StreamableFile | void> {
+    async head(
+        @Param('user_id') user_id: string
+    ): Promise<StreamableFile | void> {
         /* get user avatar by id */
 
-        return new StreamableFile(Buffer.from(
-            await this.userService.getAvatar(user_id),
-            "base64"
-        ));
+        return new StreamableFile(
+            Buffer.from(await this.userService.getAvatar(user_id), 'base64')
+        );
     }
 
     @Patch('/user/me')
