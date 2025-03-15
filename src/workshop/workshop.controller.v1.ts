@@ -151,6 +151,7 @@ export class WorkshopController {
                 height: original_height / 2
             })
             .resize(width, height / 2, { kernel: sharp.kernel.nearest })
+            .modulate({ lightness: -5 })
             .png()
             .toBuffer();
 
