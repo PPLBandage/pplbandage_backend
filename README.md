@@ -3,6 +3,7 @@
     <img src="https://made-with.prisma.io/indigo.svg" alt='prisma'></img> 
     <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fghloc.vercel.app%2Fapi%2FPPLBandage%2FPPLBandage_Backend%2Fbadge%3Ffilter%3D.ts%24%2C.tsx%24%2C.css%24" alt='prisma'></img> 
     <img src="https://andcool.ru/static/badges/made-for-ppl.svg" alt='pepeland'></img> 
+    <img src="https://www.codefactor.io/repository/github/pplbandage/pplbandage_backend/badge" alt='pepeland'></img> 
 </p>
 
 ## Оглавление
