@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import axios from 'axios';
 import { generateSnowflake, hasAccess, Session } from 'src/auth/auth.service';
-import { UpdateSelfUserDto, UpdateUsersDto } from './dto/updateUser.dto';
+import { UpdateSelfUserDto, UpdateUsersDto } from './dto/body.dto';
 import { generateResponse } from 'src/common/bandage_response';
 import { RolesEnum } from 'src/interfaces/types';
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';

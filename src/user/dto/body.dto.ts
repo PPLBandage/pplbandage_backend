@@ -5,6 +5,7 @@ import {
     IsOptional,
     IsString,
     Max,
+    MaxLength,
     Min
 } from 'class-validator';
 
@@ -42,4 +43,11 @@ export class ForceRegisterUserDTO {
     @IsString()
     @IsNotEmpty()
     discord_id!: string;
+}
+
+export class FeedbackDTO {
+    @IsString()
+    @IsNotEmpty()
+    @MaxLength(1500)
+    content!: string;
 }

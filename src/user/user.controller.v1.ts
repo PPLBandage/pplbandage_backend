@@ -24,15 +24,17 @@ import { AuthEnum, RolesEnum } from 'src/interfaces/types';
 import { Auth } from 'src/decorators/auth.decorator';
 import { Roles } from 'src/decorators/access.decorator';
 import {
+    FeedbackDTO,
     ForceRegisterUserDTO,
     UpdateSelfUserDto,
     UpdateUsersDto
-} from './dto/updateUser.dto';
+} from './dto/body.dto';
 import { RequestSession } from 'src/common/bandage_response';
 import { PageTakeQueryDTO, QueryDTO } from './dto/queries.dto';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import responses_minecraft from 'src/localization/minecraft.localization';
 import { LocalAccessGuard } from 'src/guards/localAccess.guard';
+import { DiscordNotificationService } from 'src/notifications/discord.service';
 
 @Controller({ version: '1' })
 @UseGuards(AuthGuard, RolesGuard)
@@ -40,7 +42,8 @@ export class UserController {
     constructor(
         private readonly userService: UserService,
         private readonly notificationService: NotificationService,
-        private readonly minecraftService: MinecraftService
+        private readonly minecraftService: MinecraftService,
+        private readonly discordNotification: DiscordNotificationService
     ) {}
 
     @Get('user/me')
@@ -207,5 +210,16 @@ export class UserController {
         /* Update self data */
 
         await this.userService.updateSelfUser(request.session, body);
+    }
+
+    @Post('/user/feedback')
+    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+    @Throttle({ default: { limit: 1, ttl: 1000 * 60 } })
+    async feedback(@Body() body: FeedbackDTO) {
+        /* Receive feedback */
+
+        await this.discordNotification.doNotification(
+            `<@&${process.env.MENTION_ROLE_ID}> new feedback:\n${body.content}`
+        );
     }
 }
