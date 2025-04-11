@@ -15,7 +15,7 @@ interface UserAuthor extends User {
 }
 
 export interface BandageFull extends Bandage {
-    User: UserAuthor | null;
+    User: UserAuthor;
     stars: User[];
     categories: Category[];
 }
@@ -35,6 +35,7 @@ export const generateResponse = (
             icon: cat.icon,
             colorable: cat.colorable
         }));
+
         return {
             id: el.id,
             external_id: el.externalId,
@@ -46,17 +47,12 @@ export const generateResponse = (
             creation_date: el.creationDate,
             stars_count: el.stars.length,
             starred: !!el.stars.find(val => val.id === session?.user.id),
-            author: el.User
-                ? {
-                      id: el.User.id,
-                      name: el.User.reserved_name || el.User.name,
-                      username: el.User.username,
-                      public:
-                          Number(el.User.discordId) > 0
-                              ? el.User.UserSettings?.public_profile
-                              : false
-                  }
-                : null,
+            author: {
+                id: el.User.id,
+                name: el.User.reserved_name || el.User.name,
+                username: el.User.username,
+                public: el.User.UserSettings?.public_profile
+            },
             categories: categories,
             access_level: el.access_level,
             star_type: el.star_type

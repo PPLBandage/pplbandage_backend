@@ -392,10 +392,7 @@ export class WorkshopService {
                     id: bandage.User?.id,
                     name: bandage.User?.reserved_name || bandage.User?.name,
                     username: bandage.User?.username,
-                    public:
-                        bandage.User && Number(bandage.User?.discordId) > 0
-                            ? bandage.User?.UserSettings?.public_profile
-                            : false
+                    public: bandage.User?.UserSettings?.public_profile
                 }
             }
         };
@@ -461,17 +458,12 @@ export class WorkshopService {
                 creation_date: bandage.creationDate,
                 stars_count: bandage.stars.length,
                 starred: bandage.stars.some(val => val.id === session?.user.id),
-                author: bandage.User
-                    ? {
-                          id: bandage.User.id,
-                          name: bandage.User.reserved_name || bandage.User.name,
-                          username: bandage.User.username,
-                          public:
-                              Number(bandage.User.discordId) > 0
-                                  ? bandage.User.UserSettings?.public_profile
-                                  : false
-                      }
-                    : null,
+                author: {
+                    id: bandage.User.id,
+                    name: bandage.User.reserved_name || bandage.User.name,
+                    username: bandage.User.username,
+                    public: bandage.User.UserSettings?.public_profile
+                },
                 categories: categories,
                 me_profile: me_profile,
                 permissions_level: permissions_level,
