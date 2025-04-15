@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import { accept_languages } from 'src/localization/common.localization';
 import responses from 'src/localization/common.localization';
 
@@ -26,24 +26,11 @@ export class LocaleInterceptor implements NestInterceptor {
         next: CallHandler
     ): Promise<Observable<any>> {
         const request: Request = context.switchToHttp().getRequest();
-        const response: Response = context.switchToHttp().getResponse();
         const header = request.headers['accept-language'] || 'en';
-        const contentType =
-            (response.getHeader('content-type') as string) || '';
         const locale = header.toLowerCase().split('-')[0];
 
         return next.handle().pipe(
-            map(data => {
-                if (
-                    !!contentType &&
-                    !contentType.toLowerCase().includes('application/json')
-                )
-                    return data;
-                if (data instanceof Array) return data;
-                if (request.path.includes('badge')) return data;
-
-                return { statusCode: response.statusCode, ...data };
-            }),
+            map(data => data),
             catchError(err => {
                 if (err instanceof LocaleException) {
                     const response = err.getResponse();
@@ -68,7 +55,6 @@ export class LocaleInterceptor implements NestInterceptor {
                     () =>
                         new HttpException(
                             {
-                                statusCode: 500,
                                 message: this.localizeResponse(
                                     locale,
                                     responses.INTERNAL_ERROR
