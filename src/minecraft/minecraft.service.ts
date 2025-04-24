@@ -321,38 +321,80 @@ export class MinecraftService {
         });
     }
 
-    async generateSvg(image: sharp.Sharp, pixel_width: number) {
+    async generateSvg(image: sharp.Sharp, pixelWidth: number): Promise<string> {
         const { data, info } = await image
             .raw()
             .ensureAlpha()
             .toBuffer({ resolveWithObject: true });
 
-        const pixels = [];
         const coef = 7 / 8;
-        for (let x = 8; x < 16; x++) {
-            for (let y = 8; y < 16; y++) {
-                const pixelIndex = (y * info.width + x) * info.channels;
-                pixels.push(
-                    `<rect x="${(x - 8) * (pixel_width * coef) + pixel_width / 2}" y="${(y - 8) * (pixel_width * coef) + pixel_width / 2}" width="${pixel_width * coef + 1}" height="${pixel_width * coef + 1}" fill="rgba(${data[pixelIndex]}, ${data[pixelIndex + 1]}, ${data[pixelIndex + 2]}, ${data[pixelIndex + 3]})" />`
+
+        const drawRect = (
+            x: number,
+            y: number,
+            pixelIndex: number,
+            width: number,
+            height: number,
+            offsetX = 0,
+            offsetY = 0,
+            scale = 1
+        ) => {
+            const r = data[pixelIndex];
+            const g = data[pixelIndex + 1];
+            const b = data[pixelIndex + 2];
+            const a = data[pixelIndex + 3] / 255;
+
+            if (a === 0) return '';
+
+            const posX = offsetX + x * pixelWidth * scale;
+            const posY = offsetY + y * pixelWidth * scale;
+            const w = width * scale;
+            const h = height * scale;
+
+            return `<rect x="${posX}" y="${posY}" width="${w}" height="${h}" fill="rgba(${r}, ${g}, ${b}, ${a})" />`;
+        };
+
+        const pixels: string[] = [];
+
+        for (let x = 0; x < 8; x++) {
+            for (let y = 0; y < 8; y++) {
+                const imgX = x + 8;
+                const imgY = y + 8;
+                const pixelIndex = (imgY * info.width + imgX) * info.channels;
+
+                const rect = drawRect(
+                    x,
+                    y,
+                    pixelIndex,
+                    pixelWidth + 1,
+                    pixelWidth + 1,
+                    pixelWidth / 2,
+                    pixelWidth / 2,
+                    coef
                 );
+
+                if (rect) pixels.push(rect);
             }
         }
 
-        for (let x = 40; x < 48; x++) {
-            for (let y = 8; y < 16; y++) {
-                const pixelIndex = (y * info.width + x) * info.channels;
-                if (data[pixelIndex + 3] === 0) continue;
-                pixels.push(
-                    `<rect x="${(x - 40) * pixel_width}" y="${(y - 8) * pixel_width}" width="${pixel_width}" height="${pixel_width}" fill="rgba(${data[pixelIndex]}, ${data[pixelIndex + 1]}, ${data[pixelIndex + 2]}, ${data[pixelIndex + 3]})" />`
-                );
+        for (let x = 0; x < 8; x++) {
+            for (let y = 0; y < 8; y++) {
+                const imgX = x + 40;
+                const imgY = y + 8;
+                const pixelIndex = (imgY * info.width + imgX) * info.channels;
+
+                const rect = drawRect(x, y, pixelIndex, pixelWidth, pixelWidth);
+                if (rect) pixels.push(rect);
             }
         }
 
-        const result =
-            `<svg width="${pixel_width * 8}" height="${pixel_width * 8}" xmlns="http://www.w3.org/2000/svg">\n` +
-            `${pixels.join('\n')}\n` +
-            `</svg>`;
+        const svgWidth = pixelWidth * 8;
+        const svgHeight = pixelWidth * 8;
 
-        return result;
+        return [
+            `<svg width="${svgWidth}" height="${svgHeight}" xmlns="http://www.w3.org/2000/svg">`,
+            ...pixels,
+            `</svg>`
+        ].join('\n');
     }
 }
