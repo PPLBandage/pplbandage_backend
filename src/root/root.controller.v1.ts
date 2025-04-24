@@ -1,7 +1,7 @@
-import { Controller, Get, Header, Res } from '@nestjs/common';
+import { Controller, Get, Header, Req } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
-import type { Response } from 'express';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { Request } from 'express';
 import { RootService, SitemapProps } from './root.service';
 
 export const UNAUTHORIZED = {
@@ -18,10 +18,18 @@ export class RootController {
     ) {}
 
     @Get()
-    async root(@Res({ passthrough: true }) res: Response) {
-        /* Redirect to root path */
+    async root(@Req() req: Request) {
+        /* Root API Path */
 
-        res.redirect(308, '/');
+        return {
+            message: 'Привет! Я здесь, чтобы сказать, что все работает!',
+            main_site: 'https://pplbandage.ru',
+            docs: 'https://github.com/PPLBandage/pplbandage_backend/blob/main/README.md',
+            version: {
+                route: req.route.path.split('/').at(-1),
+                build_sha: process.env.COMMIT_SHA
+            }
+        };
     }
 
     @Get('/ping')
