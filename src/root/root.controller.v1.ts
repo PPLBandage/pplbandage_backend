@@ -21,13 +21,19 @@ export class RootController {
     async root(@Req() req: Request) {
         /* Root API Path */
 
+        const sha = process.env.COMMIT_SHA;
+        const commit = await this.rootService.getCommitInfo(sha ?? '');
         return {
             message: 'Привет! Я здесь, чтобы сказать, что все работает!',
             main_site: 'https://pplbandage.ru',
             docs: 'https://github.com/PPLBandage/pplbandage_backend/blob/main/README.md',
             version: {
                 route: req.route.path.split('/').at(-1),
-                build_sha: process.env.COMMIT_SHA
+                build: {
+                    sha: sha,
+                    date: commit.committer.date,
+                    message: commit.message
+                }
             }
         };
     }

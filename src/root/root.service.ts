@@ -1,4 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
+import axios from 'axios';
+import { CommitType } from './types';
 
 export interface SitemapProps {
     loc: string;
@@ -9,7 +12,7 @@ export interface SitemapProps {
 
 @Injectable()
 export class RootService {
-    constructor() {}
+    constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
 
     generateSitemap(elements: SitemapProps[]) {
         const elements_str = elements.map(element => {
@@ -37,5 +40,27 @@ export class RootService {
             '</urlset>';
 
         return result;
+    }
+
+    async getCommitInfo(sha: string): Promise<CommitType> {
+        const commit: string | null =
+            await this.cacheManager.get('build_commit');
+        let data;
+
+        if (!commit) {
+            const result = await axios.get(
+                `https://api.github.com/repos/PPLBandage/pplbandage_backend/commits/${sha}`
+            );
+            data = result.data.commit;
+            await this.cacheManager.set(
+                'build_commit',
+                JSON.stringify(commit),
+                1000 * 3600
+            );
+        } else {
+            data = JSON.parse(commit);
+        }
+
+        return data;
     }
 }
