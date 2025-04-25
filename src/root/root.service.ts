@@ -54,7 +54,7 @@ export class RootService {
             data = result.data.commit;
             await this.cacheManager.set(
                 'build_commit',
-                JSON.stringify(commit),
+                JSON.stringify(data),
                 1000 * 3600
             );
         } else {
