@@ -13,6 +13,20 @@ import { Request } from 'express';
 import { accept_languages } from 'src/localization/common.localization';
 import responses from 'src/localization/common.localization';
 
+/**
+ * Localized HTTP Exception
+ *
+ * Constructor parameters:
+ * - message: An object containing localized messages, structured as:
+ * ```ts
+ *   {
+ *     [key: string]: {
+ *       [locale: string]: string
+ *     }
+ *   }
+ * ```
+ * - status: HTTP status code
+ */
 export class LocaleException extends HttpException {
     constructor(message: any, status: HttpStatus) {
         super(message, status);
@@ -51,18 +65,12 @@ export class LocaleInterceptor implements NestInterceptor {
                 }
 
                 console.error(err);
-                return throwError(
-                    () =>
-                        new HttpException(
-                            {
-                                message: this.localizeResponse(
-                                    locale,
-                                    responses.INTERNAL_ERROR
-                                )
-                            },
-                            500
-                        )
+
+                const message = this.localizeResponse(
+                    locale,
+                    responses.INTERNAL_ERROR
                 );
+                return throwError(() => new HttpException({ message }, 500));
             })
         );
     }
