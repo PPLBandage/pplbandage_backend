@@ -1,8 +1,22 @@
-import { Controller, Get, Header, Req } from '@nestjs/common';
-import { SkipThrottle } from '@nestjs/throttler';
+import {
+    Body,
+    Controller,
+    Get,
+    Header,
+    Param,
+    Post,
+    Req,
+    StreamableFile,
+    UsePipes,
+    ValidationPipe
+} from '@nestjs/common';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Request } from 'express';
 import { RootService, SitemapProps } from './root.service';
+import { FeedbackDTO } from 'src/user/dto/body.dto';
+import { DiscordNotificationService } from 'src/notifications/discord.service';
+import { UserService } from 'src/user/user.service';
 
 export const UNAUTHORIZED = {
     statusCode: 401,
@@ -14,7 +28,9 @@ export const UNAUTHORIZED = {
 export class RootController {
     constructor(
         private prisma: PrismaService,
-        private readonly rootService: RootService
+        private readonly rootService: RootService,
+        private readonly discordNotification: DiscordNotificationService,
+        private readonly userService: UserService
     ) {}
 
     @Get()
@@ -90,5 +106,28 @@ export class RootController {
         );
 
         return this.rootService.generateSitemap(urls);
+    }
+
+    @Post('/feedback')
+    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+    @Throttle({ default: { limit: 1, ttl: 1000 * 60 } })
+    async feedback(@Body() body: FeedbackDTO) {
+        /* Receive feedback */
+
+        await this.discordNotification.doNotification(
+            `<@&${process.env.MENTION_ROLE_ID}> new feedback:\n${body.content}`
+        );
+    }
+
+    @Get('/avatars/:user_id')
+    @Header('Content-Type', 'image/png')
+    async head(
+        @Param('user_id') user_id: string
+    ): Promise<StreamableFile | void> {
+        /* get user avatar by id */
+
+        return new StreamableFile(
+            Buffer.from(await this.userService.getAvatar(user_id), 'base64')
+        );
     }
 }

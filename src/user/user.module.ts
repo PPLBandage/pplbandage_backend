@@ -6,7 +6,6 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { AuthService } from 'src/auth/auth.service';
 import { NotificationService } from 'src/notifications/notifications.service';
 import { MinecraftService } from 'src/minecraft/minecraft.service';
-import { DiscordNotificationService } from 'src/notifications/discord.service';
 
 @Module({
     controllers: [UserController],
@@ -15,8 +14,7 @@ import { DiscordNotificationService } from 'src/notifications/discord.service';
         PrismaService,
         AuthService,
         NotificationService,
-        MinecraftService,
-        DiscordNotificationService
+        MinecraftService
     ],
     imports: [CacheModule.register()]
 })

@@ -4,39 +4,17 @@ import {
     Param,
     Req,
     Res,
-    Delete,
     Post,
-    UseGuards,
-    HttpException
+    UseGuards
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { AuthService, generateCookie } from './auth.service';
 import { AuthGuard } from 'src/guards/auth.guard';
-import { Auth } from 'src/decorators/auth.decorator';
-import { AuthEnum } from 'src/interfaces/types';
-import { RequestSession } from 'src/common/bandage_response';
-import { LocaleException } from 'src/interceptors/localization.interceptor';
-import responses from 'src/localization/common.localization';
 
 @Controller({ version: '1' })
 @UseGuards(AuthGuard)
 export class AuthController {
     constructor(private readonly authService: AuthService) {}
-
-    @Delete('/user/me')
-    async logout(@Req() request: Request): Promise<void> {
-        /* log out user */
-
-        const user_agent = request.headers['user-agent'];
-        const session = await this.authService.validateSession(
-            request.cookies.sessionId,
-            user_agent as string,
-            true
-        );
-        if (!session) throw new LocaleException(responses.UNAUTHORIZED, 401);
-
-        await this.authService.logout(session);
-    }
 
     @Post('/auth/discord/:code')
     async discord(
@@ -85,36 +63,6 @@ export class AuthController {
         /* get roles for registration */
 
         return await this.authService.getRoles();
-    }
-
-    @Get('/user/me/sessions')
-    @Auth(AuthEnum.Strict)
-    async getSessions(@Req() request: RequestSession) {
-        /* get user sessions */
-
-        return await this.authService.getSessions(request.session);
-    }
-
-    @Delete('/user/me/sessions/all')
-    @Auth(AuthEnum.Strict)
-    async delete_all_sessions(@Req() request: RequestSession) {
-        /* log out from all sessions */
-
-        await this.authService.deleteSessionAll(request.session);
-    }
-
-    @Delete('/user/me/sessions/:id')
-    @Auth(AuthEnum.Strict)
-    async delete_session(
-        @Param('id') id: string,
-        @Req() request: RequestSession
-    ) {
-        /* log out from session by id */
-
-        if (isNaN(Number(id)))
-            throw new HttpException('Invalid session id', 400);
-
-        await this.authService.deleteSession(request.session, Number(id));
     }
 
     @Get('/auth/url')

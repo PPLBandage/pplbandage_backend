@@ -20,7 +20,7 @@ const responses = {
         ru: 'У вас нет требуемых ролей для регистрации'
     },
     INVALID_OAUTH_CODE: {
-        en: 'Invalid code',
+        en: 'Invalid code. Try again later',
         ru: 'Недействительный код. Попробуйте еще раз'
     },
     MINECRAFT_USER_NOT_FOUND: {

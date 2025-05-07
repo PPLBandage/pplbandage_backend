@@ -10,9 +10,8 @@ import {
     UseGuards,
     ValidationPipe,
     UsePipes,
-    StreamableFile,
     Patch,
-    Header
+    HttpException
 } from '@nestjs/common';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { UserService } from './user.service';
@@ -23,8 +22,8 @@ import { RolesGuard } from 'src/guards/roles.guard';
 import { AuthEnum, RolesEnum } from 'src/interfaces/types';
 import { Auth } from 'src/decorators/auth.decorator';
 import { Roles } from 'src/decorators/access.decorator';
+import type { Request } from 'express';
 import {
-    FeedbackDTO,
     ForceRegisterUserDTO,
     UpdateSelfUserDto,
     UpdateUsersDto
@@ -34,19 +33,20 @@ import { PageTakeQueryDTO, QueryDTO } from './dto/queries.dto';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import responses_minecraft from 'src/localization/minecraft.localization';
 import { LocalAccessGuard } from 'src/guards/localAccess.guard';
-import { DiscordNotificationService } from 'src/notifications/discord.service';
+import { AuthService } from 'src/auth/auth.service';
+import responses from 'src/localization/common.localization';
 
-@Controller({ version: '1' })
+@Controller({ version: '1', path: 'users' })
 @UseGuards(AuthGuard, RolesGuard)
 export class UserController {
     constructor(
         private readonly userService: UserService,
         private readonly notificationService: NotificationService,
         private readonly minecraftService: MinecraftService,
-        private readonly discordNotification: DiscordNotificationService
+        private readonly authService: AuthService
     ) {}
 
-    @Get('user/me')
+    @Get('@me')
     @Auth(AuthEnum.Strict)
     async me(@Req() request: RequestSession) {
         /* get user data. associated with session */
@@ -54,7 +54,64 @@ export class UserController {
         return await this.userService.getUser(request.session);
     }
 
-    @Get('/user/me/works')
+    @Patch('@me')
+    @Auth(AuthEnum.Strict)
+    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+    async updateMe(
+        @Req() request: RequestSession,
+        @Body() body: UpdateSelfUserDto
+    ) {
+        /* Update self data */
+
+        await this.userService.updateSelfUser(request.session, body);
+    }
+
+    @Delete('@me')
+    async logout(@Req() request: Request): Promise<void> {
+        /* log out user */
+
+        const user_agent = request.headers['user-agent'];
+        const session = await this.authService.validateSession(
+            request.cookies.sessionId,
+            user_agent as string,
+            true
+        );
+        if (!session) throw new LocaleException(responses.UNAUTHORIZED, 401);
+
+        await this.authService.logout(session);
+    }
+
+    @Get('/@me/sessions')
+    @Auth(AuthEnum.Strict)
+    async getSessions(@Req() request: RequestSession) {
+        /* get user sessions */
+
+        return await this.authService.getSessions(request.session);
+    }
+
+    @Delete('/@me/sessions/all')
+    @Auth(AuthEnum.Strict)
+    async delete_all_sessions(@Req() request: RequestSession) {
+        /* log out from all sessions */
+
+        await this.authService.deleteSessionAll(request.session);
+    }
+
+    @Delete('/@me/sessions/:id')
+    @Auth(AuthEnum.Strict)
+    async delete_session(
+        @Param('id') id: string,
+        @Req() request: RequestSession
+    ) {
+        /* log out from session by id */
+
+        if (isNaN(Number(id)))
+            throw new HttpException('Invalid session id', 400);
+
+        await this.authService.deleteSession(request.session, Number(id));
+    }
+
+    @Get('@me/works')
     @Auth(AuthEnum.Strict)
     async getWorks(@Req() request: RequestSession) {
         /* get user's works */
@@ -62,7 +119,7 @@ export class UserController {
         return await this.userService.getWork(request.session);
     }
 
-    @Get('/user/me/stars')
+    @Get('@me/stars')
     @Auth(AuthEnum.Strict)
     async getStars(@Req() request: RequestSession) {
         /* get user's stars */
@@ -70,7 +127,7 @@ export class UserController {
         return await this.userService.getStars(request.session);
     }
 
-    @Get('user/me/settings')
+    @Get('@me/settings')
     @Auth(AuthEnum.Strict)
     async minecraft(@Req() request: RequestSession) {
         /* get user's settings */
@@ -78,7 +135,7 @@ export class UserController {
         return await this.userService.getUserSettings(request.session);
     }
 
-    @Get('/user/me/notifications')
+    @Get('@me/notifications')
     @Auth(AuthEnum.Strict)
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async getNotifications(
@@ -94,7 +151,7 @@ export class UserController {
         );
     }
 
-    @Post('/user/me/connections/minecraft/connect/:code')
+    @Post('@me/connections/minecraft/connect/:code')
     @Auth(AuthEnum.Strict)
     async connectMinecraft(
         @Param('code') code: string,
@@ -109,7 +166,7 @@ export class UserController {
     }
 
     @Throttle({ default: { limit: 5, ttl: 60000 } })
-    @Post('/user/me/connections/minecraft/cache/purge')
+    @Post('@me/connections/minecraft/cache/purge')
     @Auth(AuthEnum.Strict)
     async purgeSkinCache(@Req() request: RequestSession): Promise<void> {
         /* Purge minecraft skin cache, associated with session's account */
@@ -126,7 +183,7 @@ export class UserController {
         );
     }
 
-    @Delete('/user/me/connections/minecraft')
+    @Delete('@me/connections/minecraft')
     @Auth(AuthEnum.Strict)
     async disconnectMinecraft(@Req() request: RequestSession): Promise<void> {
         /* disconnect minecraft profile */
@@ -134,7 +191,7 @@ export class UserController {
         await this.minecraftService.disconnect(request.session);
     }
 
-    @Get('/users/:username')
+    @Get(':username')
     @Auth(AuthEnum.Weak)
     @UseGuards(new LocalAccessGuard())
     async user_profile(
@@ -148,23 +205,14 @@ export class UserController {
         );
     }
 
-    @Get('/users/:username/og')
+    @Get(':username/og')
     async userOg(@Param('username') username: string) {
         /* get user data by nickname */
 
         return await this.userService.getUserOg(username);
     }
 
-    @Get('users')
-    @Auth(AuthEnum.Strict)
-    @Roles([RolesEnum.UpdateUsers])
-    async getUsers(@Query() query: QueryDTO) {
-        /* Get list of registered users */
-
-        return await this.userService.getUsers(query.query);
-    }
-
-    @Patch('/users/:username')
+    @Patch(':username')
     @Auth(AuthEnum.Strict)
     @Roles([RolesEnum.UpdateUsers])
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
@@ -178,7 +226,16 @@ export class UserController {
         await this.userService.updateUser(request.session, username, body);
     }
 
-    @Post('/users')
+    @Get('/')
+    @Auth(AuthEnum.Strict)
+    @Roles([RolesEnum.UpdateUsers])
+    async getUsers(@Query() query: QueryDTO) {
+        /* Get list of registered users */
+
+        return await this.userService.getUsers(query.query);
+    }
+
+    @Post('/')
     @Auth(AuthEnum.Strict)
     @Roles([RolesEnum.UpdateUsers])
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
@@ -186,40 +243,5 @@ export class UserController {
         /* Force register user */
 
         return await this.userService.forceRegister(body.discord_id);
-    }
-
-    @Get('/avatars/:user_id')
-    @Header('Content-Type', 'image/png')
-    async head(
-        @Param('user_id') user_id: string
-    ): Promise<StreamableFile | void> {
-        /* get user avatar by id */
-
-        return new StreamableFile(
-            Buffer.from(await this.userService.getAvatar(user_id), 'base64')
-        );
-    }
-
-    @Patch('/user/me')
-    @Auth(AuthEnum.Strict)
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-    async updateMe(
-        @Req() request: RequestSession,
-        @Body() body: UpdateSelfUserDto
-    ) {
-        /* Update self data */
-
-        await this.userService.updateSelfUser(request.session, body);
-    }
-
-    @Post('/user/feedback')
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-    @Throttle({ default: { limit: 1, ttl: 1000 * 60 } })
-    async feedback(@Body() body: FeedbackDTO) {
-        /* Receive feedback */
-
-        await this.discordNotification.doNotification(
-            `<@&${process.env.MENTION_ROLE_ID}> new feedback:\n${body.content}`
-        );
     }
 }
