@@ -22,7 +22,7 @@ jobs:
               run: |
                   sshpass -e ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
                     set -e
-                    cd /home/andcoolsystems/PPLBandage_Backend
+                    cd /home/andcoolsystems/pplbandage_backend
                     git fetch
                     git stash
                     git merge '@{u}'
