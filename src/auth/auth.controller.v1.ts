@@ -11,12 +11,12 @@ import type { Request, Response } from 'express';
 import { AuthService, generateCookie } from './auth.service';
 import { AuthGuard } from 'src/guards/auth.guard';
 
-@Controller({ version: '1' })
+@Controller({ version: '1', path: 'auth' })
 @UseGuards(AuthGuard)
 export class AuthController {
     constructor(private readonly authService: AuthService) {}
 
-    @Post('/auth/discord/:code')
+    @Post('/discord/:code')
     async discord(
         @Param('code') code: string,
         @Req() request: Request,
@@ -37,7 +37,7 @@ export class AuthController {
         return data;
     }
 
-    @Post('/auth/minecraft/:code')
+    @Post('/minecraft/:code')
     async minecraftLogin(
         @Param('code') code: string,
         @Req() request: Request,
@@ -58,14 +58,14 @@ export class AuthController {
         return data;
     }
 
-    @Get('/auth/roles')
+    @Get('/roles')
     async roles() {
         /* get roles for registration */
 
         return await this.authService.getRoles();
     }
 
-    @Get('/auth/url')
+    @Get('/url')
     async url(@Req() req: Request, @Res() res: Response): Promise<void> {
         /* get discord oauth url */
 
