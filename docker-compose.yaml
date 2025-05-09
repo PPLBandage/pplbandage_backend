@@ -2,7 +2,7 @@ services:
     ppl_api:
         container_name: ppl_api
         volumes:
-            - ./prisma:/app/prisma
+            - ./data:/app/data
         build:
             context: .
             dockerfile: Dockerfile
@@ -14,7 +14,7 @@ services:
         command: npm run start
 
 volumes:
-    prisma:
+    data:
 
 networks:
     nginx:
