@@ -310,6 +310,7 @@ export class AuthService {
         if (!sessionDB) return null;
 
         // User-Agent check
+        /*
         if (sessionDB.User_Agent !== user_agent) {
             try {
                 await this.prisma.sessions.delete({
@@ -319,6 +320,7 @@ export class AuthService {
                 return null;
             }
         }
+        */
 
         try {
             const decoded = verify(session, 'ppl_super_secret') as SessionToken;
