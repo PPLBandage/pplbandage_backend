@@ -17,6 +17,7 @@ lerna-debug.log*
 .DS_Store
 /out
 /prisma/desktop.ini
+/data
 
 # Tests
 /coverage
