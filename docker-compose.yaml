@@ -13,9 +13,6 @@ services:
         restart: always
         command: npm run start
 
-volumes:
-    data:
-
 networks:
     nginx:
         external: true
