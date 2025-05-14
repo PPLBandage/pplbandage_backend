@@ -30,5 +30,6 @@ jobs:
                     ./.github/update_hash.sh COMMIT_SHA ${{ github.sha }}
                     npx prisma db push
                     docker-compose build
+                    docker-compose down --volumes --remove-orphans
                     docker-compose up -d
                   EOF
