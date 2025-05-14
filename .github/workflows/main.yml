@@ -29,6 +29,6 @@ jobs:
                     chmod +x .github/update_hash.sh
                     ./.github/update_hash.sh COMMIT_SHA ${{ github.sha }}
                     npx prisma db push
-                    docker-compose build
-                    docker-compose up -d
+                    docker compose build
+                    docker compose up -d
                   EOF
