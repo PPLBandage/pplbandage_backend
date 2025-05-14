@@ -64,6 +64,7 @@ export class UserService {
     }
 
     async getCurrentData(user_id: string): Promise<DiscordUser> {
+        this.logger.debug('Start getting current data for discord user');
         const cache = await this.cacheManager.get<string>(`discord:${user_id}`);
         if (cache) return JSON.parse(cache) as DiscordUser;
 
@@ -72,11 +73,13 @@ export class UserService {
             validateStatus: () => true
         });
 
+        this.logger.debug('Data got');
         if (response.status !== 200)
             throw new LocaleException(responses.PROFILE_FETCH_ERROR, 500);
 
         const data = response.data as DiscordUser;
 
+        this.logger.debug('Saving into cache');
         await this.cacheManager.set(
             `avatar_hash:${user_id}`,
             data.avatar ?? 'none',
@@ -87,6 +90,8 @@ export class UserService {
             JSON.stringify(response.data),
             1000 * 60 * 60
         );
+
+        this.logger.debug('Data got successfully');
         return data;
     }
 
