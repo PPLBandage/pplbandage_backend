@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import axios from 'axios';
 import { generateSnowflake, hasAccess, Session } from 'src/auth/auth.service';
@@ -34,6 +34,7 @@ interface DiscordUser {
 
 @Injectable()
 export class UserService {
+    private readonly logger = new Logger(UserService.name);
     constructor(
         private prisma: PrismaService,
         @Inject(CACHE_MANAGER) private cacheManager: Cache
@@ -126,6 +127,7 @@ export class UserService {
     async getUser(session: Session) {
         /* get user, associated with session */
 
+        this.logger.debug('Received /@me request');
         if (session.user.UserSettings?.banned) {
             await this.prisma.sessions.deleteMany({
                 where: { userId: session.user.id }
@@ -134,6 +136,7 @@ export class UserService {
         }
 
         const response_data = await this.getCurrentData(session.user.discordId);
+        this.logger.debug('Got current discord data');
 
         const updated_user = await this.prisma.user.update({
             where: { id: session.user.id },
@@ -142,15 +145,21 @@ export class UserService {
             }
         });
 
+        this.logger.debug('User updated');
+
         const starred_bandages = await this.prisma.bandage.findMany({
             where: { userId: session.user.id, stars: { some: {} } },
             include: { stars: true }
         });
+
+        this.logger.debug('Starred bandages got');
+
         const stars_count = starred_bandages.reduce(
             (acc, current_val) => acc + current_val.stars.length,
             0
         );
 
+        this.logger.debug('Processed');
         return {
             userID: session.user.id,
             discordID: session.user.discordId,

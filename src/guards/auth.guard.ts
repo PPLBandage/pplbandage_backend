@@ -1,4 +1,9 @@
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+import {
+    Injectable,
+    CanActivate,
+    ExecutionContext,
+    Logger
+} from '@nestjs/common';
 import { Response } from 'express';
 import { AuthService } from 'src/auth/auth.service';
 import { Reflector } from '@nestjs/core';
@@ -8,6 +13,7 @@ import { UNAUTHORIZED } from 'src/root/root.controller.v1';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
+    private readonly logger = new Logger(AuthGuard.name);
     constructor(
         private prisma: PrismaService,
         private oathService: AuthService,
@@ -17,6 +23,7 @@ export class AuthGuard implements CanActivate {
     async canActivate(context: ExecutionContext): Promise<boolean> {
         /* Auth Guard */
 
+        this.logger.debug('Received request');
         const request = context.switchToHttp().getRequest();
         const response: Response = context.switchToHttp().getResponse();
         const strict = this.reflector.get(Auth, context.getHandler());
@@ -32,6 +39,8 @@ export class AuthGuard implements CanActivate {
             user_agent,
             strict === 'Strict'
         );
+
+        this.logger.debug('Session validated');
         if (!session && strict === 'Strict') {
             response.status(401).send(UNAUTHORIZED);
             return false;
@@ -50,6 +59,7 @@ export class AuthGuard implements CanActivate {
             }
         }
 
+        this.logger.debug('Request processed successfully');
         return true;
     }
 }

@@ -1,4 +1,4 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { HttpException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
     Bandage,
@@ -111,6 +111,7 @@ export const generateSnowflake = (increment: bigint, date?: Date): string => {
 
 @Injectable()
 export class AuthService {
+    private readonly logger = new Logger(AuthService.name);
     constructor(
         private prisma: PrismaService,
         private readonly userService: UserService,
@@ -302,11 +303,13 @@ export class AuthService {
 
         if (!session) return null;
 
+        this.logger.debug('Start session validating');
         const sessionDB = await this.prisma.sessions.findFirst({
             where: { sessionId: session },
             include: this.userInclude
         });
 
+        this.logger.debug('Session info got (or not found)');
         if (!sessionDB) return null;
 
         // User-Agent check
@@ -339,11 +342,13 @@ export class AuthService {
                     { expiresIn: Number(process.env.SESSION_TTL) }
                 );
 
+                this.logger.debug('Updating session');
                 const updatedSession = await this.prisma.sessions.update({
                     where: { id: sessionDB.id },
                     data: { sessionId: sessionId },
                     include: this.userInclude
                 });
+                this.logger.debug('Session updated');
 
                 return {
                     sessionId: sessionId,
