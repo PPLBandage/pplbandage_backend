@@ -3,6 +3,7 @@ import {
     Controller,
     Get,
     Header,
+    HttpException,
     Param,
     Post,
     Req,
@@ -17,6 +18,7 @@ import { RootService, SitemapProps } from './root.service';
 import { FeedbackDTO } from 'src/user/dto/body.dto';
 import { DiscordNotificationService } from 'src/notifications/discord.service';
 import { UserService } from 'src/user/user.service';
+import axios from 'axios';
 
 export const UNAUTHORIZED = {
     statusCode: 401,
@@ -60,6 +62,32 @@ export class RootController {
         /* Ping endpoint */
 
         return { message: 'pong' };
+    }
+
+    @Get('/ping/discord')
+    async pingDiscord() {
+        /* Discord ping endpoint */
+
+        const [discord_response, cdn_discord_response] = await Promise.all([
+            axios.get(`${process.env.DISCORD_URL}/api/v10/gateway`),
+            axios.get(`${process.env.DISCORD_AVATAR}`, {
+                validateStatus: status => status === 404
+            })
+        ]);
+
+        if (discord_response.status !== 200)
+            throw new HttpException(
+                'Discord API returned unexpected status code',
+                503
+            );
+
+        if (cdn_discord_response.status !== 404)
+            throw new HttpException(
+                'Discord CDN returned unexpected status code',
+                503
+            );
+
+        return { message: 'Discord systems operational' };
     }
 
     @Get('/sitemap.xml')
