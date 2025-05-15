@@ -15,7 +15,7 @@ export class SetQueryDTO {
     set?: string;
 }
 
-export class PageTakeQueryDTO {
+export class PageTakeDTO {
     @IsNumber()
     @IsOptional()
     @Type(() => Number)
@@ -30,8 +30,21 @@ export class PageTakeQueryDTO {
     page?: number;
 }
 
-export class QueryDTO {
+export class PageTakeQueryDTO {
     @IsString()
     @IsOptional()
     query?: string;
+
+    @IsNumber()
+    @IsOptional()
+    @Type(() => Number)
+    @Min(1)
+    @Max(100)
+    take?: number;
+
+    @IsNumber()
+    @IsOptional()
+    @Type(() => Number)
+    @Min(0)
+    page?: number;
 }

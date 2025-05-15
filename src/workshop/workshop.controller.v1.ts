@@ -59,10 +59,10 @@ export class WorkshopController {
         );
     }
 
-    @Throttle({ default: { limit: 1, ttl: 10000 } })
     @Post()
-    @Auth(AuthEnum.Strict)
     @HttpCode(201)
+    @Auth(AuthEnum.Strict)
+    @Throttle({ default: { limit: 1, ttl: 10000 } })
     @UsePipes(new ValidationPipe({ whitelist: true }))
     async create_bandage(
         @Req() request: RequestSession,

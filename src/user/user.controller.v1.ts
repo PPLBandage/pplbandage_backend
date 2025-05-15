@@ -29,7 +29,7 @@ import {
     UpdateUsersDto
 } from './dto/body.dto';
 import { RequestSession } from 'src/common/bandage_response';
-import { PageTakeQueryDTO, QueryDTO } from './dto/queries.dto';
+import { PageTakeDTO, PageTakeQueryDTO } from './dto/queries.dto';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import responses_minecraft from 'src/localization/minecraft.localization';
 import { LocalAccessGuard } from 'src/guards/localAccess.guard';
@@ -140,7 +140,7 @@ export class UserController {
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async getNotifications(
         @Req() request: RequestSession,
-        @Query() query: PageTakeQueryDTO
+        @Query() query: PageTakeDTO
     ) {
         /* get user's connections */
 
@@ -229,10 +229,15 @@ export class UserController {
     @Get('/')
     @Auth(AuthEnum.Strict)
     @Roles([RolesEnum.UpdateUsers])
-    async getUsers(@Query() query: QueryDTO) {
+    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+    async getUsers(@Query() query: PageTakeQueryDTO) {
         /* Get list of registered users */
 
-        return await this.userService.getUsers(query.query);
+        return await this.userService.getUsers(
+            query.page ?? 0,
+            query.take ?? 20,
+            query.query
+        );
     }
 
     @Post('/')

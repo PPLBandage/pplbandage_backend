@@ -417,31 +417,41 @@ export class UserService {
         };
     }
 
-    async getUsers(query?: string) {
+    async getUsers(page: number, take: number, query?: string) {
+        const query_req = !!query
+            ? {
+                  OR: [
+                      { name: { contains: query } },
+                      { reserved_name: { contains: query } },
+                      { username: { contains: query } },
+                      { id: { contains: query } }
+                  ]
+              }
+            : undefined;
+
         const users = await this.prisma.user.findMany({
-            where: !!query
-                ? {
-                      OR: [
-                          { name: { contains: query } },
-                          { reserved_name: { contains: query } },
-                          { username: { contains: query } },
-                          { id: { contains: query } }
-                      ]
-                  }
-                : undefined,
-            include: { UserSettings: true, AccessRoles: true }
+            where: query_req,
+            include: { UserSettings: true, AccessRoles: true },
+            take,
+            skip: take * page
         });
 
-        return users.map(user => ({
-            id: user.id,
-            username: user.username,
-            name: user.reserved_name || user.name,
-            joined_at: user.joined_at,
-            discord_id: user.discordId,
-            banned: user.UserSettings?.banned,
-            permissions: user.AccessRoles?.map(role => role.name.toLowerCase()),
-            skip_ppl_check: user.UserSettings?.skip_ppl_check
-        }));
+        const total_count = await this.prisma.user.count({ where: query_req });
+        return {
+            data: users.map(user => ({
+                id: user.id,
+                username: user.username,
+                name: user.reserved_name || user.name,
+                joined_at: user.joined_at,
+                discord_id: user.discordId,
+                banned: user.UserSettings?.banned,
+                permissions: user.AccessRoles?.map(role =>
+                    role.name.toLowerCase()
+                ),
+                skip_ppl_check: user.UserSettings?.skip_ppl_check
+            })),
+            totalCount: total_count
+        };
     }
 
     async updateUser(session: Session, username: string, data: UpdateUsersDto) {
