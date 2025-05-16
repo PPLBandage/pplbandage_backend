@@ -4,6 +4,7 @@ import {
     Get,
     Header,
     HttpException,
+    Inject,
     Param,
     Post,
     Req,
@@ -19,6 +20,7 @@ import { FeedbackDTO } from 'src/user/dto/body.dto';
 import { DiscordNotificationService } from 'src/notifications/discord.service';
 import { UserService } from 'src/user/user.service';
 import axios from 'axios';
+import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 
 export const UNAUTHORIZED = {
     statusCode: 401,
@@ -32,7 +34,8 @@ export class RootController {
         private prisma: PrismaService,
         private readonly rootService: RootService,
         private readonly discordNotification: DiscordNotificationService,
-        private readonly userService: UserService
+        private readonly userService: UserService,
+        @Inject(CACHE_MANAGER) private cacheManager: Cache
     ) {}
 
     @Get()
@@ -68,6 +71,9 @@ export class RootController {
     async pingDiscord() {
         /* Discord ping endpoint */
 
+        const cache = await this.cacheManager.get('discord_ping');
+        if (cache === 'true') return { message: 'Discord systems operational' };
+
         const [discord_response, cdn_discord_response] = await Promise.all([
             axios.get(`${process.env.DISCORD_URL}/api/v10/gateway`),
             axios.get(`${process.env.DISCORD_AVATAR}`, {
@@ -87,6 +93,7 @@ export class RootController {
                 503
             );
 
+        await this.cacheManager.set('discord_ping', 'true', 1000 * 60);
         return { message: 'Discord systems operational' };
     }
 

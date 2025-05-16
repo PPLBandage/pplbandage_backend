@@ -107,10 +107,10 @@ export class MinecraftService {
         /* update skin data in data base */
 
         const uuid = await this.getUUID(nickname); // validate UUID (resolve UUID by nickname also)
-
         const cache = await this.prisma.minecraft.findFirst({
             where: { uuid: uuid }
         }); // get cache if exists
+
         if (cache && cache.expires > new Date().getTime() && !ignore_cache) {
             return cache;
         }
@@ -185,29 +185,23 @@ export class MinecraftService {
             }
         }
 
+        const update_data = {
+            nickname: fetched_skin_data.name.toLowerCase(),
+            default_nick: fetched_skin_data.name,
+            expires: new Date().getTime() + parseInt(process.env.TTL as string),
+            data: skin_buff.toString('base64'),
+            data_cape: cape_b64,
+            data_head: head.toString('base64'),
+            slim: json_textures.textures.SKIN?.metadata?.model === 'slim'
+        };
+
         const updated_data = await this.prisma.minecraft.upsert({
             where: { uuid: fetched_skin_data.id },
             create: {
                 uuid: fetched_skin_data.id,
-                nickname: fetched_skin_data.name.toLowerCase(),
-                default_nick: fetched_skin_data.name,
-                expires:
-                    new Date().getTime() + parseInt(process.env.TTL as string),
-                data: skin_buff.toString('base64'),
-                data_cape: cape_b64,
-                data_head: head.toString('base64'),
-                slim: json_textures.textures.SKIN?.metadata?.model === 'slim'
+                ...update_data
             },
-            update: {
-                nickname: fetched_skin_data.name.toLowerCase(),
-                default_nick: fetched_skin_data.name,
-                expires:
-                    new Date().getTime() + parseInt(process.env.TTL as string),
-                data: skin_buff.toString('base64'),
-                data_cape: cape_b64,
-                data_head: head.toString('base64'),
-                slim: json_textures.textures.SKIN?.metadata?.model === 'slim'
-            }
+            update: update_data
         });
         return updated_data;
     }
@@ -241,9 +235,8 @@ export class MinecraftService {
     async searchNicks({ fragment, take, page }: SearchParams) {
         /* search nicks in data base by provided fragment */
 
-        if (fragment.length < 3) {
-            throw new HttpException('', 204);
-        }
+        if (fragment.length < 3) throw new HttpException('', 204);
+
         const filter_rule = {
             OR: [{ nickname: { contains: fragment } }],
             valid: true
@@ -251,25 +244,24 @@ export class MinecraftService {
         const cache = await this.prisma.minecraft.findMany({
             where: filter_rule,
             orderBy: { default_nick: 'asc' },
-            take: take,
+            take,
             skip: take * page
         });
 
-        if (cache.length === 0) {
-            throw new HttpException('', 204);
-        }
+        if (cache.length === 0) throw new HttpException('', 204);
 
-        const count: number = await this.prisma.minecraft.count({
+        const count = await this.prisma.minecraft.count({
             where: filter_rule
         });
-        const records_list: SearchUnit[] = cache.map(nick => ({
+
+        const records_list = cache.map(nick => ({
             name: nick.default_nick,
             uuid: nick.uuid,
             head: nick.data_head
         }));
-        if (!count) {
-            throw new HttpException('', 204);
-        }
+
+        if (!count) throw new HttpException('', 204);
+
         return {
             requested_fragment: fragment,
             data: records_list,
@@ -279,6 +271,8 @@ export class MinecraftService {
     }
 
     async getByCode(code: string): Promise<{ nickname: string; UUID: string }> {
+        /* Resolve mc-oauth code */
+
         const response = await axios.get(
             `${process.env.MC_OAUTH_API}/${code}`,
             { validateStatus: () => true }
