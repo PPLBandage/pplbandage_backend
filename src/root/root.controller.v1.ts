@@ -95,7 +95,7 @@ export class RootController {
                 cdn_discord_response.status
             );
 
-        await this.cacheManager.set('discord_ping', 'true', 1000 * 60);
+        await this.cacheManager.set('discord_ping', 'true', 1000 * 60 * 3);
         return { message: 'Discord systems operational' };
     }
 
