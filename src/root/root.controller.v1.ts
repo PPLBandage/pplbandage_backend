@@ -75,22 +75,24 @@ export class RootController {
         if (cache === 'true') return { message: 'Discord systems operational' };
 
         const [discord_response, cdn_discord_response] = await Promise.all([
-            axios.get(`${process.env.DISCORD_URL}/api/v10/gateway`),
+            axios.get(`${process.env.DISCORD_URL}/api/v10/gateway`, {
+                validateStatus: () => true
+            }),
             axios.get(`${process.env.DISCORD_AVATAR}`, {
-                validateStatus: status => status === 404
+                validateStatus: () => true
             })
         ]);
 
         if (discord_response.status !== 200)
             throw new HttpException(
                 'Discord API returned unexpected status code',
-                503
+                discord_response.status
             );
 
         if (cdn_discord_response.status !== 404)
             throw new HttpException(
                 'Discord CDN returned unexpected status code',
-                503
+                cdn_discord_response.status
             );
 
         await this.cacheManager.set('discord_ping', 'true', 1000 * 60);
