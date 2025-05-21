@@ -10,10 +10,10 @@ import {
 } from '@nestjs/common';
 import { MinecraftService } from 'src/minecraft/minecraft.service';
 import * as sharp from 'sharp';
-import { PageTakeQueryDTO } from 'src/user/dto/queries.dto';
-import { PixelWidthQueryDTO } from './dto/queries.dto';
+import { PageTakeQueryDTO, PixelWidthQueryDTO } from './dto/queries.dto';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import responses from 'src/localization/minecraft.localization';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller({ path: 'minecraft', version: '1' })
 export class MinecraftController {
@@ -53,16 +53,14 @@ export class MinecraftController {
         return new StreamableFile(Buffer.from(cache.data_cape, 'base64'));
     }
 
-    @Get('/search/:name')
+    @Get('/suggest')
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-    async search(
-        @Param('name') name: string,
-        @Query() query: PageTakeQueryDTO
-    ) {
+    @Throttle({ default: { limit: 300, ttl: 1000 * 60 } })
+    async suggest(@Query() query: PageTakeQueryDTO) {
         /* search nicknames by requested fragment */
 
         return await this.minecraftService.searchNicks({
-            fragment: name,
+            fragment: query.q,
             take: query.take ?? 20,
             page: query.page ?? 0
         });
