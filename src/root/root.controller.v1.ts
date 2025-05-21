@@ -75,7 +75,7 @@ export class RootController {
         if (cache === 'true') return { message: 'Discord systems operational' };
 
         const [discord_response, cdn_discord_response] = await Promise.all([
-            axios.get(`${process.env.DISCORD_URL}/api/v10/gateway`, {
+            axios.get(`${process.env.DISCORD_URL}/gateway`, {
                 validateStatus: () => true
             }),
             axios.get(`${process.env.DISCORD_AVATAR}`, {

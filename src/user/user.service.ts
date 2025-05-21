@@ -12,7 +12,7 @@ import responses from 'src/localization/users.localization';
 import responses_common from 'src/localization/common.localization';
 import responses_minecraft from 'src/localization/minecraft.localization';
 
-const discord_url = process.env.DISCORD_URL + '/api/v10';
+const discord_url = process.env.DISCORD_URL;
 
 interface DiscordUser {
     id: string;

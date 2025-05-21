@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import axios from 'axios';
 
-const discord_url = process.env.DISCORD_URL + '/api/v10';
+const discord_url = process.env.DISCORD_URL;
 
 @Injectable()
 export class DiscordNotificationService {

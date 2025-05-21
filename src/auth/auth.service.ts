@@ -19,7 +19,7 @@ import responses_users from 'src/localization/users.localization';
 import responses_minecraft from 'src/localization/minecraft.localization';
 import { MinecraftService } from 'src/minecraft/minecraft.service';
 
-const discord_url = process.env.DISCORD_URL + '/api/v10';
+const discord_url = process.env.DISCORD_URL;
 const pwgood = '447699225078136832'; // pwgood server id
 const EPOCH = 1672531200000n;
 
