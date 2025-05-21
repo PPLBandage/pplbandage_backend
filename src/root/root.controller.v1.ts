@@ -89,7 +89,7 @@ export class RootController {
                 discord_response.status
             );
 
-        if (cdn_discord_response.status !== 404)
+        if (![403, 404].includes(cdn_discord_response.status))
             throw new HttpException(
                 'Discord CDN returned unexpected status code',
                 cdn_discord_response.status
