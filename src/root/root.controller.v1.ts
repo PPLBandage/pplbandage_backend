@@ -46,7 +46,7 @@ export class RootController {
         const commit = await this.rootService.getCommitInfo(sha ?? '');
         return {
             message: 'Привет! Я здесь, чтобы сказать, что все работает!',
-            main_site: 'https://pplbandage.ru',
+            main_site: 'https://pplb.ru',
             docs: 'https://github.com/PPLBandage/pplbandage_backend/blob/main/README.md',
             version: {
                 route: req.route.path.split('/').at(-1),
@@ -105,14 +105,14 @@ export class RootController {
         /* Generate sitemap */
 
         let urls: SitemapProps[] = [
-            { loc: 'https://pplbandage.ru/', priority: 1 },
-            { loc: 'https://pplbandage.ru/workshop', priority: 0.8 },
-            { loc: 'https://pplbandage.ru/tutorials', priority: 0.7 },
-            { loc: 'https://pplbandage.ru/tutorials/bandage', priority: 0.7 },
-            { loc: 'https://pplbandage.ru/tutorials/colorable', priority: 0.7 },
-            { loc: 'https://pplbandage.ru/me', priority: 0.5 },
-            { loc: 'https://pplbandage.ru/tos', priority: 0.5 },
-            { loc: 'https://pplbandage.ru/contacts', priority: 0.5 }
+            { loc: 'https://pplb.ru/', priority: 1 },
+            { loc: 'https://pplb.ru/workshop', priority: 0.8 },
+            { loc: 'https://pplb.ru/tutorials', priority: 0.7 },
+            { loc: 'https://pplb.ru/tutorials/bandage', priority: 0.7 },
+            { loc: 'https://pplb.ru/tutorials/colorable', priority: 0.7 },
+            { loc: 'https://pplb.ru/me', priority: 0.5 },
+            { loc: 'https://pplb.ru/tos', priority: 0.5 },
+            { loc: 'https://pplb.ru/contacts', priority: 0.5 }
         ];
 
         const bandages = await this.prisma.bandage.findMany({
@@ -123,7 +123,7 @@ export class RootController {
         });
         urls = urls.concat(
             bandages.map(bandage => ({
-                loc: `https://pplbandage.ru/workshop/${bandage.externalId}`,
+                loc: `https://pplb.ru/workshop/${bandage.externalId}`,
                 priority: 0.6
             }))
         );
@@ -137,7 +137,7 @@ export class RootController {
         });
         urls = urls.concat(
             users.map(user => ({
-                loc: `https://pplbandage.ru/users/${user.username}`,
+                loc: `https://pplb.ru/users/${user.username}`,
                 priority: 0.5
             }))
         );

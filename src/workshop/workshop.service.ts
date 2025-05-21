@@ -336,11 +336,11 @@ export class WorkshopService {
                     `- **Description**: ${result.description}\n` +
                     `- **Is split type**: ${result.split_type}\n` +
                     `- **Creator**: ${session.user.name}\n\n` +
-                    `**URL**: https://pplbandage.ru/workshop/${result.externalId}`
+                    `**URL**: https://pplb.ru/workshop/${result.externalId}`
             );
         } catch {
             console.error(
-                `Cannot do Discord notification about https://pplbandage.ru/workshop/${result.externalId}`
+                `Cannot do Discord notification about https://pplb.ru/workshop/${result.externalId}`
             );
         }
 
