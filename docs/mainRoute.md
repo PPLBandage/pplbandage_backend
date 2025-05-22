@@ -29,11 +29,11 @@
 ```xml
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-        <loc>https://pplb.ru/</loc>
+        <loc>https://pplbandage.ru/</loc>
         <priority>1</priority>
     </url>
     <url>
-        <loc>https://pplb.ru/workshop</loc>
+        <loc>https://pplbandage.ru/workshop</loc>
         <priority>0.8</priority>
     </url>
 </urlset>
