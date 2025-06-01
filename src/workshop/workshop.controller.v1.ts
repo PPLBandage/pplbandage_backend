@@ -70,7 +70,7 @@ export class WorkshopController {
     ) {
         /* create work */
 
-        const validate_result = await this.bandageService.validateBandage(
+        const { height } = await this.bandageService.validateBandage(
             body.base64
         );
 
@@ -81,7 +81,7 @@ export class WorkshopController {
 
             await this.bandageService.validateBandage(
                 body.base64_slim,
-                validate_result.height as number
+                height as number
             );
         }
 

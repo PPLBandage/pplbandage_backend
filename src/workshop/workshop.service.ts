@@ -8,7 +8,7 @@ import { RolesEnum } from 'src/interfaces/types';
 import { CreateBandageDto } from './dto/createBandage.dto';
 import { EditBandageDto } from './dto/editBandage.dto';
 import { DiscordNotificationService } from 'src/notifications/discord.service';
-import { generateResponse } from 'src/common/bandage_response';
+import { generateFlags, generateResponse } from 'src/common/bandage_response';
 import responses from 'src/localization/workshop.localization';
 import responses_common from 'src/localization/common.localization';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
@@ -268,9 +268,8 @@ export class WorkshopService {
         };
     }
 
+    /** Clear bandage's image metadata */
     async clearMetadata(base64?: string) {
-        /* Clear bandage's image metadata */
-
         if (!base64) return '';
         const data = await sharp(Buffer.from(base64, 'base64')).toBuffer({
             resolveWithObject: false
@@ -308,11 +307,11 @@ export class WorkshopService {
         const bandage_slim_base64 = await this.clearMetadata(body.base64_slim);
 
         const buff = Buffer.from(bandage_base64, 'base64');
-        const { data } = await sharp(buff)
+        const data = await sharp(buff)
             .resize(1, 1, { fit: 'inside' })
             .extract({ left: 0, top: 0, width: 1, height: 1 })
             .raw()
-            .toBuffer({ resolveWithObject: true });
+            .toBuffer({ resolveWithObject: false });
         const [r, g, b] = data;
 
         const result = await this.prisma.bandage.create({
@@ -406,25 +405,30 @@ export class WorkshopService {
         const hidden = bandage.categories.some(val => val.only_admins);
         let permissions_level = 0;
         if (session) {
-            if (session.user.id === bandage.User?.id) permissions_level = 1;
-            if (
-                hasAccess(session.user, RolesEnum.ManageBandages) ||
-                (session.user.id === bandage.User?.id && hidden)
-            )
+            const isBandageOwner = session.user.id === bandage.User?.id;
+            const canManageBandages = hasAccess(
+                session.user,
+                RolesEnum.ManageBandages
+            );
+            const canForbidSelfHarm = hasAccess(
+                session.user,
+                RolesEnum.ForbidSelfHarm,
+                true
+            );
+
+            if (canForbidSelfHarm) {
+                permissions_level = 0;
+            } else if (bandage.archived && !canManageBandages) {
+                permissions_level = 0;
+            } else if (canManageBandages || (isBandageOwner && hidden)) {
                 permissions_level = 2;
-            if (hasAccess(session.user, RolesEnum.ForbidSelfHarm, true))
-                permissions_level = 0;
-            if (
-                bandage.archived &&
-                !hasAccess(session.user, RolesEnum.ManageBandages)
-            )
-                permissions_level = 0;
+            } else if (isBandageOwner) {
+                permissions_level = 1;
+            }
         }
 
         const me_profile =
-            session &&
-            session.user.profile &&
-            session.user.UserSettings?.autoload
+            session?.user?.UserSettings?.autoload && session?.user?.profile
                 ? {
                       uuid: session.user.profile.uuid,
                       nickname: session.user.profile.nickname
@@ -454,10 +458,9 @@ export class WorkshopService {
                 base64_slim: bandage.split_type
                     ? bandage.base64_slim
                     : undefined,
-                split_type: bandage.split_type,
+                flags: generateFlags(bandage, session),
                 creation_date: bandage.creationDate,
                 stars_count: bandage.stars.length,
-                starred: bandage.stars.some(val => val.id === session?.user.id),
                 author: {
                     id: bandage.User.id,
                     name: bandage.User.reserved_name || bandage.User.name,
@@ -480,18 +483,22 @@ export class WorkshopService {
 
         const bandage = await this.getBandageById(id);
 
-        if (
-            bandage.User?.id !== session.user.id &&
-            !hasAccess(session.user, RolesEnum.ManageBandages)
-        ) {
+        const isBandageOwner = bandage.User?.id === session.user.id;
+        const canManageBandages = hasAccess(
+            session.user,
+            RolesEnum.ManageBandages
+        );
+        const forbidSelfHarm = hasAccess(
+            session.user,
+            RolesEnum.ForbidSelfHarm,
+            true
+        );
+
+        if (!isBandageOwner && !canManageBandages) {
             throw new LocaleException(responses_common.FORBIDDEN, 403);
         }
 
-        if (
-            hasAccess(session.user, RolesEnum.ForbidSelfHarm, true) ||
-            (bandage.archived &&
-                !hasAccess(session.user, RolesEnum.ManageBandages))
-        ) {
+        if (forbidSelfHarm || (bandage.archived && !canManageBandages)) {
             throw new LocaleException(responses_common.FORBIDDEN, 403);
         }
 
@@ -508,6 +515,7 @@ export class WorkshopService {
             if (body.description !== undefined) description = body.description;
         }
 
+        // TODO: Rewrite me
         if (body.categories !== undefined) {
             const validated_categories = await this.validateCategories(
                 body.categories,
@@ -588,17 +596,21 @@ export class WorkshopService {
 
         const bandage = await this.getBandageById(externalId);
 
-        if (
-            !hasAccess(session.user, RolesEnum.ManageBandages) &&
-            session.user.id !== bandage.User?.id
-        ) {
-            throw new LocaleException(responses_common.FORBIDDEN, 403);
-        }
+        const isBandageOwner = session.user.id === bandage.User?.id;
+        const canManageBandages = hasAccess(
+            session.user,
+            RolesEnum.ManageBandages
+        );
+        const forbidSelfHarm = hasAccess(
+            session.user,
+            RolesEnum.ForbidSelfHarm,
+            true
+        );
 
         if (
-            hasAccess(session.user, RolesEnum.ForbidSelfHarm, true) ||
-            (bandage.archived &&
-                !hasAccess(session.user, RolesEnum.ManageBandages))
+            forbidSelfHarm ||
+            (bandage.archived && !canManageBandages) ||
+            (!canManageBandages && !isBandageOwner)
         ) {
             throw new LocaleException(responses_common.FORBIDDEN, 403);
         }
@@ -633,7 +645,7 @@ export class WorkshopService {
             throw new LocaleException(responses.BAD_BANDAGE_SIZE, 400);
         }
 
-        if (heightInit != undefined && height !== heightInit) {
+        if (!!heightInit && height !== heightInit) {
             throw new LocaleException(responses.BAD_SECOND_BANDAGE_SIZE, 400);
         }
 

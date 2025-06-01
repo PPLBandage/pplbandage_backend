@@ -438,18 +438,23 @@ export class UserService {
 
         const total_count = await this.prisma.user.count({ where: query_req });
         return {
-            data: users.map(user => ({
-                id: user.id,
-                username: user.username,
-                name: user.reserved_name || user.name,
-                joined_at: user.joined_at,
-                discord_id: user.discordId,
-                banned: user.UserSettings?.banned,
-                permissions: user.AccessRoles?.map(role =>
-                    role.name.toLowerCase()
-                ),
-                skip_ppl_check: user.UserSettings?.skip_ppl_check
-            })),
+            data: users.map(user => {
+                let flags = Number(user.UserSettings?.banned);
+                flags =
+                    flags | (Number(user?.UserSettings?.skip_ppl_check) << 1);
+
+                return {
+                    id: user.id,
+                    username: user.username,
+                    name: user.reserved_name || user.name,
+                    joined_at: user.joined_at,
+                    discord_id: user.discordId,
+                    flags: flags,
+                    permissions: user.AccessRoles?.map(role =>
+                        role.name.toLowerCase()
+                    )
+                };
+            }),
             totalCount: total_count
         };
     }

@@ -20,6 +20,23 @@ export interface BandageFull extends Bandage {
     categories: Category[];
 }
 
+export const generateFlags = (el: BandageFull, session: Session | null) => {
+    const colorable = el.categories.some(cat => cat.colorable);
+    const starred = el.stars.find(val => val.id === session?.user.id);
+
+    /*
+    0 - colorable
+    1 - split_type
+    2 - starred (НЕ БЕЙТЕ)
+    */
+
+    let flags = Number(colorable);
+    flags = flags | (Number(el.split_type) << 1);
+    flags = flags | (Number(!!starred) << 2);
+
+    return flags;
+};
+
 export const generateResponse = (
     data: BandageFull[],
     session: Session | null,
@@ -42,18 +59,17 @@ export const generateResponse = (
             title: el.title,
             description: el.description,
             base64: el.base64,
-            split_type: el.split_type,
+            flags: generateFlags(el, session),
             accent_color: el.accent_color,
             creation_date: el.creationDate,
             stars_count: el.stars.length,
-            starred: !!el.stars.find(val => val.id === session?.user.id),
             author: {
                 id: el.User.id,
                 name: el.User.reserved_name || el.User.name,
                 username: el.User.username,
                 public: el.User.UserSettings?.public_profile
             },
-            categories: categories,
+            categories,
             access_level: el.access_level,
             star_type: el.star_type
         };
