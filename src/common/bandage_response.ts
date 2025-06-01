@@ -31,8 +31,8 @@ export const generateFlags = (el: BandageFull, session: Session | null) => {
     */
 
     let flags = Number(colorable);
-    flags = flags | (Number(el.split_type) << 1);
-    flags = flags | (Number(!!starred) << 2);
+    flags |= Number(el.split_type) << 1;
+    flags |= Number(!!starred) << 2;
 
     return flags;
 };

@@ -440,8 +440,7 @@ export class UserService {
         return {
             data: users.map(user => {
                 let flags = Number(user.UserSettings?.banned);
-                flags =
-                    flags | (Number(user?.UserSettings?.skip_ppl_check) << 1);
+                flags |= Number(user?.UserSettings?.skip_ppl_check) << 1;
 
                 return {
                     id: user.id,
