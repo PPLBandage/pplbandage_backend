@@ -34,6 +34,7 @@ import responses_common from 'src/localization/common.localization';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import { LocalAccessGuard } from 'src/guards/localAccess.guard';
 import { generateKey } from 'src/guards/throttlerViews';
+import { LocalAccessThrottlerGuard } from 'src/guards/throttlerLocalAccess.guard';
 
 @Controller({ path: 'workshop', version: '1' })
 @UseGuards(AuthGuard)
@@ -261,11 +262,10 @@ export class WorkshopController {
     }
 
     @Get(':id')
-    @SkipThrottle()
     @Auth(AuthEnum.Weak)
-    @UseGuards(new LocalAccessGuard())
+    @UseGuards(LocalAccessThrottlerGuard)
     async getBandage(@Param('id') id: string, @Req() request: RequestSession) {
-        /* get bandage by external id (internal endpoint) */
+        /* get bandage by external id */
 
         return await this.bandageService.getBandage(id, request.session);
     }

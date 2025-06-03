@@ -32,9 +32,9 @@ import { RequestSession } from 'src/common/bandage_response';
 import { PageTakeDTO, PageTakeQueryDTO } from './dto/queries.dto';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import responses_minecraft from 'src/localization/minecraft.localization';
-import { LocalAccessGuard } from 'src/guards/localAccess.guard';
 import { AuthService } from 'src/auth/auth.service';
 import responses from 'src/localization/common.localization';
+import { LocalAccessThrottlerGuard } from 'src/guards/throttlerLocalAccess.guard';
 
 @Controller({ version: '1', path: 'users' })
 @UseGuards(AuthGuard, RolesGuard)
@@ -193,7 +193,7 @@ export class UserController {
 
     @Get(':username')
     @Auth(AuthEnum.Weak)
-    @UseGuards(new LocalAccessGuard())
+    @UseGuards(LocalAccessThrottlerGuard)
     async user_profile(
         @Param('username') username: string,
         @Req() request: RequestSession
