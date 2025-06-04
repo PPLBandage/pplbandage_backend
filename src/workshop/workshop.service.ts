@@ -319,6 +319,7 @@ export class WorkshopService {
                 externalId: Math.random().toString(36).substring(2, 8),
                 title: body.title,
                 description: body.description,
+                colorable: body.colorable,
                 base64: bandage_base64,
                 base64_slim: bandage_slim_base64,
                 split_type: body.split_type ?? false,
@@ -369,8 +370,7 @@ export class WorkshopService {
             id: category.id,
             name: category.name,
             icon: category.icon,
-            count: category.bandages.length,
-            colorable: category.colorable
+            count: category.bandages.length
         }));
     }
 
@@ -438,8 +438,7 @@ export class WorkshopService {
         const categories = bandage.categories.map(cat => ({
             id: cat.id,
             name: cat.name,
-            icon: cat.icon,
-            colorable: cat.colorable
+            icon: cat.icon
         }));
 
         let check = null;
@@ -570,6 +569,7 @@ export class WorkshopService {
             data: {
                 title: title,
                 description: description,
+                colorable: body.colorable,
                 categories: {
                     set: categories
                 },

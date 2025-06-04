@@ -21,7 +21,6 @@ export interface BandageFull extends Bandage {
 }
 
 export const generateFlags = (el: BandageFull, session: Session | null) => {
-    const colorable = el.categories.some(cat => cat.colorable);
     const starred = el.stars.some(val => val.id === session?.user.id);
 
     /*
@@ -30,7 +29,7 @@ export const generateFlags = (el: BandageFull, session: Session | null) => {
     2 - starred (НЕ БЕЙТЕ)
     */
 
-    let flags = Number(colorable);
+    let flags = Number(el.colorable);
     flags |= Number(el.split_type) << 1;
     flags |= Number(starred) << 2;
 
@@ -49,8 +48,7 @@ export const generateResponse = (
         const categories = el.categories.map(cat => ({
             id: cat.id,
             name: cat.name,
-            icon: cat.icon,
-            colorable: cat.colorable
+            icon: cat.icon
         }));
 
         return {

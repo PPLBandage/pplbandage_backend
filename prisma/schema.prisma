@@ -89,13 +89,13 @@ model Bandage {
     relevance_modifier Int        @default(0)
     views              Int        @default(0)
     star_type          Int        @default(0)
+    colorable          Boolean    @default(false)
 }
 
 model Category {
     id          Int       @id @default(autoincrement())
     name        String    @default("")
     icon        String    @default("")
-    colorable   Boolean   @default(false)
     bandages    Bandage[] @relation("Categories")
     reachable   Boolean   @default(true)
     only_admins Boolean   @default(false)

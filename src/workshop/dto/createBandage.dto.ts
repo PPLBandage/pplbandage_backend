@@ -46,4 +46,8 @@ export class CreateBandageDto {
     @IsOptional()
     @IsBoolean({ message: 'Поле `split_type` должно иметь тип boolean' })
     split_type?: boolean;
+
+    @IsNotEmpty({ message: 'Поле `colorable` обязательно' })
+    @IsBoolean({ message: 'Поле `colorable` должно иметь тип boolean' })
+    colorable?: boolean;
 }

@@ -1,5 +1,6 @@
 import {
     IsArray,
+    IsBoolean,
     IsNumber,
     IsOptional,
     IsString,
@@ -31,4 +32,8 @@ export class EditBandageDto {
     @IsOptional()
     @IsNumber({}, { message: 'Поле `access_level` должно иметь тип number' })
     access_level?: number;
+
+    @IsOptional()
+    @IsBoolean({ message: 'Поле `colorable` должно иметь тип boolean' })
+    colorable!: boolean;
 }
