@@ -268,8 +268,8 @@ export class WorkshopService {
         };
     }
 
-    /** Clear bandage's image metadata */
     async clearMetadata(base64?: string) {
+        /* Clear bandage's image metadata */
         if (!base64) return '';
         const data = await sharp(Buffer.from(base64, 'base64')).toBuffer({
             resolveWithObject: false

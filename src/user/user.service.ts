@@ -432,6 +432,7 @@ export class UserService {
         const users = await this.prisma.user.findMany({
             where: query_req,
             include: { UserSettings: true, AccessRoles: true },
+            orderBy: { joined_at: 'asc' },
             take,
             skip: take * page
         });
