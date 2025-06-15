@@ -405,20 +405,13 @@ export class WorkshopService {
         const hidden = bandage.categories.some(val => val.only_admins);
         let permissions_level = 0;
         if (session) {
-            const isBandageOwner = session.user.id === bandage.User?.id;
+            const isBandageOwner = session.user.id === bandage.User.id;
             const canManageBandages = hasAccess(
                 session.user,
                 RolesEnum.ManageBandages
             );
-            const canForbidSelfHarm = hasAccess(
-                session.user,
-                RolesEnum.ForbidSelfHarm,
-                true
-            );
 
-            if (canForbidSelfHarm) {
-                permissions_level = 0;
-            } else if (bandage.archived && !canManageBandages) {
+            if (bandage.archived && !canManageBandages) {
                 permissions_level = 0;
             } else if (canManageBandages || (isBandageOwner && hidden)) {
                 permissions_level = 2;
@@ -482,22 +475,16 @@ export class WorkshopService {
 
         const bandage = await this.getBandageById(id);
 
-        const isBandageOwner = bandage.User?.id === session.user.id;
+        const isBandageOwner = bandage.User.id === session.user.id;
         const canManageBandages = hasAccess(
             session.user,
             RolesEnum.ManageBandages
         );
-        const forbidSelfHarm = hasAccess(
-            session.user,
-            RolesEnum.ForbidSelfHarm,
-            true
-        );
 
-        if (!isBandageOwner && !canManageBandages) {
-            throw new LocaleException(responses_common.FORBIDDEN, 403);
-        }
-
-        if (forbidSelfHarm || (bandage.archived && !canManageBandages)) {
+        if (
+            (!isBandageOwner && !canManageBandages) ||
+            (bandage.archived && !canManageBandages)
+        ) {
             throw new LocaleException(responses_common.FORBIDDEN, 403);
         }
 
@@ -596,22 +583,13 @@ export class WorkshopService {
 
         const bandage = await this.getBandageById(externalId);
 
-        const isBandageOwner = session.user.id === bandage.User?.id;
+        const isBandageOwner = session.user.id === bandage.User.id;
         const canManageBandages = hasAccess(
             session.user,
             RolesEnum.ManageBandages
         );
-        const forbidSelfHarm = hasAccess(
-            session.user,
-            RolesEnum.ForbidSelfHarm,
-            true
-        );
 
-        if (
-            forbidSelfHarm ||
-            (bandage.archived && !canManageBandages) ||
-            (!canManageBandages && !isBandageOwner)
-        ) {
+        if (!canManageBandages && !isBandageOwner) {
             throw new LocaleException(responses_common.FORBIDDEN, 403);
         }
 

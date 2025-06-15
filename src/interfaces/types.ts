@@ -2,7 +2,6 @@ type ValueOf<T> = T[keyof T];
 
 export const RolesEnum = {
     SuperAdmin: 5,
-    ForbidSelfHarm: 4, // 😁
     UpdateUsers: 3,
     ManageBandages: 1,
     Default: 0
