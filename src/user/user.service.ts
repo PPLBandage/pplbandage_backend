@@ -176,9 +176,6 @@ export class UserService {
                 : `${process.env.DOMAIN}/icon.png`,
             banner_color: response_data.banner_color,
             has_unreaded_notifications: session.user.has_unreaded_notifications,
-            permissions: session.user.AccessRoles.map(role =>
-                role.name.toLowerCase()
-            ),
             roles: session.user.AccessRoles.filter(
                 role => role.public_name
             ).map(role => ({
@@ -450,8 +447,9 @@ export class UserService {
                     joined_at: user.joined_at,
                     discord_id: user.discordId,
                     flags: flags,
-                    permissions: user.AccessRoles?.map(role =>
-                        role.name.toLowerCase()
+                    permissions: user.AccessRoles.reduce(
+                        (acc, role) => acc | (1 << role.level),
+                        0
                     )
                 };
             }),
