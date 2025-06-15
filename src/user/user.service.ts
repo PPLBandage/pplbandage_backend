@@ -433,7 +433,7 @@ export class UserService {
             where: query_req,
             include: { UserSettings: true, AccessRoles: true },
             orderBy: { joined_at: 'asc' },
-            take,
+            take: take,
             skip: take * page
         });
 
@@ -493,6 +493,7 @@ export class UserService {
             autoload?: boolean;
             public_profile?: boolean;
         } = {};
+
         if (body.theme !== undefined) updates.profile_theme = body.theme;
         if (body.skin_autoload !== undefined)
             updates.autoload = body.skin_autoload;

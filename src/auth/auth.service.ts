@@ -229,7 +229,7 @@ export class AuthService {
                 }
             },
             update: {},
-            include: { UserSettings: true }
+            include: { UserSettings: true, AccessRoles: true }
         });
 
         await this.userService.resolveCollisions(user_db.username);
@@ -243,7 +243,11 @@ export class AuthService {
 
         // ----------------------- Create session token ---------------------------
 
-        const session = await this.createSession(user_db.id, user_agent);
+        const session = await this.createSession(
+            user_db.id,
+            user_agent,
+            user_db.AccessRoles
+        );
         return { sessionId: session.sessionId };
     }
 
@@ -252,7 +256,9 @@ export class AuthService {
 
         const minecraft_record = await this.prisma.minecraft.findFirst({
             where: { uuid: minecraft_data.UUID },
-            include: { user: { include: { UserSettings: true } } }
+            include: {
+                user: { include: { UserSettings: true, AccessRoles: true } }
+            }
         });
         if (!minecraft_record)
             throw new LocaleException(
@@ -275,15 +281,27 @@ export class AuthService {
 
         const session = await this.createSession(
             minecraft_record.user.id,
-            user_agent
+            user_agent,
+            minecraft_record.user.AccessRoles
         );
         return { sessionId: session.sessionId };
     }
 
-    async createSession(user_id: string, user_agent: string) {
-        const sessionId = sign({ userId: user_id }, 'ppl_super_secret', {
-            expiresIn: Number(process.env.SESSION_TTL)
-        });
+    async createSession(
+        user_id: string,
+        user_agent: string,
+        roles: AccessRoles[]
+    ) {
+        const sessionId = sign(
+            {
+                userId: user_id,
+                access: this.generateAccessBitSet(roles)
+            },
+            'ppl_super_secret',
+            {
+                expiresIn: Number(process.env.SESSION_TTL)
+            }
+        );
         const token_record = await this.prisma.sessions.create({
             data: {
                 sessionId: sessionId,
@@ -294,14 +312,18 @@ export class AuthService {
         return token_record;
     }
 
+    generateAccessBitSet(roles: AccessRoles[]) {
+        return roles.reduce((acc, role) => acc | (1 << role.level), 0);
+    }
+
     async validateSession(
         session: string | undefined,
         user_agent: string,
         strict: boolean
-    ): Promise<Session | null> {
+    ): Promise<Session | undefined> {
         /* validate and update user session */
 
-        if (!session) return null;
+        if (!session) return undefined;
 
         this.logger.debug('Start session validating');
         const sessionDB = await this.prisma.sessions.findFirst({
@@ -310,7 +332,7 @@ export class AuthService {
         });
 
         this.logger.debug('Session info got (or not found)');
-        if (!sessionDB) return null;
+        if (!sessionDB) return undefined;
 
         // User-Agent check
         if (sessionDB.User_Agent !== user_agent) {
@@ -319,7 +341,7 @@ export class AuthService {
                     where: { id: sessionDB.id }
                 });
             } finally {
-                return null;
+                return undefined;
             }
         }
 
@@ -337,7 +359,12 @@ export class AuthService {
 
             if (decoded.iat + (decoded.exp - decoded.iat) / 2 < now) {
                 const sessionId = sign(
-                    { userId: sessionDB.userId },
+                    {
+                        userId: sessionDB.userId,
+                        access: this.generateAccessBitSet(
+                            sessionDB.User.AccessRoles
+                        )
+                    },
                     'ppl_super_secret',
                     { expiresIn: Number(process.env.SESSION_TTL) }
                 );
@@ -367,7 +394,7 @@ export class AuthService {
         } catch (err) {
             await this.prisma.sessions.delete({ where: { id: sessionDB.id } });
             console.error(`Failed to validate tokens: ${err} Exiting...`);
-            return null;
+            return undefined;
         }
     }
 

@@ -10,6 +10,7 @@ import { Reflector } from '@nestjs/core';
 import { Auth } from 'src/decorators/auth.decorator';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UNAUTHORIZED } from 'src/root/root.controller.v1';
+import { RequestSessionWeak } from 'src/common/bandage_response';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -24,11 +25,11 @@ export class AuthGuard implements CanActivate {
         /* Auth Guard */
 
         this.logger.debug('Received request');
-        const request = context.switchToHttp().getRequest();
+        const request: RequestSessionWeak = context.switchToHttp().getRequest();
         const response: Response = context.switchToHttp().getResponse();
         const strict = this.reflector.get(Auth, context.getHandler());
         const sessionId = request.cookies?.sessionId;
-        const user_agent = request.headers['user-agent'];
+        const user_agent = request.headers['user-agent'] ?? '';
 
         if (!strict) {
             return true;
