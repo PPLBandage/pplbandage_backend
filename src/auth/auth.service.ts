@@ -51,6 +51,7 @@ interface DiscordUser {
 
 interface SessionToken {
     userId: number;
+    access: number;
     iat: number;
     exp: number;
 }
@@ -348,8 +349,11 @@ export class AuthService {
         try {
             const decoded = verify(session, 'ppl_super_secret') as SessionToken;
             const now = Math.round(Date.now() / 1000);
+            const accessMatch =
+                decoded.access ===
+                this.generateAccessBitSet(sessionDB.User.AccessRoles);
 
-            if (!strict && decoded.exp > now) {
+            if (!strict && decoded.exp > now && accessMatch) {
                 return {
                     sessionId: sessionDB.sessionId,
                     cookie: generateCookie(session, decoded.exp),
@@ -357,7 +361,10 @@ export class AuthService {
                 };
             }
 
-            if (decoded.iat + (decoded.exp - decoded.iat) / 2 < now) {
+            if (
+                decoded.iat + (decoded.exp - decoded.iat) / 2 < now ||
+                !accessMatch // Если переданный юзером токен содержит старые роли - ревалидируем токен
+            ) {
                 const sessionId = sign(
                     {
                         userId: sessionDB.userId,

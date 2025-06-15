@@ -94,7 +94,7 @@ export class UserController {
 
     @Delete('/@me/sessions/all')
     @Auth(AuthEnum.Strict)
-    async delete_all_sessions(@Req() request: RequestSession) {
+    async deleteAllSessions(@Req() request: RequestSession) {
         /* log out from all sessions */
 
         await this.authService.deleteSessionAll(request.session);
@@ -102,7 +102,7 @@ export class UserController {
 
     @Delete('/@me/sessions/:id')
     @Auth(AuthEnum.Strict)
-    async delete_session(
+    async deleteSession(
         @Param('id') id: string,
         @Req() request: RequestSession
     ) {
@@ -197,7 +197,7 @@ export class UserController {
     @Get(':username')
     @Auth(AuthEnum.Weak)
     @UseGuards(LocalAccessThrottlerGuard)
-    async user_profile(
+    async userProfile(
         @Param('username') username: string,
         @Req() request: RequestSessionWeak
     ) {
