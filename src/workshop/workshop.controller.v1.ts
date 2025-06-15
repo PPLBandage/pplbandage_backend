@@ -23,7 +23,10 @@ import { AuthEnum } from 'src/interfaces/types';
 import { Auth } from 'src/decorators/auth.decorator';
 import { CreateBandageDto } from './dto/createBandage.dto';
 import { EditBandageDto } from './dto/editBandage.dto';
-import { RequestSession } from 'src/common/bandage_response';
+import {
+    RequestSession,
+    RequestSessionWeak
+} from 'src/common/bandage_response';
 import {
     EditQueryDTO,
     WidthQueryDTO,
@@ -104,7 +107,7 @@ export class WorkshopController {
     @UseGuards(new LocalAccessGuard())
     async getBandageOg(
         @Param('id') id: string,
-        @Req() request: RequestSession
+        @Req() request: RequestSessionWeak
     ) {
         /* get bandage info by external id (internal endpoint) */
 
@@ -117,7 +120,7 @@ export class WorkshopController {
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async getBandageImage(
         @Param('id') id: string,
-        @Req() request: RequestSession,
+        @Req() request: RequestSessionWeak,
         @Query() query: WidthQueryDTO
     ): Promise<StreamableFile | void> {
         /* get bandage image render (for OpenGraph) */
@@ -222,7 +225,7 @@ export class WorkshopController {
     @Auth(AuthEnum.Weak)
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async categories(
-        @Req() request: RequestSession,
+        @Req() request: RequestSessionWeak,
         @Query() query: EditQueryDTO
     ) {
         /* get list of categories */
@@ -264,7 +267,10 @@ export class WorkshopController {
     @Get(':id')
     @Auth(AuthEnum.Weak)
     @UseGuards(LocalAccessThrottlerGuard)
-    async getBandage(@Param('id') id: string, @Req() request: RequestSession) {
+    async getBandage(
+        @Param('id') id: string,
+        @Req() request: RequestSessionWeak
+    ) {
         /* get bandage by external id */
 
         return await this.bandageService.getBandage(id, request.session);

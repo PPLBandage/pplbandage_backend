@@ -85,7 +85,7 @@ export class WorkshopService {
         return bandage;
     }
 
-    async getBandageSession(id: string, session: Session | null) {
+    async getBandageSession(id: string, session?: Session) {
         /* Get and validate bandage from data base */
 
         const bandage = await this.prisma.bandage.findFirst({
@@ -353,7 +353,7 @@ export class WorkshopService {
         return { external_id: result.externalId };
     }
 
-    async getCategories(for_edit: boolean, session: Session) {
+    async getCategories(for_edit: boolean, session?: Session) {
         /* get list of categories */
 
         const admin = hasAccess(session?.user, RolesEnum.ManageBandages);
@@ -374,7 +374,7 @@ export class WorkshopService {
         }));
     }
 
-    async getDataForOg(id: string, session: Session) {
+    async getDataForOg(id: string, session?: Session) {
         /* Get bandage data for Open Graph */
 
         const bandage = await this.getBandageSession(id, session);
@@ -397,7 +397,7 @@ export class WorkshopService {
         };
     }
 
-    async getBandage(id: string, session: Session) {
+    async getBandage(id: string, session?: Session) {
         /* get bandage by external id */
 
         const bandage = await this.getBandageSession(id, session);

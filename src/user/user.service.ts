@@ -293,7 +293,7 @@ export class UserService {
         );
     }
 
-    async _getUserByNickname(username: string, session: Session | null) {
+    async _getUserByNickname(username: string, session?: Session) {
         const user = await this.prisma.user.findFirst({
             where: { username: username },
             include: { Bandage: true, UserSettings: true, AccessRoles: true }
@@ -311,7 +311,7 @@ export class UserService {
         return user;
     }
 
-    async getUserByNickname(username: string, session: Session | null) {
+    async getUserByNickname(username: string, session?: Session) {
         const user = await this._getUserByNickname(username, session);
 
         if (user.id === session?.user?.id) {
@@ -392,7 +392,7 @@ export class UserService {
     }
 
     async getUserOg(username: string) {
-        const user = await this._getUserByNickname(username, null);
+        const user = await this._getUserByNickname(username, undefined);
         const current_discord = await this.getCurrentData(user.discordId);
 
         const starred_bandages = await this.prisma.bandage.findMany({

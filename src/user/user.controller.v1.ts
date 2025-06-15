@@ -28,7 +28,10 @@ import {
     UpdateSelfUserDto,
     UpdateUsersDto
 } from './dto/body.dto';
-import { RequestSession } from 'src/common/bandage_response';
+import {
+    RequestSession,
+    RequestSessionWeak
+} from 'src/common/bandage_response';
 import { PageTakeDTO, PageTakeQueryDTO } from './dto/queries.dto';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import responses_minecraft from 'src/localization/minecraft.localization';
@@ -196,7 +199,7 @@ export class UserController {
     @UseGuards(LocalAccessThrottlerGuard)
     async user_profile(
         @Param('username') username: string,
-        @Req() request: RequestSession
+        @Req() request: RequestSessionWeak
     ) {
         /* get user data by nickname */
         return await this.userService.getUserByNickname(

@@ -20,7 +20,7 @@ export interface BandageFull extends Bandage {
     categories: Category[];
 }
 
-export const generateFlags = (el: BandageFull, session: Session | null) => {
+export const generateFlags = (el: BandageFull, session?: Session) => {
     const starred = el.stars.some(val => val.id === session?.user.id);
 
     /*
@@ -38,7 +38,7 @@ export const generateFlags = (el: BandageFull, session: Session | null) => {
 
 export const generateResponse = (
     data: BandageFull[],
-    session: Session | null,
+    session?: Session,
     suppress_ban?: boolean
 ) => {
     /* generate list of works response by provided array of bandages */
