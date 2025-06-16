@@ -118,7 +118,7 @@ export class RootController {
         const bandages = await this.prisma.bandage.findMany({
             where: {
                 access_level: 2,
-                categories: { none: { only_admins: true } }
+                BandageModeration: { is_hides: false }
             }
         });
         urls = urls.concat(

@@ -1,5 +1,11 @@
 import type { Request } from 'express';
-import { Bandage, Category, User, UserSettings } from '@prisma/client';
+import {
+    Bandage,
+    BandageModeration,
+    Category,
+    User,
+    UserSettings
+} from '@prisma/client';
 import { Session } from 'src/auth/auth.service';
 
 export interface RequestSession extends Request {
@@ -14,10 +20,15 @@ interface UserAuthor extends User {
     UserSettings: UserSettings | null;
 }
 
+interface BandageModerationIssuer extends BandageModeration {
+    issuer: User;
+}
+
 export interface BandageFull extends Bandage {
     User: UserAuthor;
     stars: User[];
     categories: Category[];
+    BandageModeration: BandageModerationIssuer | null;
 }
 
 export const generateFlags = (el: BandageFull, session?: Session) => {
@@ -27,13 +38,33 @@ export const generateFlags = (el: BandageFull, session?: Session) => {
     0 - colorable
     1 - split_type
     2 - starred (НЕ БЕЙТЕ)
+    3 - under_moderation
+    4 - denied
     */
 
     let flags = Number(el.colorable);
     flags |= Number(el.split_type) << 1;
     flags |= Number(starred) << 2;
+    flags |= Number(el.BandageModeration?.type === 'review') << 3;
+    flags |= Number(el.BandageModeration?.type === 'denied') << 4;
 
     return flags;
+};
+
+export const generateModerationState = (el: BandageFull) => {
+    if (!el.BandageModeration) return null;
+
+    const bandage_moderation = el.BandageModeration;
+    return {
+        type: bandage_moderation.type,
+        message: bandage_moderation.message,
+        is_hides: bandage_moderation.is_hides,
+        issuer: {
+            id: bandage_moderation.issuer.id,
+            name: bandage_moderation.issuer.name,
+            username: bandage_moderation.issuer.username
+        }
+    };
 };
 
 export const generateResponse = (
@@ -45,6 +76,13 @@ export const generateResponse = (
 
     const result = data.map(el => {
         if (el.User?.UserSettings?.banned && !suppress_ban) return undefined;
+        if (
+            el.BandageModeration &&
+            el.BandageModeration?.is_hides &&
+            !suppress_ban
+        )
+            return undefined;
+
         const categories = el.categories.map(cat => ({
             id: cat.id,
             name: cat.name,
@@ -69,7 +107,8 @@ export const generateResponse = (
             },
             categories,
             access_level: el.access_level,
-            star_type: el.star_type
+            star_type: el.star_type,
+            moderation: generateModerationState(el)
         };
     });
 

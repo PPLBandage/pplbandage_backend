@@ -24,21 +24,22 @@ model Minecraft {
 }
 
 model User {
-    id                         String          @id
-    username                   String          @default("")
+    id                         String              @id
+    username                   String              @default("")
     reserved_name              String?
-    name                       String          @default("")
-    discordId                  String          @unique @default("")
+    name                       String              @default("")
+    discordId                  String              @unique @default("")
     sessions                   Sessions[]
-    last_accessed              DateTime        @default(now())
+    last_accessed              DateTime            @default(now())
     profile                    Minecraft?
     UserSettings               UserSettings?
-    Bandage                    Bandage[]       @relation("UserBandages")
-    stars                      Bandage[]       @relation("UserStars")
-    joined_at                  DateTime        @default(now())
-    notifications              Notifications[] @relation("Notifications")
-    has_unreaded_notifications Boolean         @default(false)
+    Bandage                    Bandage[]           @relation("UserBandages")
+    stars                      Bandage[]           @relation("UserStars")
+    joined_at                  DateTime            @default(now())
+    notifications              Notifications[]     @relation("Notifications")
+    has_unreaded_notifications Boolean             @default(false)
     AccessRoles                AccessRoles[]
+    BandageModeration          BandageModeration[]
 }
 
 model UserSettings {
@@ -71,36 +72,48 @@ model Sessions {
 }
 
 model Bandage {
-    id                 Int        @id @default(autoincrement())
-    externalId         String     @unique @default("")
-    title              String     @default("")
-    description        String?    @default("")
-    base64             String     @default("")
-    base64_slim        String     @default("")
-    split_type         Boolean    @default(false)
-    User               User       @relation("UserBandages", fields: [userId], references: [id])
+    id                 Int                @id @default(autoincrement())
+    externalId         String             @unique @default("")
+    title              String             @default("")
+    description        String?            @default("")
+    base64             String             @default("")
+    base64_slim        String             @default("")
+    split_type         Boolean            @default(false)
+    User               User               @relation("UserBandages", fields: [userId], references: [id])
     userId             String
-    creationDate       DateTime   @default(now())
-    stars              User[]     @relation("UserStars")
-    categories         Category[] @relation("Categories")
-    access_level       Int        @default(2)
-    archived           Boolean    @default(false)
-    accent_color       String     @default("#000000")
-    relevance_modifier Int        @default(0)
-    views              Int        @default(0)
-    star_type          Int        @default(0)
-    colorable          Boolean    @default(false)
+    BandageModeration  BandageModeration?
+    creationDate       DateTime           @default(now())
+    stars              User[]             @relation("UserStars")
+    categories         Category[]         @relation("Categories")
+    access_level       Int                @default(2)
+    archived           Boolean            @default(false)
+    accent_color       String             @default("#000000")
+    relevance_modifier Int                @default(0)
+    views              Int                @default(0)
+    star_type          Int                @default(0)
+    colorable          Boolean            @default(false)
+}
+
+model BandageModeration {
+    id        Int     @id @default(autoincrement())
+    type      String  @default("")
+    message   String  @default("")
+    is_hides  Boolean @default(true)
+    is_final  Boolean @default(false)
+    bandage   Bandage @relation(fields: [bandageId], references: [id])
+    bandageId Int     @unique
+    issuer    User    @relation(fields: [userId], references: [id])
+    userId    String
 }
 
 model Category {
-    id          Int       @id @default(autoincrement())
-    name        String    @default("")
-    icon        String    @default("")
-    bandages    Bandage[] @relation("Categories")
-    reachable   Boolean   @default(true)
-    only_admins Boolean   @default(false)
-    visible     Boolean   @default(true)
-    order       Int       @default(0)
+    id        Int       @id @default(autoincrement())
+    name      String    @default("")
+    icon      String    @default("")
+    bandages  Bandage[] @relation("Categories")
+    reachable Boolean   @default(true)
+    visible   Boolean   @default(true)
+    order     Int       @default(0)
 }
 
 model Notifications {

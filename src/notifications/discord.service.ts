@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import axios from 'axios';
+import { Session } from 'src/auth/auth.service';
+import { BandageFull } from 'src/common/bandage_response';
 
 const discord_url = process.env.DISCORD_URL;
 
@@ -20,5 +22,26 @@ export class DiscordNotificationService {
                 }
             }
         );
+    }
+
+    async doBandageNotification(
+        message: string,
+        bandage: BandageFull,
+        session: Session
+    ) {
+        try {
+            await this.doNotification(
+                `<@&${process.env.MENTION_ROLE_ID}> ${message}\n` +
+                    `- **Название**: ${bandage.title}\n` +
+                    `- **Описание**: ${bandage.description ?? '<нет описания>'}\n` +
+                    `- **Имеет раздельные типы**: ${bandage.split_type ? 'Да' : 'Нет'}\n` +
+                    `- **Создатель**: ${session.user.name}\n\n` +
+                    `**URL**: https://pplbandage.ru/workshop/${bandage.externalId}`
+            );
+        } catch {
+            console.error(
+                `Cannot do Discord notification about https://pplbandage.ru/workshop/${bandage.externalId}`
+            );
+        }
     }
 }

@@ -246,10 +246,11 @@ export class UserService {
             include: {
                 stars: true,
                 categories: { orderBy: { order: 'asc' } },
-                User: { include: { UserSettings: true } }
+                User: { include: { UserSettings: true } },
+                BandageModeration: { include: { issuer: true } }
             }
         });
-        return generateResponse(result, session);
+        return generateResponse(result, session, true);
     }
 
     async getStars(session: Session) {
@@ -262,31 +263,26 @@ export class UserService {
         const bandages = results.filter(record => record.B === session.user.id);
 
         const result = await Promise.all(
-            bandages.map(async record => {
-                const bandage = await this.prisma.bandage.findFirst({
-                    where: {
-                        id: record.A,
-                        User: { UserSettings: { banned: false } }
-                    },
-                    include: {
-                        stars: true,
-                        categories: { orderBy: { order: 'asc' } },
-                        User: { include: { UserSettings: true } }
-                    }
-                });
-                if (
-                    bandage?.User?.id !== session.user.id &&
-                    !hasAccess(session.user, RolesEnum.ManageBandages) &&
-                    bandage?.categories.some(category => category.only_admins)
-                ) {
-                    return undefined;
-                }
-                return bandage;
-            })
+            bandages.map(
+                async record =>
+                    await this.prisma.bandage.findFirst({
+                        where: {
+                            id: record.A,
+                            User: { UserSettings: { banned: false } }
+                        },
+                        include: {
+                            stars: true,
+                            categories: { orderBy: { order: 'asc' } },
+                            User: { include: { UserSettings: true } },
+                            BandageModeration: { include: { issuer: true } }
+                        }
+                    })
+            )
         );
         return generateResponse(
             result.filter(i => !!i),
-            session
+            session,
+            false
         );
     }
 
@@ -328,15 +324,13 @@ export class UserService {
         const bandages = await this.prisma.bandage.findMany({
             where: {
                 userId: user.id,
-                access_level: can_view ? undefined : 2,
-                categories: can_view
-                    ? undefined
-                    : { none: { only_admins: true } }
+                access_level: can_view ? undefined : 2
             },
             include: {
                 categories: { orderBy: { order: 'asc' } },
                 stars: true,
-                User: { include: { UserSettings: true } }
+                User: { include: { UserSettings: true } },
+                BandageModeration: { include: { issuer: true } }
             }
         });
 
