@@ -646,14 +646,14 @@ export class WorkshopService {
         });
     }
 
-    async approveBandage(external_id: string) {
-        const bandage = await this.getBandageById(external_id);
-
+    /** Remove moderation from bandage */
+    async approveBandage(bandage: BandageFull) {
         await this.prisma.bandageModeration.delete({
             where: { bandageId: bandage.id }
         });
     }
 
+    /** Change bandage moderation status  */
     async changeBandageModeration(
         bandage: BandageFull,
         session: Session,
@@ -662,6 +662,11 @@ export class WorkshopService {
         is_final?: boolean,
         is_hides?: boolean
     ) {
+        if (type === 'none') {
+            this.approveBandage(bandage);
+            return;
+        }
+
         await this.prisma.bandageModeration.upsert({
             where: { bandageId: bandage.id },
             create: {

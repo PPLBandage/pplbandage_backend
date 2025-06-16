@@ -1,6 +1,7 @@
 import {
     IsArray,
     IsBoolean,
+    IsNotEmpty,
     IsNumber,
     IsOptional,
     IsString,
@@ -36,4 +37,24 @@ export class EditBandageDto {
     @IsOptional()
     @IsBoolean({ message: 'Поле `colorable` должно иметь тип boolean' })
     colorable!: boolean;
+}
+
+export class BandageModerationDto {
+    @IsString()
+    @IsNotEmpty()
+    @MaxLength(10)
+    type!: string;
+
+    @IsString()
+    @IsNotEmpty()
+    @MaxLength(50)
+    message!: string;
+
+    @IsBoolean()
+    @IsNotEmpty()
+    is_final!: boolean;
+
+    @IsBoolean()
+    @IsNotEmpty()
+    is_hides!: boolean;
 }

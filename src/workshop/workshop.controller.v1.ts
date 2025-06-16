@@ -19,11 +19,12 @@ import { WorkshopService } from './workshop.service';
 import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { AuthGuard } from 'src/guards/auth.guard';
 import * as sharp from 'sharp';
-import { AuthEnum } from 'src/interfaces/types';
+import { AuthEnum, RolesEnum } from 'src/interfaces/types';
 import { Auth } from 'src/decorators/auth.decorator';
 import { CreateBandageDto } from './dto/createBandage.dto';
-import { EditBandageDto } from './dto/editBandage.dto';
+import { BandageModerationDto, EditBandageDto } from './dto/editBandage.dto';
 import {
+    BandageFull,
     RequestSession,
     RequestSessionWeak
 } from 'src/common/bandage_response';
@@ -38,6 +39,7 @@ import { LocaleException } from 'src/interceptors/localization.interceptor';
 import { LocalAccessGuard } from 'src/guards/localAccess.guard';
 import { generateKey } from 'src/guards/throttlerViews';
 import { LocalAccessThrottlerGuard } from 'src/guards/throttlerLocalAccess.guard';
+import { Roles } from 'src/decorators/access.decorator';
 
 @Controller({ path: 'workshop', version: '1' })
 @UseGuards(AuthGuard)
@@ -208,6 +210,34 @@ export class WorkshopController {
         /* Archive bandage */
 
         await this.bandageService.archiveBandage(request.session, id);
+    }
+
+    @Put(':id/moderation')
+    @Auth(AuthEnum.Strict)
+    @Roles([RolesEnum.ManageBandages])
+    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+    async changeBandageModeration(
+        @Param('id') id: string,
+        @Req() request: RequestSession,
+        @Body() body: BandageModerationDto
+    ) {
+        const bandage = await this.bandageService.getBandageById(id);
+        await this.bandageService.changeBandageModeration(
+            bandage as BandageFull,
+            request.session,
+            body.type,
+            body.message,
+            body.is_final,
+            body.is_hides
+        );
+    }
+
+    @Delete(':id/moderation')
+    @Auth(AuthEnum.Strict)
+    @Roles([RolesEnum.ManageBandages])
+    async approveBandage(@Param('id') id: string) {
+        const bandage = await this.bandageService.getBandageById(id);
+        await this.bandageService.approveBandage(bandage as BandageFull);
     }
 
     @Delete(':id')
