@@ -648,9 +648,13 @@ export class WorkshopService {
 
     /** Remove moderation from bandage */
     async approveBandage(bandage: BandageFull) {
-        await this.prisma.bandageModeration.delete({
-            where: { bandageId: bandage.id }
-        });
+        try {
+            await this.prisma.bandageModeration.delete({
+                where: { bandageId: bandage.id }
+            });
+        } catch {
+            console.debug('Cannot approve approved bandage');
+        }
     }
 
     /** Change bandage moderation status  */
@@ -723,6 +727,14 @@ export class WorkshopService {
             }
         });
 
-        return generateResponse(bandages, session, true);
+        return generateResponse(
+            bandages.sort((a, b) => {
+                if (a.BandageModeration?.type === 'review') return -1;
+                if (b.BandageModeration?.type === 'review') return 1;
+                return 0;
+            }),
+            session,
+            true
+        );
     }
 }

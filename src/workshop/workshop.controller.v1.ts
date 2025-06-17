@@ -40,9 +40,10 @@ import { LocalAccessGuard } from 'src/guards/localAccess.guard';
 import { generateKey } from 'src/guards/throttlerViews';
 import { LocalAccessThrottlerGuard } from 'src/guards/throttlerLocalAccess.guard';
 import { Roles } from 'src/decorators/access.decorator';
+import { RolesGuard } from 'src/guards/roles.guard';
 
 @Controller({ path: 'workshop', version: '1' })
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, RolesGuard)
 export class WorkshopController {
     constructor(private readonly bandageService: WorkshopService) {}
 

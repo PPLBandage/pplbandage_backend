@@ -16,6 +16,8 @@ export class RolesGuard implements CanActivate {
         const user_roles = request.session?.user.AccessRoles.map(
             role => role.level
         );
+
+        console.log(user_roles);
         if (!roles) {
             return true;
         }

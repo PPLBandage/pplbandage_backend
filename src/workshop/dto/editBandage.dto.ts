@@ -46,7 +46,7 @@ export class BandageModerationDto {
     type!: string;
 
     @IsString()
-    @MaxLength(50)
+    @MaxLength(200)
     message!: string;
 
     @IsBoolean()
