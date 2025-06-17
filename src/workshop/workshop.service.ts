@@ -662,6 +662,25 @@ export class WorkshopService {
         is_final?: boolean,
         is_hides?: boolean
     ) {
+        const last_type = bandage.BandageModeration?.type ?? '';
+        if (last_type !== 'denied' && type === 'denied') {
+            await this.notifications.createNotification(bandage.userId, {
+                content:
+                    `Повязка <a href="/workshop/${bandage.externalId}?ref=/me/notifications"><b>${bandage.title}</b></a> ` +
+                    `была отклонена. Пожалуйста, свяжитесь с <a href="/contacts"><b>администрацией</b></a> для уточнения причин.`,
+                type: 2
+            });
+        }
+
+        if (['review', 'denied'].includes(last_type) && type === 'none') {
+            await this.notifications.createNotification(bandage.userId, {
+                content:
+                    `Повязка <a href="/workshop/${bandage.externalId}?ref=/me/notifications"><b>${bandage.title}</b></a> ` +
+                    `успешно прошла проверку и теперь доступна остальным в <a href="/workshop"><b>мастерской</b></a>!`,
+                type: 1
+            });
+        }
+
         if (type === 'none') {
             this.approveBandage(bandage);
             return;
@@ -685,5 +704,25 @@ export class WorkshopService {
                 is_final: is_final
             }
         });
+    }
+
+    /** Get under moderation bandages */
+    async getModerationWorks(session: Session) {
+        const bandages = await this.prisma.bandage.findMany({
+            where: { BandageModeration: { is_hides: true } },
+            orderBy: { creationDate: 'asc' },
+            include: {
+                User: {
+                    include: {
+                        UserSettings: true
+                    }
+                },
+                stars: true,
+                categories: { orderBy: { order: 'asc' } },
+                BandageModeration: { include: { issuer: true } }
+            }
+        });
+
+        return generateResponse(bandages, session, true);
     }
 }

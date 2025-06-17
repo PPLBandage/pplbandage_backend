@@ -212,6 +212,14 @@ export class WorkshopController {
         await this.bandageService.archiveBandage(request.session, id);
     }
 
+    @Get('moderation')
+    @Auth(AuthEnum.Strict)
+    @Roles([RolesEnum.ManageBandages])
+    async getModeration(@Req() request: RequestSession) {
+        /* Get bandages under moderation */
+        return await this.bandageService.getModerationWorks(request.session);
+    }
+
     @Put(':id/moderation')
     @Auth(AuthEnum.Strict)
     @Roles([RolesEnum.ManageBandages])
@@ -221,6 +229,8 @@ export class WorkshopController {
         @Req() request: RequestSession,
         @Body() body: BandageModerationDto
     ) {
+        /* Change bandage moderation status */
+
         const bandage = await this.bandageService.getBandageById(id);
         await this.bandageService.changeBandageModeration(
             bandage as BandageFull,
@@ -230,14 +240,6 @@ export class WorkshopController {
             body.is_final,
             body.is_hides
         );
-    }
-
-    @Delete(':id/moderation')
-    @Auth(AuthEnum.Strict)
-    @Roles([RolesEnum.ManageBandages])
-    async approveBandage(@Param('id') id: string) {
-        const bandage = await this.bandageService.getBandageById(id);
-        await this.bandageService.approveBandage(bandage as BandageFull);
     }
 
     @Delete(':id')
