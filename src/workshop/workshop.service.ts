@@ -348,7 +348,7 @@ export class WorkshopService {
             }
         });
 
-        this.discordNotifications.doBandageNotification(
+        await this.discordNotifications.doBandageNotification(
             'Опубликована новая повязка',
             result as BandageFull,
             session
