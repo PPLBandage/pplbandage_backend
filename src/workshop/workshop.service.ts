@@ -73,7 +73,14 @@ export class WorkshopService {
     ) {}
 
     async getBandagesCount() {
-        return await this.prisma.bandage.count();
+        return await this.prisma.bandage.count({
+            where: {
+                OR: [
+                    { BandageModeration: null },
+                    { BandageModeration: { is_hides: false } }
+                ]
+            }
+        });
     }
 
     async getBandageById(external_id: string) {
