@@ -17,7 +17,6 @@ export class RolesGuard implements CanActivate {
             role => role.level
         );
 
-        console.log(user_roles);
         if (!roles) {
             return true;
         }
