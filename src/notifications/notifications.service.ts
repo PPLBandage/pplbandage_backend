@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Session } from 'src/auth/auth.service';
+import { BandageFull } from 'src/common/bandage_response';
 
 /*
 @types:
@@ -73,5 +74,34 @@ export class NotificationService {
             })
         );
         return notification_db;
+    }
+
+    /** Create bandage approval notification to related user */
+    async createApproveNotification(bandage: BandageFull) {
+        await this.createNotification(bandage.userId, {
+            content:
+                `Повязка <a href="/workshop/${bandage.externalId}?ref=/me/notifications"><b>${bandage.title}</b></a> ` +
+                `успешно прошла проверку и теперь доступна остальным в <a href="/workshop"><b>мастерской</b></a>!`,
+            type: 1
+        });
+    }
+
+    /** Create bandage deny notification to related user */
+    async createDenyNotification(bandage: BandageFull) {
+        await this.createNotification(bandage.userId, {
+            content:
+                `Повязка <a href="/workshop/${bandage.externalId}?ref=/me/notifications"><b>${bandage.title}</b></a> ` +
+                `была отклонена. Пожалуйста, свяжитесь с <a href="/contacts"><b>администрацией</b></a> для уточнения причин.`,
+            type: 2
+        });
+    }
+
+    /** Create bandage creation notification to related user */
+    async createBandageCreationNotification(bandage: BandageFull) {
+        await this.createNotification(bandage.User.id, {
+            content:
+                `Повязка <a href="/workshop/${bandage.externalId}?ref=/me/notifications"><b>${bandage.title}</b></a> ` +
+                `создана и отправлена на проверку!`
+        });
     }
 }

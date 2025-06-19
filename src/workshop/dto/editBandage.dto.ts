@@ -1,4 +1,5 @@
 import {
+    ArrayMaxSize,
     IsArray,
     IsBoolean,
     IsNotEmpty,
@@ -23,12 +24,10 @@ export class EditBandageDto {
     description?: string;
 
     @IsOptional()
-    @IsArray({ message: 'Поле `categories` должно иметь тип array' })
-    @IsNumber(
-        {},
-        { each: true, message: 'Поле `categories` должно иметь тип number[]' }
-    )
-    categories?: number[];
+    @IsArray({ message: 'Поле `tags` должно иметь тип array' })
+    @IsString({ each: true, message: 'Каждый тег должен быть строкой' })
+    @ArrayMaxSize(10, { message: 'Максимум 10 тегов' })
+    tags?: string[];
 
     @IsOptional()
     @IsNumber({}, { message: 'Поле `access_level` должно иметь тип number' })

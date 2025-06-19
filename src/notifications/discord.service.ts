@@ -35,12 +35,13 @@ export class DiscordNotificationService {
                     `- **Название**: ${bandage.title}\n` +
                     `- **Описание**: ${bandage.description ?? '<нет описания>'}\n` +
                     `- **Имеет раздельные типы**: ${bandage.split_type ? 'Да' : 'Нет'}\n` +
+                    `- **Теги**: \`${bandage.tags.map(tag => tag.name).join('`, `')}\`\n` +
                     `- **Создатель**: ${session.user.name}\n\n` +
                     `**URL**: https://pplbandage.ru/workshop/${bandage.externalId}`
             );
-        } catch {
+        } catch (e) {
             console.error(
-                `Cannot do Discord notification about https://pplbandage.ru/workshop/${bandage.externalId}`
+                `Cannot do Discord notification about https://pplbandage.ru/workshop/${bandage.externalId} (${e})`
             );
         }
     }

@@ -29,7 +29,7 @@ import {
     RequestSessionWeak
 } from 'src/common/bandage_response';
 import {
-    EditQueryDTO,
+    TagQueryDto,
     WidthQueryDTO,
     WorkshopSearchQueryDTO
 } from 'src/workshop/dto/queries.dto';
@@ -221,6 +221,13 @@ export class WorkshopController {
         return await this.bandageService.getModerationWorks(request.session);
     }
 
+    @Get('tags/suggest')
+    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+    async suggestTag(@Query() query: TagQueryDto) {
+        /* Suggest tags list */
+        return await this.bandageService.suggestTag(query.q);
+    }
+
     @Put(':id/moderation')
     @Auth(AuthEnum.Strict)
     @Roles([RolesEnum.ManageBandages])
@@ -252,21 +259,6 @@ export class WorkshopController {
         /* delete bandage by external id */
 
         await this.bandageService.deleteBandage(request.session, id);
-    }
-
-    @Get('categories')
-    @Auth(AuthEnum.Weak)
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-    async categories(
-        @Req() request: RequestSessionWeak,
-        @Query() query: EditQueryDTO
-    ) {
-        /* get list of categories */
-
-        return await this.bandageService.getCategories(
-            query.for_edit === 'true',
-            request.session
-        );
     }
 
     @Put('star/:id')

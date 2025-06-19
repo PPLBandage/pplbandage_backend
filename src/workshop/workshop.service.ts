@@ -18,12 +18,10 @@ import responses from 'src/localization/workshop.localization';
 import responses_common from 'src/localization/common.localization';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 
-const official_id = 0;
-
 // Relevance settings
 const downgrade_factor = 1.5;
-const start_boost = 1;
-const start_boost_duration = 7;
+const start_boost = 1; // In stars
+const start_boost_duration = 7; // In days
 
 interface BandageSearch {
     title?: { contains: string };
@@ -88,7 +86,7 @@ export class WorkshopService {
             where: { externalId: external_id },
             include: {
                 User: true,
-                categories: true,
+                tags: true,
                 stars: true,
                 BandageModeration: true
             }
@@ -112,7 +110,7 @@ export class WorkshopService {
                         UserSettings: true
                     }
                 },
-                categories: true,
+                tags: true,
                 stars: true,
                 BandageModeration: { include: { issuer: true } }
             }
@@ -160,11 +158,6 @@ export class WorkshopService {
             ];
         }
 
-        const filters_rule =
-            filters?.map(el => ({
-                categories: { some: { id: el } }
-            })) ?? [];
-
         const admin =
             session &&
             session.user &&
@@ -174,7 +167,6 @@ export class WorkshopService {
             User: { UserSettings: { banned: false } },
             access_level: !admin ? 2 : undefined,
             AND: [
-                ...filters_rule,
                 { OR: search_rule },
                 {
                     OR: [
@@ -198,7 +190,7 @@ export class WorkshopService {
                     }
                 },
                 stars: true,
-                categories: { orderBy: { order: 'asc' } },
+                tags: true,
                 BandageModeration: { include: { issuer: true } }
             },
             take: Math.min(take, 100),
@@ -231,7 +223,7 @@ export class WorkshopService {
                     }
                 },
                 stars: true,
-                categories: { orderBy: { order: 'asc' } },
+                tags: true,
                 BandageModeration: { include: { issuer: true } }
             }
         });
@@ -301,15 +293,6 @@ export class WorkshopService {
     async createBandage(body: CreateBandageDto, session: Session) {
         /* create bandage */
 
-        let categories: { id: number }[] = [];
-        if (body.categories !== undefined) {
-            const validated_categories = await this.validateCategories(
-                body.categories,
-                hasAccess(session.user, RolesEnum.SuperAdmin)
-            );
-            categories = validated_categories.map(el => ({ id: el }));
-        }
-
         const count = await this.prisma.bandage.count({
             where: {
                 userId: session.user.id,
@@ -342,7 +325,6 @@ export class WorkshopService {
                 base64_slim: bandage_slim_base64,
                 split_type: body.split_type ?? false,
                 User: { connect: { id: session.user.id } },
-                categories: { connect: categories },
                 accent_color: rgbToHex(r, g, b),
                 BandageModeration: {
                     create: {
@@ -352,8 +334,16 @@ export class WorkshopService {
                         userId: session.user.id
                     }
                 }
-            }
+            },
+            include: { User: true }
         });
+
+        // Connect or create requested tags to created bandage
+        await this.updateTagsForBandage(
+            body.tags ?? [],
+            result as BandageFull,
+            false
+        );
 
         await this.discordNotifications.doBandageNotification(
             'Опубликована новая повязка',
@@ -361,33 +351,58 @@ export class WorkshopService {
             session
         );
 
-        await this.notifications.createNotification(session.user.id, {
-            content:
-                `Повязка <a href="/workshop/${result.externalId}?ref=/me/notifications"><b>${result.title}</b></a> ` +
-                `создана и отправлена на проверку!`
-        });
+        await this.notifications.createBandageCreationNotification(
+            result as BandageFull
+        );
 
         return { external_id: result.externalId };
     }
 
-    async getCategories(for_edit: boolean, session?: Session) {
-        /* get list of categories */
+    /** Updates / creates list of tags for bandage */
+    async updateTagsForBandage(
+        tags: string[],
+        bandage: BandageFull,
+        verified: boolean
+    ) {
+        const loweredTags = tags.map(t => t.toLowerCase());
 
-        const admin = hasAccess(session?.user, RolesEnum.ManageBandages);
-        const categories = await this.prisma.category.findMany({
-            where: {
-                reachable: for_edit && !admin ? true : undefined,
-                visible: true
-            },
-            orderBy: { order: 'asc' },
-            include: { bandages: true }
+        const existingTags = await this.prisma.tags.findMany({
+            where: { name_search: { in: loweredTags } }
         });
-        return categories.map(category => ({
-            id: category.id,
-            name: category.name,
-            icon: category.icon,
-            count: category.bandages.length
-        }));
+
+        const existingByName = new Map(
+            existingTags.map(tag => [tag.name_search, tag.id])
+        );
+
+        const tagIds: number[] = [];
+        for (const tag of tags) {
+            const searchName = tag.toLowerCase();
+            if (existingByName.has(searchName)) {
+                tagIds.push(existingByName.get(searchName)!);
+            } else {
+                const newTag = await this.prisma.tags.create({
+                    data: {
+                        name: tag,
+                        name_search: searchName,
+                        verified: verified
+                    }
+                });
+                tagIds.push(newTag.id);
+            }
+        }
+
+        await this.prisma.bandage.update({
+            where: { id: bandage.id },
+            data: {
+                tags: {
+                    set: tagIds.map(id => ({ id }))
+                }
+            }
+        });
+
+        await this.prisma.tags.deleteMany({
+            where: { bandages: { none: {} } }
+        });
     }
 
     async getDataForOg(id: string, session?: Session) {
@@ -441,12 +456,6 @@ export class WorkshopService {
                   }
                 : undefined;
 
-        const categories = bandage.categories.map(cat => ({
-            id: cat.id,
-            name: cat.name,
-            icon: cat.icon
-        }));
-
         return {
             data: {
                 id: bandage.id,
@@ -466,7 +475,7 @@ export class WorkshopService {
                     username: bandage.User.username,
                     public: bandage.User.UserSettings?.public_profile
                 },
-                categories: categories,
+                tags: bandage.tags.map(tag => tag.name),
                 me_profile: me_profile,
                 permissions_level: permissions_level,
                 access_level: bandage.access_level,
@@ -497,27 +506,11 @@ export class WorkshopService {
 
         let title = undefined;
         let description = undefined;
-        let categories = undefined;
         let access_level = undefined;
 
         const admin = hasAccess(session.user, RolesEnum.ManageBandages);
         if (body.title !== undefined) title = body.title;
         if (body.description !== undefined) description = body.description;
-
-        // TODO: Rewrite me
-        if (body.categories !== undefined) {
-            const validated_categories = await this.validateCategories(
-                body.categories,
-                admin
-            );
-            const bandage_categories = bandage?.categories.map(el => el.id);
-            if (!admin) {
-                if (bandage_categories?.includes(official_id))
-                    validated_categories.push(official_id);
-            }
-
-            categories = validated_categories.map(el => ({ id: el }));
-        }
 
         if (body.access_level !== undefined) {
             const check_al = body.access_level;
@@ -525,9 +518,32 @@ export class WorkshopService {
                 access_level = check_al;
         }
 
+        if (body.tags) {
+            // Connect or create tags for bandage
+            await this.updateTagsForBandage(
+                body.tags,
+                bandage as BandageFull,
+                admin
+            );
+        }
+
+        const result = await this.prisma.bandage.update({
+            where: {
+                id: bandage.id
+            },
+            data: {
+                title: title,
+                description: description,
+                colorable: body.colorable,
+                access_level: access_level
+            },
+            include: { User: true, tags: true }
+        });
+
+        // Do some notifications
         if (!admin && !bandage.BandageModeration?.is_final) {
             await this.changeBandageModeration(
-                bandage as BandageFull,
+                result as BandageFull,
                 session,
                 'review',
                 'Ваша повязка сейчас проходит модерацию',
@@ -541,39 +557,11 @@ export class WorkshopService {
             ) {
                 await this.discordNotifications.doBandageNotification(
                     'Запрошена ремодерация повязки',
-                    bandage as BandageFull,
+                    result as BandageFull,
                     session
                 );
             }
         }
-
-        await this.prisma.bandage.update({
-            where: {
-                id: bandage.id
-            },
-            data: {
-                title: title,
-                description: description,
-                colorable: body.colorable,
-                categories: {
-                    set: categories
-                },
-                access_level: access_level
-            }
-        });
-    }
-
-    async validateCategories(categories: number[], admin: boolean) {
-        /* filter categories that available for user */
-
-        const reachable_categories = await this.prisma.category.findMany({
-            where: {
-                reachable: admin ? undefined : true
-            }
-        });
-
-        const reachable_ids = reachable_categories.map(el => el.id);
-        return categories.filter(el => reachable_ids.includes(el));
     }
 
     async deleteBandage(session: Session, externalId: string) {
@@ -631,10 +619,12 @@ export class WorkshopService {
     async archiveBandage(session: Session, externalId: string) {
         const bandage = await this.getBandageById(externalId);
 
-        if (
-            !hasAccess(session.user, RolesEnum.ManageBandages) &&
-            session.user.id !== bandage.User?.id
-        ) {
+        const isBandageOwner = session.user.id === bandage.User.id;
+        const canManageBandages = hasAccess(
+            session.user,
+            RolesEnum.ManageBandages
+        );
+        if (!isBandageOwner && !canManageBandages) {
             throw new LocaleException(responses_common.FORBIDDEN, 403);
         }
 
@@ -664,7 +654,7 @@ export class WorkshopService {
         }
     }
 
-    /** Change bandage moderation status  */
+    /** Change bandage moderation status */
     async changeBandageModeration(
         bandage: BandageFull,
         session: Session,
@@ -675,21 +665,17 @@ export class WorkshopService {
     ) {
         const last_type = bandage.BandageModeration?.type ?? '';
         if (last_type !== 'denied' && type === 'denied') {
-            await this.notifications.createNotification(bandage.userId, {
-                content:
-                    `Повязка <a href="/workshop/${bandage.externalId}?ref=/me/notifications"><b>${bandage.title}</b></a> ` +
-                    `была отклонена. Пожалуйста, свяжитесь с <a href="/contacts"><b>администрацией</b></a> для уточнения причин.`,
-                type: 2
-            });
+            await this.notifications.createDenyNotification(bandage);
         }
 
         if (['review', 'denied'].includes(last_type) && type === 'none') {
-            await this.notifications.createNotification(bandage.userId, {
-                content:
-                    `Повязка <a href="/workshop/${bandage.externalId}?ref=/me/notifications"><b>${bandage.title}</b></a> ` +
-                    `успешно прошла проверку и теперь доступна остальным в <a href="/workshop"><b>мастерской</b></a>!`,
-                type: 1
+            // Approve this bandage's tags
+            await this.prisma.tags.updateMany({
+                where: { bandages: { some: { id: bandage.id } } },
+                data: { verified: true }
             });
+
+            await this.notifications.createApproveNotification(bandage);
         }
 
         if (type === 'none') {
@@ -729,7 +715,7 @@ export class WorkshopService {
                     }
                 },
                 stars: true,
-                categories: { orderBy: { order: 'asc' } },
+                tags: true,
                 BandageModeration: { include: { issuer: true } }
             }
         });
@@ -743,5 +729,19 @@ export class WorkshopService {
             session,
             true
         );
+    }
+
+    /** Get list of verified tags */
+    async suggestTag(q?: string) {
+        const tags = await this.prisma.tags.findMany({
+            where: {
+                name_search: { contains: q?.toLowerCase() },
+                verified: true
+            },
+            orderBy: { bandages: { _count: 'desc' } },
+            take: 20
+        });
+
+        return tags.map(tag => tag.name);
     }
 }

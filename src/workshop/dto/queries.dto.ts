@@ -1,6 +1,6 @@
 import { Transform, Type } from 'class-transformer';
 import { IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
-import { IsBooleanStr, IsDivisible, IsSort } from 'src/common/types.decorator';
+import { IsDivisible, IsSort } from 'src/common/types.decorator';
 
 export class WidthQueryDTO {
     @IsNumber()
@@ -12,10 +12,10 @@ export class WidthQueryDTO {
     width?: number;
 }
 
-export class EditQueryDTO {
-    @IsBooleanStr()
+export class TagQueryDto {
+    @IsString()
     @IsOptional()
-    for_edit?: string;
+    q?: string;
 }
 
 export class WorkshopSearchQueryDTO {

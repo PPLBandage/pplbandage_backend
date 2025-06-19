@@ -245,7 +245,7 @@ export class UserService {
             },
             include: {
                 stars: true,
-                categories: { orderBy: { order: 'asc' } },
+                tags: true,
                 User: { include: { UserSettings: true } },
                 BandageModeration: { include: { issuer: true } }
             }
@@ -272,7 +272,7 @@ export class UserService {
                         },
                         include: {
                             stars: true,
-                            categories: { orderBy: { order: 'asc' } },
+                            tags: true,
                             User: { include: { UserSettings: true } },
                             BandageModeration: { include: { issuer: true } }
                         }
@@ -327,7 +327,7 @@ export class UserService {
                 access_level: can_view ? undefined : 2
             },
             include: {
-                categories: { orderBy: { order: 'asc' } },
+                tags: true,
                 stars: true,
                 User: { include: { UserSettings: true } },
                 BandageModeration: { include: { issuer: true } }

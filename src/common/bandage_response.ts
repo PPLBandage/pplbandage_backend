@@ -2,7 +2,7 @@ import type { Request } from 'express';
 import {
     Bandage,
     BandageModeration,
-    Category,
+    Tags,
     User,
     UserSettings
 } from '@prisma/client';
@@ -27,7 +27,7 @@ interface BandageModerationIssuer extends BandageModeration {
 export interface BandageFull extends Bandage {
     User: UserAuthor;
     stars: User[];
-    categories: Category[];
+    tags: Tags[];
     BandageModeration: BandageModerationIssuer | null;
 }
 
@@ -83,12 +83,6 @@ export const generateResponse = (
         )
             return undefined;
 
-        const categories = el.categories.map(cat => ({
-            id: cat.id,
-            name: cat.name,
-            icon: cat.icon
-        }));
-
         return {
             id: el.id,
             external_id: el.externalId,
@@ -99,13 +93,13 @@ export const generateResponse = (
             accent_color: el.accent_color,
             creation_date: el.creationDate,
             stars_count: el.stars.length,
+            tags: el.tags.map(tag => tag.name),
             author: {
                 id: el.User.id,
                 name: el.User.reserved_name || el.User.name,
                 username: el.User.username,
                 public: el.User.UserSettings?.public_profile
             },
-            categories,
             access_level: el.access_level,
             star_type: el.star_type,
             moderation: generateModerationState(el)
