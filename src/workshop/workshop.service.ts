@@ -23,13 +23,6 @@ const downgrade_factor = 1.5;
 const start_boost = 1; // In stars
 const start_boost_duration = 7; // In days
 
-interface BandageSearch {
-    title?: { contains: string };
-    description?: { contains: string };
-    externalId?: { contains: string };
-    User?: { name: { contains: string } };
-}
-
 export const sort_keys = ['popular_up', 'date_up', 'name_up', 'relevant_up'];
 
 const constructSort = (
@@ -143,18 +136,26 @@ export class WorkshopService {
         take: number,
         page: number,
         search?: string,
-        filters?: number[],
         sort?: string
     ) {
         /* get workshop list */
 
-        let search_rule: BandageSearch[] | undefined = undefined;
+        let search_rule = undefined;
         if (search) {
             search_rule = [
                 { title: { contains: search } },
                 { description: { contains: search } },
                 { externalId: { contains: search } },
-                { User: { name: { contains: search } } }
+                { User: { name: { contains: search } } },
+                {
+                    tags: {
+                        some: {
+                            name_search: {
+                                contains: search.toLocaleLowerCase()
+                            }
+                        }
+                    }
+                }
             ];
         }
 

@@ -61,7 +61,6 @@ export class WorkshopController {
             query.take ?? 20,
             query.page ?? 0,
             query.search,
-            query.filters,
             query.sort
         );
     }

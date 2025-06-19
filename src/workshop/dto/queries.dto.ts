@@ -1,4 +1,4 @@
-import { Transform, Type } from 'class-transformer';
+import { Type } from 'class-transformer';
 import { IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 import { IsDivisible, IsSort } from 'src/common/types.decorator';
 
@@ -22,22 +22,6 @@ export class WorkshopSearchQueryDTO {
     @IsString()
     @IsOptional()
     search?: string;
-
-    @IsOptional()
-    @Transform(({ value }) => value.split(',').map(Number))
-    @IsNumber(
-        {},
-        {
-            each: true,
-            message(validationArguments) {
-                return (
-                    `\`${validationArguments.property}\` property must be an array of categories IDs, ` +
-                    `like \`1,2,10\`, but \`${validationArguments.value}\` was provided instead`
-                );
-            }
-        }
-    )
-    filters?: number[];
 
     @IsOptional()
     @IsString()
