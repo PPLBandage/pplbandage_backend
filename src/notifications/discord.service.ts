@@ -30,12 +30,13 @@ export class DiscordNotificationService {
         session: Session
     ) {
         try {
+            const tags = bandage?.tags ?? [];
             await this.doNotification(
                 `<@&${process.env.MENTION_ROLE_ID}> ${message}\n` +
                     `- **Название**: ${bandage.title}\n` +
                     `- **Описание**: ${bandage.description ?? '<нет описания>'}\n` +
                     `- **Имеет раздельные типы**: ${bandage.split_type ? 'Да' : 'Нет'}\n` +
-                    `- **Теги**: \`${bandage.tags.map(tag => tag.name).join('`, `')}\`\n` +
+                    `- **Теги**: \`${tags.map(tag => tag.name).join('`, `')}\`\n` +
                     `- **Создатель**: ${session.user.name}\n\n` +
                     `**URL**: https://pplbandage.ru/workshop/${bandage.externalId}`
             );
