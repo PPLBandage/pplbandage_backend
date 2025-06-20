@@ -336,7 +336,7 @@ export class WorkshopService {
                     }
                 }
             },
-            include: { User: true }
+            include: { User: true, tags: true }
         });
 
         // Connect or create requested tags to created bandage
