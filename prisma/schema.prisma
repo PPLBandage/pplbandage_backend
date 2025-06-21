@@ -129,3 +129,11 @@ model Roles {
     title String @default("")
     color Int    @default(0)
 }
+
+model KV {
+    id      Int      @id @default(autoincrement())
+    key     String   @unique @default("")
+    value   String   @default("")
+    created DateTime @default(now())
+    edited  DateTime @default(now())
+}
