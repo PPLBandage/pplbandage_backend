@@ -147,7 +147,8 @@ export class UserService {
             where: { id: session.user.id },
             data: {
                 name: response_data.global_name || response_data.username
-            }
+            },
+            include: { subscribers: true }
         });
 
         this.logger.debug('User updated');
@@ -184,7 +185,8 @@ export class UserService {
                 icon: role.icon
             })),
             profile_theme: session.user.UserSettings?.profile_theme,
-            stars_count: stars_count
+            stars_count: stars_count,
+            subscribers_count: session.user.subscribers.length
         };
     }
 
@@ -289,7 +291,12 @@ export class UserService {
     async _getUserByNickname(username: string, session?: Session) {
         const user = await this.prisma.user.findFirst({
             where: { username: username },
-            include: { Bandage: true, UserSettings: true, AccessRoles: true }
+            include: {
+                Bandage: true,
+                UserSettings: true,
+                AccessRoles: true,
+                subscribers: true
+            }
         });
 
         if (!user) throw new LocaleException(responses.USER_NOT_FOUND, 404);
@@ -355,6 +362,10 @@ export class UserService {
                 new Date(a.last_accessed).getTime()
         )[0];
 
+        const subscribed = session
+            ? !!session.user.subscriptions.find(el => el.id === updated_user.id)
+            : undefined;
+
         return {
             userID: user.id,
             discordID: user.discordId,
@@ -376,6 +387,8 @@ export class UserService {
                 })
             ),
             stars_count: stars_count,
+            subscribers_count: user.subscribers.length,
+            is_subscribed: subscribed,
             last_accessed: hasAccess(session?.user, RolesEnum.UpdateUsers)
                 ? last_accessed?.last_accessed
                 : undefined
@@ -541,5 +554,43 @@ export class UserService {
         await this.resolveCollisions(user_db.username);
 
         return { statusCode: 201 };
+    }
+
+    /** Subscribe to user by nickname */
+    async subscribeTo(username: string, session: Session) {
+        if (username === session.user.username)
+            throw new LocaleException(responses.BAD_REQUEST, 400);
+
+        const user = await this._getUserByNickname(username, session);
+
+        await this.prisma.user.update({
+            where: { id: session.user.id },
+            data: { subscriptions: { connect: { id: user.id } } },
+            include: { subscribers: true }
+        });
+
+        const count = await this.prisma.user.count({
+            where: { subscriptions: { some: { id: user.id } } }
+        });
+        return { count };
+    }
+
+    /** Unsubscribe from user by nickname */
+    async unsubscribeFrom(username: string, session: Session) {
+        if (username === session.user.username)
+            throw new LocaleException(responses.BAD_REQUEST, 400);
+
+        const user = await this._getUserByNickname(username, session);
+
+        await this.prisma.user.update({
+            where: { id: session.user.id },
+            data: { subscriptions: { disconnect: { id: user.id } } },
+            include: { subscribers: true }
+        });
+
+        const count = await this.prisma.user.count({
+            where: { subscriptions: { some: { id: user.id } } }
+        });
+        return { count };
     }
 }

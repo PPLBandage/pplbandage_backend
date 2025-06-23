@@ -208,6 +208,29 @@ export class UserController {
         );
     }
 
+    @Post(':username/subscribers')
+    @Auth(AuthEnum.Strict)
+    async subscribeTo(
+        @Param('username') username: string,
+        @Req() request: RequestSession
+    ) {
+        /* Subscribe to user by nickname */
+        return await this.userService.subscribeTo(username, request.session);
+    }
+
+    @Delete(':username/subscribers')
+    @Auth(AuthEnum.Strict)
+    async unsubscribeFrom(
+        @Param('username') username: string,
+        @Req() request: RequestSession
+    ) {
+        /* Unsubscribe from user by nickname */
+        return await this.userService.unsubscribeFrom(
+            username,
+            request.session
+        );
+    }
+
     @Get(':username/og')
     async userOg(@Param('username') username: string) {
         /* get user data by nickname */

@@ -77,6 +77,8 @@ export interface UserFull extends User {
     stars: Bandage[];
     notifications: Notifications[];
     AccessRoles: AccessRoles[];
+    subscribers: User[];
+    subscriptions: User[];
 }
 
 export interface UserAccess extends User {
@@ -127,7 +129,9 @@ export class AuthService {
                 UserSettings: true,
                 Bandage: true,
                 stars: true,
-                AccessRoles: true
+                AccessRoles: true,
+                subscribers: true,
+                subscriptions: true
             }
         }
     };

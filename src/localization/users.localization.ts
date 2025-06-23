@@ -26,6 +26,10 @@ const responses = {
     MINECRAFT_USER_NOT_FOUND: {
         en: "This account didn't connected",
         ru: 'Этот аккаунт не подключен'
+    },
+    BAD_REQUEST: {
+        en: 'You cannot do this',
+        ru: 'Вы не можете делать это действие'
     }
 };
 

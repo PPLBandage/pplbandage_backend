@@ -40,6 +40,9 @@ model User {
     has_unreaded_notifications Boolean             @default(false)
     AccessRoles                AccessRoles[]
     BandageModeration          BandageModeration[]
+
+    subscriptions User[] @relation("UserSubs")
+    subscribers   User[] @relation("UserSubs")
 }
 
 model UserSettings {
