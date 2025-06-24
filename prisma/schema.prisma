@@ -98,12 +98,14 @@ model Bandage {
 }
 
 model BandageModeration {
-    id        Int     @id @default(autoincrement())
-    type      String  @default("")
-    message   String  @default("")
-    is_hides  Boolean @default(true)
-    is_final  Boolean @default(false)
-    is_first  Boolean @default(false)
+    id       Int      @id @default(autoincrement())
+    type     String   @default("")
+    message  String   @default("")
+    is_hides Boolean  @default(true)
+    is_final Boolean  @default(false)
+    is_first Boolean  @default(false)
+    created  DateTime @default(now())
+
     bandage   Bandage @relation(fields: [bandageId], references: [id])
     bandageId Int     @unique
     issuer    User    @relation(fields: [userId], references: [id])
