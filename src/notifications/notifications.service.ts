@@ -3,13 +3,12 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Session } from 'src/auth/auth.service';
 import { BandageFull } from 'src/common/bandage_response';
 
-/*
-@types:
-0 - standard notification
-1 - moderation pass
-2 - moderation denied
+/**
+@types  
+0 - standard notification  
+1 - moderation pass  
+2 - moderation denied  
 */
-
 @Injectable()
 export class NotificationService {
     constructor(private prisma: PrismaService) {}
@@ -84,6 +83,10 @@ export class NotificationService {
                 `успешно прошла проверку и теперь доступна остальным в <a href="/workshop"><b>мастерской</b></a>!`,
             type: 1
         });
+
+        if (bandage.BandageModeration?.is_first) {
+            await this.createBandageCreationSubscribers(bandage);
+        }
     }
 
     /** Create bandage deny notification to related user */
@@ -103,5 +106,28 @@ export class NotificationService {
                 `Повязка <a href="/workshop/${bandage.externalId}?ref=/me/notifications"><b>${bandage.title}</b></a> ` +
                 `создана и отправлена на проверку!`
         });
+    }
+
+    /** Create bandage creation notification for user's subscribers */
+    async createBandageCreationSubscribers(bandage: BandageFull) {
+        const author = await this.prisma.user.findFirst({
+            where: { id: bandage.userId },
+            include: { subscribers: true }
+        });
+
+        if (!author) return;
+
+        const content =
+            `<a href="/users/${author.username}?ref=/me/notifications"><b>${author.name}</b></a> опубликовал(а) новую повязку ` +
+            `<a href="/workshop/${bandage.externalId}?ref=/me/notifications"><b>${bandage.title}</b></a>!`;
+
+        await Promise.all(
+            author.subscribers.map(async subscriber => {
+                await this.createNotification(subscriber.id, {
+                    content,
+                    type: 0
+                });
+            })
+        );
     }
 }

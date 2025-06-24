@@ -332,6 +332,7 @@ export class WorkshopService {
                         type: 'review',
                         message: 'Ваша повязка сейчас проходит модерацию',
                         is_hides: true,
+                        is_first: true,
                         userId: session.user.id
                     }
                 }

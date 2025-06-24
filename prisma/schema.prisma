@@ -103,6 +103,7 @@ model BandageModeration {
     message   String  @default("")
     is_hides  Boolean @default(true)
     is_final  Boolean @default(false)
+    is_first  Boolean @default(false)
     bandage   Bandage @relation(fields: [bandageId], references: [id])
     bandageId Int     @unique
     issuer    User    @relation(fields: [userId], references: [id])
