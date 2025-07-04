@@ -160,11 +160,12 @@ export class RootController {
     @Post('/error-report')
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     @Throttle({ default: { limit: 5, ttl: 1000 * 60 } })
-    async errorReport(@Body() body: FeedbackDTO) {
+    async errorReport(@Body() body: FeedbackDTO, @Req() req: Request) {
         /* Receive error report */
 
         await this.discordNotification.doNotification(
-            `<@&${process.env.SYSTEM_ROLE_ID}> Client received client-side error:\n${body.content}`,
+            `<@&${process.env.SYSTEM_ROLE_ID}> Client received client-side error:\n${body.content}\n\nUser agent: ` +
+                req.headers['user-agent'],
             process.env.SYSTEM_CHANNEL_ID
         );
     }
