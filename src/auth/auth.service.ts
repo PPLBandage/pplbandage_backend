@@ -204,7 +204,9 @@ export class AuthService {
         const ds_user = discord_user.data as DiscordUser;
 
         // ----------------------- Check discord server roles ---------------------
+        // Disabled for a test
 
+        /*
         const user_settings = await this.prisma.userSettings.findFirst({
             where: { User: { discordId: ds_user.id } }
         });
@@ -217,6 +219,7 @@ export class AuthService {
             });
             throw new LocaleException(responses_users.MISSING_PPL_ROLES, 403);
         }
+        */
 
         // ----------------------- Upsert user field in DB ------------------------
 
