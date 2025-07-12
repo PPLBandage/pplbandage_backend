@@ -36,7 +36,7 @@ export class DiscordNotificationService {
             await this.doNotification(
                 `<@&${process.env.MENTION_ROLE_ID}> ${message}\n` +
                     `- **Название**: ${bandage.title}\n` +
-                    `- **Описание**: ${bandage.description ?? '<нет описания>'}\n` +
+                    `- **Описание**: ${bandage.description || '<нет описания>'}\n` +
                     `- **Имеет раздельные типы**: ${bandage.split_type ? 'Да' : 'Нет'}\n` +
                     `- **Теги**: \`${tags.join('`, `')}\`\n` +
                     `- **Создатель**: ${session.user.name}\n\n` +
