@@ -350,7 +350,8 @@ export class WorkshopService {
         await this.discordNotifications.doBandageNotification(
             'Опубликована новая повязка',
             result as BandageFull,
-            session
+            session,
+            body.tags ?? []
         );
 
         await this.notifications.createBandageCreationNotification(
@@ -366,6 +367,7 @@ export class WorkshopService {
         bandage: BandageFull,
         verified: boolean
     ) {
+        tags = tags.map(tag => tag.replace(/[^\p{L}\p{N} ]/gu, ''));
         const loweredTags = tags.map(t => t.toLowerCase());
 
         const existingTags = await this.prisma.tags.findMany({
@@ -747,3 +749,4 @@ export class WorkshopService {
         return tags.map(tag => tag.name);
     }
 }
+

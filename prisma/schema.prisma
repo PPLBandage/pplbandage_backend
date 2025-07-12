@@ -106,7 +106,7 @@ model BandageModeration {
     is_first Boolean  @default(false)
     created  DateTime @default(now())
 
-    bandage   Bandage @relation(fields: [bandageId], references: [id])
+    bandage   Bandage @relation(fields: [bandageId], references: [id], onDelete: Cascade)
     bandageId Int     @unique
     issuer    User    @relation(fields: [userId], references: [id])
     userId    String

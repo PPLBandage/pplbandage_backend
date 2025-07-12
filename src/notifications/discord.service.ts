@@ -27,16 +27,18 @@ export class DiscordNotificationService {
     async doBandageNotification(
         message: string,
         bandage: BandageFull,
-        session: Session
+        session: Session,
+        bandage_tags?: string[]
     ) {
         try {
-            const tags = bandage?.tags ?? [];
+            const tags =
+                bandage_tags ?? bandage.tags?.map?.(tag => tag.name) ?? [];
             await this.doNotification(
                 `<@&${process.env.MENTION_ROLE_ID}> ${message}\n` +
                     `- **Название**: ${bandage.title}\n` +
                     `- **Описание**: ${bandage.description ?? '<нет описания>'}\n` +
                     `- **Имеет раздельные типы**: ${bandage.split_type ? 'Да' : 'Нет'}\n` +
-                    `- **Теги**: \`${tags.map(tag => tag.name).join('`, `')}\`\n` +
+                    `- **Теги**: \`${tags.join('`, `')}\`\n` +
                     `- **Создатель**: ${session.user.name}\n\n` +
                     `**URL**: https://pplbandage.ru/workshop/${bandage.externalId}`
             );
@@ -47,3 +49,4 @@ export class DiscordNotificationService {
         }
     }
 }
+
