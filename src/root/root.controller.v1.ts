@@ -163,9 +163,16 @@ export class RootController {
     async errorReport(@Body() body: FeedbackDTO, @Req() req: Request) {
         /* Receive error report */
 
+        const ua = req.headers['user-agent'] ?? 'Unknown agent';
+        if (ua.toLocaleLowerCase().includes('bot')) {
+            console.log('Received client-side error from bot. Ignoring it...');
+            console.log(body.content);
+            return;
+        }
+
         await this.discordNotification.doNotification(
-            `<@&${process.env.SYSTEM_ROLE_ID}> Client received client-side error:\n${body.content}\n\nUser agent: ` +
-                req.headers['user-agent'],
+            `<@&${process.env.SYSTEM_ROLE_ID}> Client received client-side error:\n${body.content}\n\n` +
+                `User agent: ${ua}`,
             process.env.SYSTEM_CHANNEL_ID
         );
     }
@@ -182,3 +189,4 @@ export class RootController {
         );
     }
 }
+
