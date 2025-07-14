@@ -3,17 +3,18 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
 import responses from 'src/localization/users.localization';
 import { readFile } from 'fs/promises';
+import * as sharp from 'sharp';
 
 @Injectable()
 export class AvatarsService {
-    providers = ['discord', 'bla', 'bla-bla'];
+    providers = ['discord', 'minecraft', 'bla', 'bla-bla'];
     constructor(private prisma: PrismaService) {}
 
     /** Get user' preferred avatar */
     async getPreferredAvatar(uid: string) {
         const user = await this.prisma.user.findUnique({
             where: { id: uid },
-            include: { DiscordAuth: true }
+            include: { DiscordAuth: true, profile: true }
         });
 
         if (!user) throw new LocaleException(responses.USER_NOT_FOUND, 404);
@@ -33,6 +34,16 @@ export class AvatarsService {
             ) {
                 buff = await this.getAvatar(user.DiscordAuth.avatar_id);
                 if (buff) break;
+            }
+
+            if (provider === 'minecraft' && user.profile) {
+                buff = await sharp(
+                    Buffer.from(user.profile.data_head, 'base64')
+                )
+                    .resize(512, 512, { kernel: sharp.kernel.nearest })
+                    .toFormat('png')
+                    .toBuffer();
+                break;
             }
         }
 
