@@ -6,8 +6,10 @@ import { readFile } from 'fs/promises';
 
 @Injectable()
 export class AvatarsService {
+    providers = ['discord', 'bla', 'bla-bla'];
     constructor(private prisma: PrismaService) {}
 
+    /** Get user' preferred avatar */
     async getPreferredAvatar(uid: string) {
         const user = await this.prisma.user.findUnique({
             where: { id: uid },
@@ -16,14 +18,28 @@ export class AvatarsService {
 
         if (!user) throw new LocaleException(responses.USER_NOT_FOUND, 404);
 
+        const preferred = 'discord'; // Условность
+        const check_order = [
+            preferred,
+            ...this.providers.filter(p => p !== preferred)
+        ];
+
         let buff = null;
-        if (user.DiscordAuth && user.DiscordAuth.avatar_id) {
-            buff = this.getDiscordAvatarFile(user.DiscordAuth.avatar_id);
+        for (const provider of check_order) {
+            if (
+                provider === 'discord' &&
+                user.DiscordAuth &&
+                user.DiscordAuth.avatar_id
+            ) {
+                buff = await this.getAvatar(user.DiscordAuth.avatar_id);
+                if (buff) break;
+            }
         }
 
         return buff;
     }
 
+    /** Get user' avatar */
     async getDiscordAvatar(uid: string) {
         const user = await this.prisma.user.findUnique({
             where: { id: uid },
@@ -38,15 +54,14 @@ export class AvatarsService {
                 404
             );
 
-        const buff = await this.getDiscordAvatarFile(
-            user.DiscordAuth.avatar_id
-        );
+        const buff = await this.getAvatar(user.DiscordAuth.avatar_id);
         if (!buff) throw new LocaleException(responses.AVATAR_NOT_FOUND, 404);
 
         return buff;
     }
 
-    async getDiscordAvatarFile(avatar_id: string) {
+    /** Read avatar from file */
+    async getAvatar(avatar_id: string) {
         return readFile(avatar_id).catch(() => null);
     }
 }
