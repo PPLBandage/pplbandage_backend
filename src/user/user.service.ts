@@ -84,7 +84,6 @@ export class UserService {
                   last_cached:
                       Number(session.user.profile.expires) -
                       parseInt(process.env.TTL as string),
-                  head: session.user.profile.data_head,
                   valid: session.user.profile.valid,
                   autoload: session.user.UserSettings?.autoload
               }
