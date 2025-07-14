@@ -64,10 +64,13 @@ model UserSettings {
 model DiscordAuth {
     id         Int     @id @default(autoincrement())
     discord_id String  @unique
+    name       String
     avatar_id  String?
 
     user   User   @relation(fields: [userid], references: [id])
     userid String @unique
+
+    connected_at DateTime @default(now())
 }
 
 // =============== END OF AUTH PROVIDERS ================

@@ -6,10 +6,11 @@ import { randomUUID } from 'crypto';
 import { mkdir, writeFile } from 'fs/promises';
 
 const prisma = new PrismaClient();
+const cache_folder = process.env.CACHE_FOLDER + 'discord/';
 
 const main = async () => {
     await prisma.$connect();
-    await mkdir(process.env.CACHE_FOLDER as string, { recursive: true });
+    await mkdir(cache_folder, { recursive: true });
 
     const users = await prisma.user.findMany({
         include: { DiscordAuth: true }
@@ -36,7 +37,7 @@ const main = async () => {
 
             if (avatar_response.status !== 200) return null;
             const avatar = Buffer.from(avatar_response.data);
-            filename = process.env.CACHE_FOLDER + randomUUID();
+            filename = cache_folder + randomUUID();
 
             await writeFile(filename, avatar);
         } else {
@@ -47,6 +48,8 @@ const main = async () => {
             data: {
                 discord_id: user.discordId,
                 avatar_id: has_avatar ? filename : undefined,
+                name: response.data.global_name ?? response.data.username,
+                connected_at: user.joined_at,
                 userid: user.id
             }
         });

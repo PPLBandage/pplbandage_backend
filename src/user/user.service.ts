@@ -77,33 +77,10 @@ export class UserService {
     async getUserSettings(session: Session) {
         /* get user's settings */
 
-        const minecraft = session.user.profile
-            ? {
-                  nickname: session.user.profile.default_nick,
-                  uuid: session.user.profile.uuid,
-                  last_cached:
-                      Number(session.user.profile.expires) -
-                      parseInt(process.env.TTL as string),
-                  valid: session.user.profile.valid,
-                  autoload: session.user.UserSettings?.autoload
-              }
-            : null;
-
-        const discord = {
-            user_id: session.user.discordId,
-            username: session.user.username,
-            name: session.user.reserved_name || session.user.name,
-            connected_at: session.user.joined_at
-        };
-
         return {
             userID: session.user.id,
             public_profile: session.user.UserSettings?.public_profile,
-            can_be_public: session.user.Bandage.length !== 0,
-            connections: {
-                discord: discord,
-                minecraft: minecraft
-            }
+            can_be_public: session.user.Bandage.length !== 0
         };
     }
 

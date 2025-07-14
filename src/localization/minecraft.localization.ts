@@ -20,8 +20,8 @@ const responses = {
         ru: 'Этот аккаунт уже подключен к другой учётной записи'
     },
     ACCOUNT_NOT_CONNECTED: {
-        en: "Minecraft account didn't connected",
-        ru: 'Аккаунт Minecraft не подключен'
+        en: "This account didn't connected",
+        ru: 'Этот аккаунт не подключен'
     },
     MOJANG_ERROR: {
         en: 'Mojang API error',
@@ -30,3 +30,4 @@ const responses = {
 };
 
 export default responses;
+

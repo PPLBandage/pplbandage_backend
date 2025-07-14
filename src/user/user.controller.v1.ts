@@ -16,8 +16,6 @@ import {
 import { AuthGuard } from 'src/guards/auth.guard';
 import { UserService } from './user.service';
 import { NotificationService } from 'src/notifications/notifications.service';
-import { MinecraftService } from 'src/minecraft/minecraft.service';
-import { Throttle } from '@nestjs/throttler';
 import { RolesGuard } from 'src/guards/roles.guard';
 import { AuthEnum, RolesEnum } from 'src/interfaces/types';
 import { Auth } from 'src/decorators/auth.decorator';
@@ -30,7 +28,6 @@ import {
 } from 'src/common/bandage_response';
 import { PageTakeDTO, PageTakeQueryDTO } from './dto/queries.dto';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
-import responses_minecraft from 'src/localization/minecraft.localization';
 import { AuthService } from 'src/auth/auth.service';
 import responses from 'src/localization/common.localization';
 import { LocalAccessThrottlerGuard } from 'src/guards/throttlerLocalAccess.guard';
@@ -41,7 +38,6 @@ export class UserController {
     constructor(
         private readonly userService: UserService,
         private readonly notificationService: NotificationService,
-        private readonly minecraftService: MinecraftService,
         private readonly authService: AuthService
     ) {}
 
@@ -128,7 +124,7 @@ export class UserController {
 
     @Get('@me/settings')
     @Auth(AuthEnum.Strict)
-    async minecraft(@Req() request: RequestSession) {
+    async settings(@Req() request: RequestSession) {
         /* get user's settings */
 
         return await this.userService.getUserSettings(request.session);
@@ -148,46 +144,6 @@ export class UserController {
             query.take || 5,
             query.page || 0
         );
-    }
-
-    @Post('@me/connections/minecraft/connect/:code')
-    @Auth(AuthEnum.Strict)
-    async connectMinecraft(
-        @Param('code') code: string,
-        @Req() request: RequestSession
-    ) {
-        /* connect minecraft profile to account */
-
-        if (code.length != 6)
-            throw new LocaleException(responses_minecraft.CODE_NOT_FOUND, 404);
-
-        return await this.minecraftService.connect(request.session, code);
-    }
-
-    @Throttle({ default: { limit: 5, ttl: 60000 } })
-    @Post('@me/connections/minecraft/cache/purge')
-    @Auth(AuthEnum.Strict)
-    async purgeSkinCache(@Req() request: RequestSession): Promise<void> {
-        /* Purge minecraft skin cache, associated with session's account */
-
-        if (!request.session.user.profile)
-            throw new LocaleException(
-                responses_minecraft.ACCOUNT_NOT_CONNECTED,
-                404
-            );
-
-        await this.minecraftService.updateSkinCache(
-            request.session.user.profile.uuid,
-            true
-        );
-    }
-
-    @Delete('@me/connections/minecraft')
-    @Auth(AuthEnum.Strict)
-    async disconnectMinecraft(@Req() request: RequestSession): Promise<void> {
-        /* disconnect minecraft profile */
-
-        await this.minecraftService.disconnect(request.session);
     }
 
     @Get(':username')

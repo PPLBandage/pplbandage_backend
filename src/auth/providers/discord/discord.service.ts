@@ -8,6 +8,7 @@ import { randomUUID } from 'crypto';
 import { AuthService } from 'src/auth/auth.service';
 
 const discord_url = process.env.DISCORD_URL;
+const cache_folder = process.env.CACHE_FOLDER + 'discord/';
 
 interface DiscordResponse {
     token_type: string;
@@ -43,18 +44,14 @@ export class DiscordAuthService {
     ) {}
 
     /** Get user data by code */
-    async getData(code: string): Promise<DiscordUser> {
-        const redirect_url = new URL(
-            decodeURI(process.env.LOGIN_URL as string)
-        );
-
+    async getData(code: string, redirect_uri: string): Promise<DiscordUser> {
         // ----------------------- Get access token -------------------------------
         const discord_tokens = await axios.post(
             discord_url + '/oauth2/token',
             {
                 grant_type: 'authorization_code',
                 code: code,
-                redirect_uri: redirect_url.searchParams.get('redirect_uri')
+                redirect_uri
             },
             {
                 headers: {
@@ -100,7 +97,7 @@ export class DiscordAuthService {
 
         if (avatar_response.status !== 200) return null;
         const avatar = Buffer.from(avatar_response.data);
-        const filename = process.env.CACHE_FOLDER + randomUUID();
+        const filename = cache_folder + randomUUID();
 
         await writeFile(filename, avatar);
         return filename;
@@ -108,12 +105,15 @@ export class DiscordAuthService {
 
     /** Create cache folders for avatars */
     async initCacheFolders() {
-        await mkdir(process.env.CACHE_FOLDER as string, { recursive: true });
+        await mkdir(cache_folder, { recursive: true });
     }
 
     /** Create session for discord user */
     async login(code: string, user_agent: string) {
-        const data = await this.getData(code);
+        const data = await this.getData(
+            code,
+            process.env.DISCORD_MAIN_REDIRECT as string
+        );
         const avatar_path = await this.updateAvatar(data.avatar, data.id);
 
         const auth_record = await this.prisma.discordAuth.findUnique({
@@ -132,6 +132,7 @@ export class DiscordAuthService {
                 data: {
                     discord_id: data.id,
                     avatar_id: avatar_path,
+                    name: data.global_name ?? data.username,
                     user: { connect: { id: user.id } }
                 }
             });
@@ -143,7 +144,10 @@ export class DiscordAuthService {
 
             await this.prisma.discordAuth.update({
                 where: { id: auth_record.id },
-                data: { avatar_id: avatar_path }
+                data: {
+                    avatar_id: avatar_path,
+                    name: data.global_name ?? data.username
+                }
             });
 
             user = auth_record.user;

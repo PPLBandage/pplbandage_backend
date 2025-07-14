@@ -3,7 +3,6 @@ import * as sharp from 'sharp';
 import { PrismaService } from '../prisma/prisma.service';
 import { HttpException, Injectable } from '@nestjs/common';
 import { Buffer } from 'buffer';
-import { Session } from 'src/auth/auth.service';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import responses from 'src/localization/minecraft.localization';
 
@@ -283,38 +282,6 @@ export class MinecraftService {
         return response.data as { nickname: string; UUID: string };
     }
 
-    async connect(session: Session, code: string) {
-        /* connect minecraft account to a user profile */
-
-        if (session.user.profile)
-            throw new LocaleException(responses.ALREADY_CONNECTED, 409);
-
-        const data = await this.getByCode(code);
-        const skin_data = await this.updateSkinCache(data.UUID, true);
-
-        if (skin_data.userId)
-            throw new LocaleException(responses.ANOTHER_ALREADY_CONNECTED, 409);
-
-        await this.prisma.user.update({
-            where: { id: session.user.id },
-            data: { profile: { connect: { id: skin_data.id } } }
-        });
-
-        return { uuid: skin_data.uuid };
-    }
-
-    async disconnect(session: Session) {
-        /* disconnect minecraft account */
-
-        if (!session.user.profile)
-            throw new LocaleException(responses.ACCOUNT_NOT_CONNECTED, 404);
-
-        await this.prisma.user.update({
-            where: { id: session.user.id },
-            data: { profile: { disconnect: { id: session.user.profile.id } } }
-        });
-    }
-
     async generateSvg(image: sharp.Sharp, pixelWidth: number): Promise<string> {
         const { data, info } = await image
             .raw()
@@ -392,3 +359,4 @@ export class MinecraftService {
         ].join('\n');
     }
 }
+

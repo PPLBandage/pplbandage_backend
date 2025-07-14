@@ -7,7 +7,7 @@ import * as sharp from 'sharp';
 
 @Injectable()
 export class AvatarsService {
-    providers = ['discord', 'minecraft', 'bla', 'bla-bla'];
+    providers = ['discord', 'minecraft'];
     constructor(private prisma: PrismaService) {}
 
     /** Get user' preferred avatar */

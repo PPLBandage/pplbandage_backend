@@ -5,7 +5,8 @@ import {
     Req,
     Res,
     Post,
-    UseGuards
+    UseGuards,
+    Query
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { AuthService, generateCookie } from './auth.service';
@@ -69,16 +70,27 @@ export class AuthController {
         return await this.authService.getRoles();
     }
 
-    @Get('/url')
-    async url(@Req() req: Request, @Res() res: Response): Promise<void> {
+    @Get('/url/discord')
+    async url(
+        @Res() res: Response,
+        @Query() query: { connect: boolean }
+    ): Promise<void> {
         /* get discord oauth url */
 
-        if (req.header('Accept')?.toLowerCase() === 'application/json') {
-            res.header('Content-Type', 'application/json');
-            res.send({ url: process.env.LOGIN_URL });
-            return;
+        const login_url = new URL(process.env.DISCORD_LOGIN_URL as string);
+
+        if (query.connect) {
+            login_url.searchParams.append(
+                'redirect_uri',
+                process.env.DISCORD_REDIRECT_CONNECT as string
+            );
+        } else {
+            login_url.searchParams.append(
+                'redirect_uri',
+                process.env.DISCORD_MAIN_REDIRECT as string
+            );
         }
-        res.redirect(process.env.LOGIN_URL as string);
+        res.redirect(login_url.toString());
     }
 }
 
