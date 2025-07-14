@@ -39,5 +39,15 @@ export class AvatarsController {
             await this.avatarsService.getDiscordAvatar(uid)
         );
     }
+
+    @Get(':uid/minecraft')
+    @Header('Content-Type', 'image/png')
+    async minecraft(@Param('uid') uid: string) {
+        /* Get user' Minecraft avatar */
+
+        return new StreamableFile(
+            await this.avatarsService.getMinecraftAvatar(uid)
+        );
+    }
 }
 

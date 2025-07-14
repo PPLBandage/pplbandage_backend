@@ -50,7 +50,7 @@ export class AvatarsService {
         return buff;
     }
 
-    /** Get user' avatar */
+    /** Get user' discord avatar */
     async getDiscordAvatar(uid: string) {
         const user = await this.prisma.user.findUnique({
             where: { id: uid },
@@ -74,6 +74,22 @@ export class AvatarsService {
     /** Read avatar from file */
     async getAvatar(avatar_id: string) {
         return readFile(avatar_id).catch(() => null);
+    }
+
+    /** Get user' minecraft avatar */
+    async getMinecraftAvatar(uid: string) {
+        const minecraft = await this.prisma.minecraft.findFirst({
+            where: { userId: uid }
+        });
+
+        if (!minecraft)
+            throw new LocaleException(responses.AVATAR_NOT_FOUND, 404);
+
+        const buff = Buffer.from(minecraft.data_head, 'base64');
+        return await sharp(buff)
+            .resize(512, 512, { kernel: sharp.kernel.nearest })
+            .toFormat('png')
+            .toBuffer();
     }
 }
 
