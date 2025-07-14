@@ -10,11 +10,15 @@ import {
 import type { Request, Response } from 'express';
 import { AuthService, generateCookie } from './auth.service';
 import { AuthGuard } from 'src/guards/auth.guard';
+import { DiscordAuthService } from './providers/discord/discord.service';
 
 @Controller({ version: '1', path: 'auth' })
 @UseGuards(AuthGuard)
 export class AuthController {
-    constructor(private readonly authService: AuthService) {}
+    constructor(
+        private readonly authService: AuthService,
+        private readonly discordAuthService: DiscordAuthService
+    ) {}
 
     @Post('/discord/:code')
     async discord(
@@ -25,7 +29,7 @@ export class AuthController {
         /* create session for discord user */
 
         const user_agent = request.headers['user-agent'] as string;
-        const data = await this.authService.login(code, user_agent);
+        const data = await this.discordAuthService.login(code, user_agent);
 
         const expires =
             Math.round(Date.now() / 1000) + Number(process.env.SESSION_TTL);
@@ -77,3 +81,4 @@ export class AuthController {
         res.redirect(process.env.LOGIN_URL as string);
     }
 }
+

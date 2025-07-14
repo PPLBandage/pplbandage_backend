@@ -43,6 +43,9 @@ model User {
 
     subscriptions User[] @relation("UserSubs")
     subscribers   User[] @relation("UserSubs")
+
+    // Auth providers
+    DiscordAuth DiscordAuth?
 }
 
 model UserSettings {
@@ -55,6 +58,19 @@ model UserSettings {
     public_profile Boolean @default(true)
     skip_ppl_check Boolean @default(false)
 }
+
+// =================== AUTH PROVIDERS ===================
+
+model DiscordAuth {
+    id         Int     @id @default(autoincrement())
+    discord_id String  @unique
+    avatar_id  String?
+
+    user   User   @relation(fields: [userid], references: [id])
+    userid String @unique
+}
+
+// =============== END OF AUTH PROVIDERS ================
 
 model AccessRoles {
     id          Int    @id @default(autoincrement())

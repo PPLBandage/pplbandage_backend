@@ -8,6 +8,7 @@ import { UsersModule } from './user/user.module';
 import { WorkshopModule } from './workshop/workshop.module';
 import { RootModule } from './root/root.module';
 import { CustomThrottlerGuard } from './guards/throttlerBehindProxy.guard';
+import { AvatarsModule } from './avatars/avatars.module';
 
 @Module({
     providers: [{ provide: APP_GUARD, useClass: CustomThrottlerGuard }],
@@ -18,7 +19,9 @@ import { CustomThrottlerGuard } from './guards/throttlerBehindProxy.guard';
         AuthModule,
         MinecraftModule,
         UsersModule,
-        WorkshopModule
+        WorkshopModule,
+        AvatarsModule
     ]
 })
 export class AppModule {}
+

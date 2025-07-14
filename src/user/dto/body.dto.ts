@@ -39,15 +39,10 @@ export class UpdateSelfUserDto {
     public?: boolean;
 }
 
-export class ForceRegisterUserDTO {
-    @IsString()
-    @IsNotEmpty()
-    discord_id!: string;
-}
-
 export class FeedbackDTO {
     @IsString()
     @IsNotEmpty()
     @MaxLength(1500)
     content!: string;
 }
+

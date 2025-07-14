@@ -23,11 +23,7 @@ import { AuthEnum, RolesEnum } from 'src/interfaces/types';
 import { Auth } from 'src/decorators/auth.decorator';
 import { Roles } from 'src/decorators/access.decorator';
 import type { Request } from 'express';
-import {
-    ForceRegisterUserDTO,
-    UpdateSelfUserDto,
-    UpdateUsersDto
-} from './dto/body.dto';
+import { UpdateSelfUserDto, UpdateUsersDto } from './dto/body.dto';
 import {
     RequestSession,
     RequestSessionWeak
@@ -265,14 +261,5 @@ export class UserController {
             query.query
         );
     }
-
-    @Post('/')
-    @Auth(AuthEnum.Strict)
-    @Roles([RolesEnum.UpdateUsers])
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-    async forceRegister(@Body() body: ForceRegisterUserDTO) {
-        /* Force register user */
-
-        return await this.userService.forceRegister(body.discord_id);
-    }
 }
+

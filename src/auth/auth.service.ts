@@ -9,9 +9,7 @@ import {
     AccessRoles
 } from '@prisma/client';
 import { sign, verify } from 'jsonwebtoken';
-import axios from 'axios';
 import { RolesEnum } from 'src/interfaces/types';
-import { UserService } from 'src/user/user.service';
 import { UAParser } from 'ua-parser-js';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import responses from 'src/localization/common.localization';
@@ -19,49 +17,13 @@ import responses_users from 'src/localization/users.localization';
 import responses_minecraft from 'src/localization/minecraft.localization';
 import { MinecraftService } from 'src/minecraft/minecraft.service';
 
-const discord_url = process.env.DISCORD_URL;
-const pwgood = '447699225078136832'; // pwgood server id
 const EPOCH = 1672531200000n;
-
-interface DiscordResponse {
-    token_type: string;
-    access_token: string;
-    expires_in: number;
-    refresh_token: string;
-    scope: string;
-}
-
-interface DiscordUser {
-    id: string;
-    username: string;
-    avatar: string | null;
-    discriminator: string;
-    public_flags: number;
-    flags: number;
-    banner: string | null;
-    accent_color: number;
-    global_name: string | null;
-    avatar_decoration_data: number | null;
-    banner_color: string | null;
-    clan: string | null;
-    mfa_enabled: boolean;
-    locale: string;
-    premium_type: number;
-}
 
 interface SessionToken {
     userId: number;
     access: number;
     iat: number;
     exp: number;
-}
-
-interface PepelandResponse {
-    roles: string[];
-    user: {
-        id: string;
-        username: string;
-    };
 }
 
 export interface Session {
@@ -117,7 +79,6 @@ export class AuthService {
     private readonly logger = new Logger(AuthService.name);
     constructor(
         private prisma: PrismaService,
-        private readonly userService: UserService,
         private readonly minecraftService: MinecraftService
     ) {}
 
@@ -140,123 +101,20 @@ export class AuthService {
         return (await this.prisma.roles.findMany()).reverse();
     }
 
-    async check_ppl(token: string) {
-        /* check user on pwgood server */
-
-        const response = await axios.get(
-            `${discord_url}/users/@me/guilds/${pwgood}/member`,
-            {
-                headers: {
-                    Authorization: token
-                },
-                validateStatus: () => true
-            }
-        );
-        if (response.status != 200) {
-            return false;
-        }
-        const data = response.data as PepelandResponse;
-        const roles = (await this.getRoles()).map(role => role.ds_id);
-
-        return data.roles.some(role => roles.includes(role));
-    }
-
-    async login(code: string, user_agent: string) {
-        /* log in by code */
-
-        const redirect_url = new URL(
-            decodeURI(process.env.LOGIN_URL as string)
-        );
-
-        // ----------------------- Get access token -------------------------------
-        const discord_tokens = await axios.post(
-            discord_url + '/oauth2/token',
-            {
-                grant_type: 'authorization_code',
-                code: code,
-                redirect_uri: redirect_url.searchParams.get('redirect_uri')
-            },
-            {
-                headers: {
-                    Authorization: `Basic ${process.env.BASIC_AUTH}`,
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                validateStatus: () => true
-            }
-        );
-        if (discord_tokens.status !== 200)
-            throw new LocaleException(responses_users.INVALID_OAUTH_CODE, 404);
-
-        const data = discord_tokens.data as DiscordResponse;
-
-        // ----------------------- Get discord user data --------------------------
-
-        const discord_user = await axios.get(discord_url + '/users/@me', {
-            headers: {
-                Authorization: `${data.token_type} ${data.access_token}`
-            },
-            validateStatus: () => true
-        });
-
-        if (discord_user.status !== 200)
-            throw new LocaleException(responses_users.PROFILE_FETCH_ERROR, 500);
-
-        const ds_user = discord_user.data as DiscordUser;
-
-        // ----------------------- Check discord server roles ---------------------
-        // Disabled for a test
-
-        /*
-        const user_settings = await this.prisma.userSettings.findFirst({
-            where: { User: { discordId: ds_user.id } }
-        });
-        const on_ppl = await this.check_ppl(
-            `${data.token_type} ${data.access_token}`
-        );
-        if (!on_ppl && !user_settings?.skip_ppl_check) {
-            await this.prisma.sessions.deleteMany({
-                where: { User: { discordId: ds_user.id } }
-            });
-            throw new LocaleException(responses_users.MISSING_PPL_ROLES, 403);
-        }
-        */
-
-        // ----------------------- Upsert user field in DB ------------------------
-
+    async createUser({ name, username }: { name: string; username: string }) {
         const users_count = await this.prisma.user.count();
-        const user_db = await this.prisma.user.upsert({
-            where: { discordId: ds_user.id },
-            create: {
+        return await this.prisma.user.create({
+            data: {
                 id: generateSnowflake(BigInt(users_count)),
-                discordId: ds_user.id,
-                username: ds_user.username,
-                name: ds_user.global_name || ds_user.username,
+                username,
+                name,
                 UserSettings: { create: {} },
                 AccessRoles: {
                     connect: { level: 0 }
                 }
             },
-            update: {},
-            include: { UserSettings: true, AccessRoles: true }
+            include: { UserSettings: true }
         });
-
-        await this.userService.resolveCollisions(user_db.username);
-
-        if (user_db.UserSettings?.banned) {
-            await this.prisma.sessions.deleteMany({
-                where: { userId: user_db.id }
-            });
-            throw new LocaleException(responses.FORBIDDEN, 403);
-        }
-
-        // ----------------------- Create session token ---------------------------
-
-        const session = await this.createSession(
-            user_db.id,
-            user_agent,
-            user_db.AccessRoles
-        );
-        return { sessionId: session.sessionId };
     }
 
     async loginMinecraft(code: string, user_agent: string) {
@@ -288,7 +146,7 @@ export class AuthService {
         }
 
         const session = await this.createSession(
-            minecraft_record.user.id,
+            minecraft_record.user,
             user_agent,
             minecraft_record.user.AccessRoles
         );
@@ -296,13 +154,21 @@ export class AuthService {
     }
 
     async createSession(
-        user_id: string,
+        user: { id: string; UserSettings: { banned: boolean } | null },
         user_agent: string,
         roles: AccessRoles[]
     ) {
+        if (user.UserSettings?.banned) {
+            await this.prisma.sessions.deleteMany({
+                where: { userId: user.id }
+            });
+
+            throw new LocaleException(responses.FORBIDDEN, 403);
+        }
+
         const sessionId = sign(
             {
-                userId: user_id,
+                userId: user.id,
                 access: this.generateAccessBitSet(roles)
             },
             'ppl_super_secret',
@@ -310,11 +176,12 @@ export class AuthService {
                 expiresIn: Number(process.env.SESSION_TTL)
             }
         );
+
         const token_record = await this.prisma.sessions.create({
             data: {
                 sessionId: sessionId,
                 User_Agent: user_agent,
-                User: { connect: { id: user_id } }
+                User: { connect: { id: user.id } }
             }
         });
         return token_record;
@@ -466,3 +333,4 @@ export class AuthService {
         );
     }
 }
+

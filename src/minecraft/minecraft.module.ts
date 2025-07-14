@@ -9,6 +9,8 @@ import { MinecraftScheduler } from './scheduler.service';
 @Module({
     controllers: [MinecraftController],
     providers: [MinecraftService, PrismaService, MinecraftScheduler],
-    imports: [CacheModule.register(), ScheduleModule.forRoot()]
+    imports: [CacheModule.register(), ScheduleModule.forRoot()],
+    exports: [MinecraftService]
 })
 export class MinecraftModule {}
+

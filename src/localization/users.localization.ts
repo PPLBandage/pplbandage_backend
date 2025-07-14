@@ -30,7 +30,12 @@ const responses = {
     BAD_REQUEST: {
         en: 'You cannot do this',
         ru: 'Вы не можете делать это действие'
+    },
+    AVATAR_NOT_FOUND: {
+        en: 'Requested avatar not found',
+        ru: 'Запрашиваемый аватар не найден'
     }
 };
 
 export default responses;
+
