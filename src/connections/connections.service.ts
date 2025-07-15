@@ -134,6 +134,8 @@ export class ConnectionsService {
             );
 
         await this.prisma.discordAuth.delete({ where: { id: record.id } });
+        if (record.avatar_id)
+            this.discordAuthService.deleteAvatar(record.avatar_id);
     }
 }
 

@@ -103,6 +103,10 @@ export class DiscordAuthService {
         return filename;
     }
 
+    deleteAvatar(path: string) {
+        rm(path).catch(console.error);
+    }
+
     /** Create cache folders for avatars */
     async initCacheFolders() {
         await mkdir(cache_folder, { recursive: true });

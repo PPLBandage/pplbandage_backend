@@ -35,11 +35,14 @@ const main = async () => {
                 { responseType: 'arraybuffer' }
             );
 
-            if (avatar_response.status !== 200) return null;
-            const avatar = Buffer.from(avatar_response.data);
-            filename = cache_folder + randomUUID();
+            if (avatar_response.status === 200) {
+                const avatar = Buffer.from(avatar_response.data);
+                filename = cache_folder + randomUUID();
 
-            await writeFile(filename, avatar);
+                await writeFile(filename, avatar);
+            } else {
+                console.error(avatar_response.data);
+            }
         } else {
             has_avatar = false;
         }
