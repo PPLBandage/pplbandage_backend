@@ -6,7 +6,8 @@ import {
     User,
     UserSettings,
     Notifications,
-    AccessRoles
+    AccessRoles,
+    Prisma
 } from '@prisma/client';
 import { sign, verify } from 'jsonwebtoken';
 import { RolesEnum } from 'src/interfaces/types';
@@ -101,7 +102,15 @@ export class AuthService {
         return (await this.prisma.roles.findMany()).reverse();
     }
 
-    async createUser({ name, username }: { name: string; username: string }) {
+    async createUser({
+        name,
+        username,
+        ...extra
+    }: {
+        name: string;
+        username: string;
+    } & Omit<Prisma.UserCreateInput, 'name' | 'username' | 'id'>) {
+        // TODO: Do usernames collision resolving
         const users_count = await this.prisma.user.count();
         return await this.prisma.user.create({
             data: {
@@ -111,7 +120,8 @@ export class AuthService {
                 UserSettings: { create: {} },
                 AccessRoles: {
                     connect: { level: 0 }
-                }
+                },
+                ...extra
             },
             include: { UserSettings: true }
         });

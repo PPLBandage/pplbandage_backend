@@ -12,13 +12,15 @@ import type { Request, Response } from 'express';
 import { AuthService, generateCookie } from './auth.service';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { DiscordAuthService } from './providers/discord/discord.service';
+import { MinecraftAuthService } from './providers/minecraft/minecraft.service';
 
 @Controller({ version: '1', path: 'auth' })
 @UseGuards(AuthGuard)
 export class AuthController {
     constructor(
         private readonly authService: AuthService,
-        private readonly discordAuthService: DiscordAuthService
+        private readonly discordAuthService: DiscordAuthService,
+        private readonly minecraftAuthService: MinecraftAuthService
     ) {}
 
     @Post('/discord/:code')
@@ -34,10 +36,7 @@ export class AuthController {
 
         const expires =
             Math.round(Date.now() / 1000) + Number(process.env.SESSION_TTL);
-        res.setHeader(
-            'SetCookie',
-            generateCookie(data.sessionId as string, expires)
-        );
+        res.setHeader('SetCookie', generateCookie(data.sessionId, expires));
 
         return data;
     }
@@ -51,18 +50,16 @@ export class AuthController {
         /* create session for minecraft user */
 
         const user_agent = request.headers['user-agent'] as string;
-        const data = await this.authService.loginMinecraft(code, user_agent);
+        const data = await this.minecraftAuthService.login(code, user_agent);
 
         const expires =
             Math.round(Date.now() / 1000) + Number(process.env.SESSION_TTL);
-        res.setHeader(
-            'SetCookie',
-            generateCookie(data.sessionId as string, expires)
-        );
+        res.setHeader('SetCookie', generateCookie(data.sessionId, expires));
 
         return data;
     }
 
+    // DEPRECATED: Will be removed in future versions
     @Get('/roles')
     async roles() {
         /* get roles for registration */
