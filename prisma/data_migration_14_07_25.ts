@@ -17,7 +17,8 @@ const main = async () => {
     });
 
     for (const user of users) {
-        if (user.DiscordAuth) continue;
+        if (user.DiscordAuth || !user.discordId) continue;
+        console.log(`Processing user ${user.name}`);
 
         const response = await axios.get(
             `${process.env.DISCORD_URL}/users/${user.discordId}`,
@@ -26,6 +27,12 @@ const main = async () => {
                 validateStatus: () => true
             }
         );
+
+        if (response.status !== 200) {
+            throw new Error(
+                `Cannot get user data ${user.name} (${response.status})`
+            );
+        }
 
         let has_avatar = true;
         let filename;
@@ -51,13 +58,12 @@ const main = async () => {
             data: {
                 discord_id: user.discordId,
                 avatar_id: has_avatar ? filename : undefined,
-                name: response.data.global_name ?? response.data.username,
+                name: response.data.global_name || response.data.username,
+                username: response.data.username,
                 connected_at: user.joined_at,
                 userid: user.id
             }
         });
-
-        console.log(`Processed user ${user.name}`);
     }
 };
 

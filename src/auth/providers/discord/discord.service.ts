@@ -137,6 +137,7 @@ export class DiscordAuthService {
                     discord_id: data.id,
                     avatar_id: avatar_path,
                     name: data.global_name ?? data.username,
+                    username: data.username,
                     user: { connect: { id: user.id } }
                 }
             });

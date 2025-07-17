@@ -6,13 +6,15 @@ import {
     Res,
     Post,
     UseGuards,
-    Query
+    Query,
+    Body
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { AuthService, generateCookie } from './auth.service';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { DiscordAuthService } from './providers/discord/discord.service';
 import { MinecraftAuthService } from './providers/minecraft/minecraft.service';
+import { GoogleAuthService } from './providers/google/google.service';
 
 @Controller({ version: '1', path: 'auth' })
 @UseGuards(AuthGuard)
@@ -20,7 +22,8 @@ export class AuthController {
     constructor(
         private readonly authService: AuthService,
         private readonly discordAuthService: DiscordAuthService,
-        private readonly minecraftAuthService: MinecraftAuthService
+        private readonly minecraftAuthService: MinecraftAuthService,
+        private readonly googleAuthService: GoogleAuthService
     ) {}
 
     @Post('/discord/:code')
@@ -59,6 +62,24 @@ export class AuthController {
         return data;
     }
 
+    @Post('/google')
+    async googleLogin(
+        @Req() request: Request,
+        @Res({ passthrough: true }) res: Response,
+        @Body() body: { code: string }
+    ) {
+        /* create session for google user */
+
+        const user_agent = request.headers['user-agent'] as string;
+        const data = await this.googleAuthService.login(body.code, user_agent);
+
+        const expires =
+            Math.round(Date.now() / 1000) + Number(process.env.SESSION_TTL);
+        res.setHeader('SetCookie', generateCookie(data.sessionId, expires));
+
+        return data;
+    }
+
     // DEPRECATED: Will be removed in future versions
     @Get('/roles')
     async roles() {
@@ -68,7 +89,7 @@ export class AuthController {
     }
 
     @Get('/url/discord')
-    async url(
+    async url_discord(
         @Res() res: Response,
         @Query() query: { connect: boolean }
     ): Promise<void> {
@@ -85,6 +106,33 @@ export class AuthController {
             login_url.searchParams.append(
                 'redirect_uri',
                 process.env.DISCORD_MAIN_REDIRECT as string
+            );
+        }
+        res.redirect(login_url.toString());
+    }
+
+    @Get('/url/google')
+    async url_google(
+        @Res() res: Response,
+        @Query() query: { connect: boolean }
+    ): Promise<void> {
+        /* get google oauth url */
+
+        const login_url = new URL(process.env.GOOGLE_LOGIN_URL as string);
+        login_url.searchParams.append(
+            'client_id',
+            process.env.GOOGLE_CLIENT_ID as string
+        );
+
+        if (query.connect) {
+            login_url.searchParams.append(
+                'redirect_uri',
+                process.env.GOOGLE_REDIRECT_CONNECT as string
+            );
+        } else {
+            login_url.searchParams.append(
+                'redirect_uri',
+                process.env.GOOGLE_MAIN_REDIRECT as string
             );
         }
         res.redirect(login_url.toString());

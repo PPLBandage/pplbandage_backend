@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Session } from 'src/auth/auth.service';
 import { DiscordAuthService } from 'src/auth/providers/discord/discord.service';
+import { GoogleAuthService } from 'src/auth/providers/google/google.service';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import responses_minecraft from 'src/localization/minecraft.localization';
 import { MinecraftService } from 'src/minecraft/minecraft.service';
@@ -11,14 +12,15 @@ export class ConnectionsService {
     constructor(
         private prisma: PrismaService,
         public minecraftService: MinecraftService,
-        private discordAuthService: DiscordAuthService
+        private discordAuthService: DiscordAuthService,
+        private googleAuthService: GoogleAuthService
     ) {}
 
     /** Get list of connected accounts */
     async getConnections(session: Session) {
         const user = await this.prisma.user.findUniqueOrThrow({
             where: { id: session.user.id },
-            include: { profile: true, DiscordAuth: true }
+            include: { profile: true, DiscordAuth: true, GoogleAuth: true }
         });
 
         const minecraft = user.profile
@@ -37,12 +39,23 @@ export class ConnectionsService {
             ? {
                   user_id: user.DiscordAuth.discord_id,
                   name: user.DiscordAuth.name,
+                  username: user.DiscordAuth.username,
                   connected_at: user.DiscordAuth.connected_at
+              }
+            : null;
+
+        const google = user.GoogleAuth
+            ? {
+                  sub: user.GoogleAuth.sub,
+                  email: user.GoogleAuth.email,
+                  name: user.GoogleAuth.name,
+                  connected_at: user.GoogleAuth.connected_at
               }
             : null;
 
         return {
             userID: user.id,
+            google,
             discord,
             minecraft
         };
@@ -115,6 +128,7 @@ export class ConnectionsService {
             data: {
                 discord_id: data.id,
                 name: data.global_name || data.username,
+                username: data.username,
                 avatar_id: avatar,
                 user: { connect: { id: session.user.id } }
             }
@@ -136,6 +150,54 @@ export class ConnectionsService {
         await this.prisma.discordAuth.delete({ where: { id: record.id } });
         if (record.avatar_id)
             this.discordAuthService.deleteAvatar(record.avatar_id);
+    }
+
+    /** Connect google account */
+    async connectGoogle(session: Session, code: string) {
+        const data = await this.googleAuthService.getData(
+            code,
+            process.env.GOOGLE_REDIRECT_CONNECT as string
+        );
+        const record = await this.prisma.googleAuth.findFirst({
+            where: { sub: data.sub }
+        });
+
+        if (record)
+            throw new LocaleException(
+                responses_minecraft.ALREADY_CONNECTED,
+                409
+            );
+
+        const avatar = await this.googleAuthService.updateAvatar(data.picture);
+        const name = this.googleAuthService.getName(data);
+
+        await this.prisma.googleAuth.create({
+            data: {
+                sub: data.sub,
+                email: data.email,
+                name,
+
+                avatar_id: avatar,
+                user: { connect: { id: session.user.id } }
+            }
+        });
+    }
+
+    /** Disconnect google account */
+    async disconnectGoogle(session: Session) {
+        const record = await this.prisma.googleAuth.findFirst({
+            where: { userid: session.user.id }
+        });
+
+        if (!record)
+            throw new LocaleException(
+                responses_minecraft.ACCOUNT_NOT_CONNECTED,
+                400
+            );
+
+        await this.prisma.googleAuth.delete({ where: { id: record.id } });
+        if (record.avatar_id)
+            this.googleAuthService.deleteAvatar(record.avatar_id);
     }
 }
 

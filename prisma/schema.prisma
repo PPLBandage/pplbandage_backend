@@ -28,7 +28,7 @@ model User {
     username                   String              @default("")
     reserved_name              String?
     name                       String              @default("")
-    discordId                  String              @unique @default("")
+    discordId                  String              @default("")
     sessions                   Sessions[]
     last_accessed              DateTime            @default(now())
     profile                    Minecraft?
@@ -46,6 +46,7 @@ model User {
 
     // Auth providers
     DiscordAuth DiscordAuth?
+    GoogleAuth  GoogleAuth?
 }
 
 model UserSettings {
@@ -65,7 +66,22 @@ model DiscordAuth {
     id         Int     @id @default(autoincrement())
     discord_id String  @unique
     name       String
+    username   String
     avatar_id  String?
+
+    user   User   @relation(fields: [userid], references: [id])
+    userid String @unique
+
+    connected_at DateTime @default(now())
+}
+
+model GoogleAuth {
+    id    Int    @id @default(autoincrement())
+    sub   String @unique
+    email String
+
+    name      String
+    avatar_id String?
 
     user   User   @relation(fields: [userid], references: [id])
     userid String @unique

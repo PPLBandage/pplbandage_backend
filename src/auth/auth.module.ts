@@ -7,6 +7,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { MinecraftService } from 'src/minecraft/minecraft.service';
 import { DiscordAuthModule } from './providers/discord/discord.module';
 import { MinecraftAuthModule } from './providers/minecraft/minecraft.module';
+import { GoogleAuthModule } from './providers/google/google.module';
 
 @Module({
     controllers: [AuthController],
@@ -14,7 +15,8 @@ import { MinecraftAuthModule } from './providers/minecraft/minecraft.module';
     imports: [
         CacheModule.register(),
         forwardRef(() => DiscordAuthModule),
-        forwardRef(() => MinecraftAuthModule)
+        forwardRef(() => MinecraftAuthModule),
+        forwardRef(() => GoogleAuthModule)
     ],
     exports: [AuthService]
 })

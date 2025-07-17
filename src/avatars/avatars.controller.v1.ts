@@ -49,5 +49,15 @@ export class AvatarsController {
             await this.avatarsService.getMinecraftAvatar(uid)
         );
     }
+
+    @Get(':uid/google')
+    @Header('Content-Type', 'image/png')
+    async google(@Param('uid') uid: string) {
+        /* Get user' Google avatar */
+
+        return new StreamableFile(
+            await this.avatarsService.getGoogleAvatar(uid)
+        );
+    }
 }
 

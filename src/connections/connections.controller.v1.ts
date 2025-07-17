@@ -92,5 +92,24 @@ export class ConnectionsController {
 
         await this.connectionsService.disconnectDiscord(request.session);
     }
+
+    @Post('google')
+    @Auth(AuthEnum.Strict)
+    async connectGoogle(
+        @Req() request: RequestSession,
+        @Body() body: { code: string }
+    ) {
+        /** Connect google account */
+
+        await this.connectionsService.connectGoogle(request.session, body.code);
+    }
+
+    @Delete('google')
+    @Auth(AuthEnum.Strict)
+    async disconnectGoogle(@Req() request: RequestSession) {
+        /** Disconnect google account */
+
+        await this.connectionsService.disconnectGoogle(request.session);
+    }
 }
 
