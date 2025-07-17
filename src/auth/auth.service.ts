@@ -110,12 +110,24 @@ export class AuthService {
         name: string;
         username: string;
     } & Omit<Prisma.UserCreateInput, 'name' | 'username' | 'id'>) {
-        // TODO: Do usernames collision resolving
+        // NOT FOR PRODUCTION!!!
+        // THIS CREATING TOO MANY DB REQUESTS
+        let finalUsername = username;
+        let attempt = 0;
+        while (
+            await this.prisma.user.findFirst({
+                where: { username: finalUsername }
+            })
+        ) {
+            attempt++;
+            finalUsername = username + '_'.repeat(attempt);
+        }
+
         const users_count = await this.prisma.user.count();
         return await this.prisma.user.create({
             data: {
                 id: generateSnowflake(BigInt(users_count)),
-                username,
+                username: finalUsername,
                 name,
                 UserSettings: { create: {} },
                 AccessRoles: {
