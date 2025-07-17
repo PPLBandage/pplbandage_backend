@@ -357,10 +357,10 @@ export class UserService {
 
     /** Subscribe to user by nickname */
     async subscribeTo(username: string, session: Session) {
-        if (username === session.user.username)
-            throw new LocaleException(responses.BAD_REQUEST, 400);
-
         const user = await this._getUserByNickname(username, session);
+
+        if (user.id === session.user.id)
+            throw new LocaleException(responses.BAD_REQUEST, 400);
 
         await this.prisma.user.update({
             where: { id: session.user.id },
@@ -376,10 +376,10 @@ export class UserService {
 
     /** Unsubscribe from user by nickname */
     async unsubscribeFrom(username: string, session: Session) {
-        if (username === session.user.username)
-            throw new LocaleException(responses.BAD_REQUEST, 400);
-
         const user = await this._getUserByNickname(username, session);
+
+        if (user.id === session.user.id)
+            throw new LocaleException(responses.BAD_REQUEST, 400);
 
         await this.prisma.user.update({
             where: { id: session.user.id },
