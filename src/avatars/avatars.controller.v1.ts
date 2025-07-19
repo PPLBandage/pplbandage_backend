@@ -59,5 +59,15 @@ export class AvatarsController {
             await this.avatarsService.getGoogleAvatar(uid)
         );
     }
+
+    @Get(':uid/twitch')
+    @Header('Content-Type', 'image/png')
+    async twitch(@Param('uid') uid: string) {
+        /* Get user' Twitch avatar */
+
+        return new StreamableFile(
+            await this.avatarsService.getTwitchAvatar(uid)
+        );
+    }
 }
 

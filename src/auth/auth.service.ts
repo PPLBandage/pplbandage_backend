@@ -17,6 +17,7 @@ import responses from 'src/localization/common.localization';
 import responses_users from 'src/localization/users.localization';
 import responses_minecraft from 'src/localization/minecraft.localization';
 import { MinecraftService } from 'src/minecraft/minecraft.service';
+import { slugify } from 'transliteration';
 
 const EPOCH = 1672531200000n;
 
@@ -98,10 +99,6 @@ export class AuthService {
         }
     };
 
-    async getRoles() {
-        return (await this.prisma.roles.findMany()).reverse();
-    }
-
     async createUser({
         name,
         username,
@@ -112,7 +109,13 @@ export class AuthService {
     } & Omit<Prisma.UserCreateInput, 'name' | 'username' | 'id'>) {
         // NOT FOR PRODUCTION!!!
         // THIS CREATING TOO MANY DB REQUESTS
-        let finalUsername = username;
+
+        // Normalize username
+        let finalUsername = slugify(username, {
+            lowercase: true,
+            separator: '_'
+        });
+
         let attempt = 0;
         while (
             await this.prisma.user.findFirst({

@@ -77,9 +77,8 @@ export class DiscordAuthService {
 
         if (discord_user.status !== 200)
             throw new LocaleException(responses_users.PROFILE_FETCH_ERROR, 500);
-        const data = discord_user.data as DiscordUser;
 
-        return data;
+        return discord_user.data;
     }
 
     /** Update avatar cache */

@@ -47,6 +47,7 @@ model User {
     // Auth providers
     DiscordAuth DiscordAuth?
     GoogleAuth  GoogleAuth?
+    TwitchAuth  TwitchAuth?
 }
 
 model UserSettings {
@@ -79,6 +80,20 @@ model GoogleAuth {
     id    Int    @id @default(autoincrement())
     sub   String @unique
     email String
+
+    name      String
+    avatar_id String?
+
+    user   User   @relation(fields: [userid], references: [id])
+    userid String @unique
+
+    connected_at DateTime @default(now())
+}
+
+model TwitchAuth {
+    id    Int    @id @default(autoincrement())
+    uid   String @unique
+    login String
 
     name      String
     avatar_id String?
@@ -162,13 +177,6 @@ model Notifications {
     author        String   @default("Система")
     type          Int      @default(0)
     creation_date DateTime @default(now())
-}
-
-model Roles {
-    id    Int    @id @default(autoincrement())
-    ds_id String @default("")
-    title String @default("")
-    color Int    @default(0)
 }
 
 model KV {

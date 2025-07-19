@@ -4,47 +4,45 @@ import { AuthService } from 'src/auth/auth.service';
 import axios from 'axios';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import responses_users from 'src/localization/users.localization';
-import { decode } from 'jsonwebtoken';
 import { randomUUID } from 'crypto';
 import { mkdir, rm, writeFile } from 'fs/promises';
 
-const cache_folder = process.env.CACHE_FOLDER + 'google/';
+const cache_folder = process.env.CACHE_FOLDER + 'twitch/';
 
 type TokenResponse = {
     access_token: string;
     expires_in: number;
     token_type: string;
-    id_token: string;
 };
 
-type GoogleIdTokenPayload = {
-    sub: string;
-    email: string;
-
-    name?: string;
-    given_name?: string;
-    family_name?: string;
-    picture?: string;
+type TwitchUserType = {
+    id: string;
+    login: string;
+    display_name: string;
+    profile_image_url?: string; // Is this possibly undefined?
 };
 
 @Injectable()
-export class GoogleAuthService {
+export class TwitchAuthService {
     constructor(
         private prisma: PrismaService,
         private authService: AuthService
     ) {}
 
-    async getData(code: string, redirect_uri: string) {
+    async getData(code: string, redirect_uri: string): Promise<TwitchUserType> {
         const token_response = await axios.post(
-            'https://oauth2.googleapis.com/token',
+            'https://id.twitch.tv/oauth2/token',
             {
                 code,
-                client_id: process.env.GOOGLE_CLIENT_ID,
-                client_secret: process.env.GOOGLE_CLIENT_SECRET,
+                client_id: process.env.TWITCH_CLIENT_ID,
+                client_secret: process.env.TWITCH_CLIENT_SECRET,
                 redirect_uri,
                 grant_type: 'authorization_code'
             },
             {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
                 validateStatus: () => true
             }
         );
@@ -53,11 +51,23 @@ export class GoogleAuthService {
             throw new LocaleException(responses_users.INVALID_OAUTH_CODE, 404);
 
         const token_data = token_response.data as TokenResponse;
-        return decode(token_data.id_token) as GoogleIdTokenPayload;
-    }
+        const user_data_response = await axios.get(
+            'https://api.twitch.tv/helix/users',
+            {
+                headers: {
+                    Authorization: `Bearer ${token_data.access_token}`,
+                    'Client-Id': process.env.TWITCH_CLIENT_ID
+                },
+                validateStatus: () => true
+            }
+        );
 
-    resizeGoogleAvatarUrl(url: string, size: number = 512): string {
-        return url.replace(/=s\d+(-[a-z]*)?/, `=s${size}$1`);
+        console.log(user_data_response.data);
+
+        if (user_data_response.status !== 200)
+            throw new LocaleException(responses_users.PROFILE_FETCH_ERROR, 500);
+
+        return user_data_response.data.data[0];
     }
 
     /** Update avatar cache */
@@ -65,10 +75,9 @@ export class GoogleAuthService {
         if (!url) return null;
         await this.initCacheFolders();
 
-        const avatar_response = await axios.get(
-            this.resizeGoogleAvatarUrl(url, 512),
-            { responseType: 'arraybuffer' }
-        );
+        const avatar_response = await axios.get(url, {
+            responseType: 'arraybuffer'
+        });
 
         if (avatar_response.status !== 200) return null;
         const avatar = Buffer.from(avatar_response.data);
@@ -78,6 +87,7 @@ export class GoogleAuthService {
         return filename;
     }
 
+    /** Delete avatar */
     deleteAvatar(path: string) {
         rm(path).catch(console.error);
     }
@@ -87,69 +97,31 @@ export class GoogleAuthService {
         await mkdir(cache_folder, { recursive: true });
     }
 
-    /** Get account name */
-    getName(payload: GoogleIdTokenPayload): string {
-        if (payload.name && payload.name.trim()) {
-            return payload.name.trim();
-        }
-
-        const given = payload.given_name?.trim() || '';
-        const family = payload.family_name?.trim() || '';
-
-        if (given || family) {
-            return `${given} ${family}`.trim();
-        }
-
-        throw new LocaleException(responses_users.USER_NO_NAME, 400);
-    }
-
-    /** Mask email (circumventing laws))) */
-    maskEmail(email: string): string {
-        const [user, domain] = email.split('@');
-
-        switch (user.length) {
-            case 1:
-                return `*@${domain}`;
-            case 2:
-                return `${user[0]}*@${domain}`;
-            case 3:
-                return `${user[0]}*${user[2]}@${domain}`;
-            case 4:
-                return `${user.slice(0, 2)}*${user[3]}@${domain}`;
-            default:
-                const start = user.slice(0, 2);
-                const end = user.slice(-2);
-                const masked = '*'.repeat(user.length - 4);
-                return `${start}${masked}${end}@${domain}`;
-        }
-    }
-
-    /** Create session for google user */
+    /** Create session for twitch user */
     async login(code: string, user_agent: string) {
         const data = await this.getData(
             code,
-            process.env.GOOGLE_MAIN_REDIRECT as string
+            process.env.TWITCH_MAIN_REDIRECT as string
         );
-        const avatar_path = await this.updateAvatar(data.picture);
-        const name = this.getName(data);
+        const avatar_path = await this.updateAvatar(data.profile_image_url);
 
-        const auth_record = await this.prisma.googleAuth.findUnique({
-            where: { sub: data.sub },
+        const auth_record = await this.prisma.twitchAuth.findUnique({
+            where: { uid: data.id },
             include: { user: { include: { UserSettings: true } } }
         });
 
         let user = undefined;
         if (!auth_record) {
             user = await this.authService.createUser({
-                name: name,
-                username: name.toLowerCase()
+                name: data.display_name || data.login,
+                username: data.login.toLowerCase()
             });
 
-            await this.prisma.googleAuth.create({
+            await this.prisma.twitchAuth.create({
                 data: {
-                    sub: data.sub,
-                    email: this.maskEmail(data.email),
-                    name,
+                    uid: data.id,
+                    login: data.login,
+                    name: data.display_name || data.login,
 
                     avatar_id: avatar_path,
                     user: { connect: { id: user.id } }
@@ -161,11 +133,12 @@ export class GoogleAuthService {
                     console.error(`Cannot delete old avatar: ${e}`)
                 );
 
-            await this.prisma.googleAuth.update({
+            await this.prisma.twitchAuth.update({
                 where: { id: auth_record.id },
                 data: {
                     avatar_id: avatar_path,
-                    name
+                    login: data.login,
+                    name: data.display_name || data.login
                 }
             });
 

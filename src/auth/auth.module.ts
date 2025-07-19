@@ -8,6 +8,7 @@ import { MinecraftService } from 'src/minecraft/minecraft.service';
 import { DiscordAuthModule } from './providers/discord/discord.module';
 import { MinecraftAuthModule } from './providers/minecraft/minecraft.module';
 import { GoogleAuthModule } from './providers/google/google.module';
+import { TwitchAuthModule } from './providers/twitch/twitch.module';
 
 @Module({
     controllers: [AuthController],
@@ -16,7 +17,8 @@ import { GoogleAuthModule } from './providers/google/google.module';
         CacheModule.register(),
         forwardRef(() => DiscordAuthModule),
         forwardRef(() => MinecraftAuthModule),
-        forwardRef(() => GoogleAuthModule)
+        forwardRef(() => GoogleAuthModule),
+        forwardRef(() => TwitchAuthModule)
     ],
     exports: [AuthService]
 })

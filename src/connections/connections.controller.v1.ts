@@ -111,5 +111,24 @@ export class ConnectionsController {
 
         await this.connectionsService.disconnectGoogle(request.session);
     }
+
+    @Post('twitch')
+    @Auth(AuthEnum.Strict)
+    async connectTwitch(
+        @Req() request: RequestSession,
+        @Body() body: { code: string }
+    ) {
+        /** Connect twitch account */
+
+        await this.connectionsService.connectTwitch(request.session, body.code);
+    }
+
+    @Delete('twitch')
+    @Auth(AuthEnum.Strict)
+    async disconnectTwitch(@Req() request: RequestSession) {
+        /** Disconnect twitch account */
+
+        await this.connectionsService.disconnectTwitch(request.session);
+    }
 }
 

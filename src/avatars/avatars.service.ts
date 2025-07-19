@@ -7,14 +7,19 @@ import * as sharp from 'sharp';
 
 @Injectable()
 export class AvatarsService {
-    providers = ['discord', 'google', 'minecraft'];
+    providers = ['discord', 'google', 'twitch', 'minecraft'];
     constructor(private prisma: PrismaService) {}
 
     /** Get user' preferred avatar */
     async getPreferredAvatar(uid: string) {
         const user = await this.prisma.user.findUnique({
             where: { id: uid },
-            include: { DiscordAuth: true, profile: true, GoogleAuth: true }
+            include: {
+                DiscordAuth: true,
+                profile: true,
+                GoogleAuth: true,
+                TwitchAuth: true
+            }
         });
 
         if (!user) throw new LocaleException(responses.USER_NOT_FOUND, 404);
@@ -54,6 +59,15 @@ export class AvatarsService {
                 buff = await this.getAvatar(user.GoogleAuth.avatar_id);
                 if (buff) break;
             }
+
+            if (
+                provider === 'twitch' &&
+                user.TwitchAuth &&
+                user.TwitchAuth.avatar_id
+            ) {
+                buff = await this.getAvatar(user.TwitchAuth.avatar_id);
+                if (buff) break;
+            }
         }
 
         return buff;
@@ -74,10 +88,7 @@ export class AvatarsService {
         if (!user) throw new LocaleException(responses.USER_NOT_FOUND, 404);
 
         if (!user.DiscordAuth || !user.DiscordAuth.avatar_id)
-            throw new LocaleException(
-                'Discord auth not connected or no avatar set on this account',
-                404
-            );
+            throw new LocaleException(responses.USER_NOT_FOUND, 404);
 
         const buff = await this.getAvatar(user.DiscordAuth.avatar_id);
         if (!buff) throw new LocaleException(responses.AVATAR_NOT_FOUND, 404);
@@ -92,7 +103,7 @@ export class AvatarsService {
         });
 
         if (!minecraft)
-            throw new LocaleException(responses.AVATAR_NOT_FOUND, 404);
+            throw new LocaleException(responses.USER_NOT_FOUND, 404);
 
         const buff = Buffer.from(minecraft.data_head, 'base64');
         return await sharp(buff)
@@ -111,12 +122,27 @@ export class AvatarsService {
         if (!user) throw new LocaleException(responses.USER_NOT_FOUND, 404);
 
         if (!user.GoogleAuth || !user.GoogleAuth.avatar_id)
-            throw new LocaleException(
-                'Google auth not connected or no avatar set on this account',
-                404
-            );
+            throw new LocaleException(responses.USER_NOT_FOUND, 404);
 
         const buff = await this.getAvatar(user.GoogleAuth.avatar_id);
+        if (!buff) throw new LocaleException(responses.AVATAR_NOT_FOUND, 404);
+
+        return buff;
+    }
+
+    /** Get user' twitch avatar */
+    async getTwitchAvatar(uid: string) {
+        const user = await this.prisma.user.findUnique({
+            where: { id: uid },
+            include: { TwitchAuth: true }
+        });
+
+        if (!user) throw new LocaleException(responses.USER_NOT_FOUND, 404);
+
+        if (!user.TwitchAuth || !user.TwitchAuth.avatar_id)
+            throw new LocaleException(responses.USER_NOT_FOUND, 404);
+
+        const buff = await this.getAvatar(user.TwitchAuth.avatar_id);
         if (!buff) throw new LocaleException(responses.AVATAR_NOT_FOUND, 404);
 
         return buff;

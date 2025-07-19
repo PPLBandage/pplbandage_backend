@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Session } from 'src/auth/auth.service';
 import { DiscordAuthService } from 'src/auth/providers/discord/discord.service';
 import { GoogleAuthService } from 'src/auth/providers/google/google.service';
+import { TwitchAuthService } from 'src/auth/providers/twitch/twitch.service';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import responses_minecraft from 'src/localization/minecraft.localization';
 import { MinecraftService } from 'src/minecraft/minecraft.service';
@@ -13,14 +14,20 @@ export class ConnectionsService {
         private prisma: PrismaService,
         public minecraftService: MinecraftService,
         private discordAuthService: DiscordAuthService,
-        private googleAuthService: GoogleAuthService
+        private googleAuthService: GoogleAuthService,
+        private twitchAuthService: TwitchAuthService
     ) {}
 
     /** Get list of connected accounts */
     async getConnections(session: Session) {
         const user = await this.prisma.user.findUniqueOrThrow({
             where: { id: session.user.id },
-            include: { profile: true, DiscordAuth: true, GoogleAuth: true }
+            include: {
+                profile: true,
+                DiscordAuth: true,
+                GoogleAuth: true,
+                TwitchAuth: true
+            }
         });
 
         const minecraft = user.profile
@@ -53,9 +60,19 @@ export class ConnectionsService {
               }
             : null;
 
+        const twitch = user.TwitchAuth
+            ? {
+                  uid: user.TwitchAuth.uid,
+                  login: user.TwitchAuth.login,
+                  name: user.TwitchAuth.name,
+                  connected_at: user.TwitchAuth.connected_at
+              }
+            : null;
+
         return {
             userID: user.id,
             google,
+            twitch,
             discord,
             minecraft
         };
@@ -174,7 +191,7 @@ export class ConnectionsService {
         await this.prisma.googleAuth.create({
             data: {
                 sub: data.sub,
-                email: data.email,
+                email: this.googleAuthService.maskEmail(data.email),
                 name,
 
                 avatar_id: avatar,
@@ -198,6 +215,55 @@ export class ConnectionsService {
         await this.prisma.googleAuth.delete({ where: { id: record.id } });
         if (record.avatar_id)
             this.googleAuthService.deleteAvatar(record.avatar_id);
+    }
+
+    /** Connect twitch account */
+    async connectTwitch(session: Session, code: string) {
+        const data = await this.twitchAuthService.getData(
+            code,
+            process.env.TWITCH_REDIRECT_CONNECT as string
+        );
+        const record = await this.prisma.twitchAuth.findFirst({
+            where: { uid: data.id }
+        });
+
+        if (record)
+            throw new LocaleException(
+                responses_minecraft.ALREADY_CONNECTED,
+                409
+            );
+
+        const avatar = await this.twitchAuthService.updateAvatar(
+            data.profile_image_url
+        );
+
+        await this.prisma.twitchAuth.create({
+            data: {
+                uid: data.id,
+                login: data.login,
+                name: data.display_name || data.login,
+
+                avatar_id: avatar,
+                user: { connect: { id: session.user.id } }
+            }
+        });
+    }
+
+    /** Disconnect twitch account */
+    async disconnectTwitch(session: Session) {
+        const record = await this.prisma.twitchAuth.findFirst({
+            where: { userid: session.user.id }
+        });
+
+        if (!record)
+            throw new LocaleException(
+                responses_minecraft.ACCOUNT_NOT_CONNECTED,
+                400
+            );
+
+        await this.prisma.twitchAuth.delete({ where: { id: record.id } });
+        if (record.avatar_id)
+            this.twitchAuthService.deleteAvatar(record.avatar_id);
     }
 }
 
