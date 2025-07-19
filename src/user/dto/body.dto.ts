@@ -1,5 +1,6 @@
 import {
     IsBoolean,
+    IsIn,
     IsNotEmpty,
     IsNumber,
     IsOptional,
@@ -8,6 +9,7 @@ import {
     MaxLength,
     Min
 } from 'class-validator';
+import { avatar_providers } from 'src/avatars/avatars.service';
 
 export class UpdateUsersDto {
     @IsOptional()
@@ -37,6 +39,10 @@ export class UpdateSelfUserDto {
     @IsBoolean()
     @IsOptional()
     public?: boolean;
+
+    @IsOptional()
+    @IsIn(avatar_providers)
+    prefer_avatar?: string;
 }
 
 export class FeedbackDTO {

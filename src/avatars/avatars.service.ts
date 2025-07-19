@@ -5,9 +5,10 @@ import responses from 'src/localization/users.localization';
 import { readFile } from 'fs/promises';
 import * as sharp from 'sharp';
 
+export const avatar_providers = ['discord', 'google', 'twitch', 'minecraft'];
+
 @Injectable()
 export class AvatarsService {
-    providers = ['discord', 'google', 'twitch', 'minecraft'];
     constructor(private prisma: PrismaService) {}
 
     /** Get user' preferred avatar */
@@ -18,16 +19,17 @@ export class AvatarsService {
                 DiscordAuth: true,
                 profile: true,
                 GoogleAuth: true,
-                TwitchAuth: true
+                TwitchAuth: true,
+                UserSettings: true
             }
         });
 
         if (!user) throw new LocaleException(responses.USER_NOT_FOUND, 404);
 
-        const preferred = 'discord'; // Условность
+        const user_prefer_avatar = user.UserSettings?.prefer_avatar || null;
         const check_order = [
-            preferred,
-            ...this.providers.filter(p => p !== preferred)
+            user_prefer_avatar,
+            ...avatar_providers.filter(p => p !== user_prefer_avatar)
         ];
 
         let buff = null;

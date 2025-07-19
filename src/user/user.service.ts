@@ -77,10 +77,35 @@ export class UserService {
     async getUserSettings(session: Session) {
         /* get user's settings */
 
+        const user = await this.prisma.user.findFirstOrThrow({
+            where: { id: session.user.id },
+            include: {
+                profile: true,
+                DiscordAuth: true,
+                GoogleAuth: true,
+                TwitchAuth: true,
+                UserSettings: true,
+                Bandage: true
+            }
+        });
+
+        const available_avatars = [];
+        if (user.profile) available_avatars.push('minecraft');
+        if (user.DiscordAuth && user.DiscordAuth.avatar_id)
+            available_avatars.push('discord');
+        if (user.GoogleAuth && user.GoogleAuth.avatar_id)
+            available_avatars.push('google');
+        if (user.TwitchAuth && user.TwitchAuth.avatar_id)
+            available_avatars.push('twitch');
+
         return {
-            userID: session.user.id,
-            public_profile: session.user.UserSettings?.public_profile,
-            can_be_public: session.user.Bandage.length !== 0
+            userID: user.id,
+            public_profile: user.UserSettings?.public_profile,
+            can_be_public: user.Bandage.length !== 0,
+            avatar: {
+                current: user.UserSettings?.prefer_avatar || 'discord',
+                available: available_avatars
+            }
         };
     }
 
@@ -327,6 +352,7 @@ export class UserService {
             profile_theme?: number;
             autoload?: boolean;
             public_profile?: boolean;
+            prefer_avatar?: string;
         } = {};
 
         if (body.theme !== undefined) updates.profile_theme = body.theme;
@@ -346,6 +372,8 @@ export class UserService {
                 data: { valid: body.nick_search }
             });
         }
+
+        if (body.prefer_avatar) updates.prefer_avatar = body.prefer_avatar;
 
         if (Object.keys(updates).length > 0) {
             await this.prisma.userSettings.update({

@@ -59,6 +59,8 @@ model UserSettings {
     autoload       Boolean @default(true)
     public_profile Boolean @default(true)
     skip_ppl_check Boolean @default(false)
+
+    prefer_avatar String @default("")
 }
 
 // =================== AUTH PROVIDERS ===================
