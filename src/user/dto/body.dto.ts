@@ -26,23 +26,23 @@ export class UpdateSelfUserDto {
     @IsOptional()
     @Min(0)
     @Max(2)
-    theme?: number;
+    profile_theme?: number;
 
     @IsBoolean()
     @IsOptional()
-    skin_autoload?: boolean;
+    minecraft_skin_autoload?: boolean;
 
     @IsBoolean()
     @IsOptional()
-    nick_search?: boolean;
+    minecraft_nick_searchable?: boolean;
 
     @IsBoolean()
     @IsOptional()
-    public?: boolean;
+    public_profile?: boolean;
 
     @IsOptional()
     @IsIn(avatar_providers)
-    prefer_avatar?: string;
+    preferred_avatar?: string;
 }
 
 export class FeedbackDTO {

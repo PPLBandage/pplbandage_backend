@@ -9,7 +9,6 @@ import { LocaleException } from 'src/interceptors/localization.interceptor';
 
 import responses from 'src/localization/users.localization';
 import responses_common from 'src/localization/common.localization';
-import responses_minecraft from 'src/localization/minecraft.localization';
 
 @Injectable()
 export class UserService {
@@ -348,39 +347,25 @@ export class UserService {
         /* Update self data */
         /* TODO: Nickname changing */
 
-        const updates: {
-            profile_theme?: number;
-            autoload?: boolean;
-            public_profile?: boolean;
-            prefer_avatar?: string;
-        } = {};
-
-        if (body.theme !== undefined) updates.profile_theme = body.theme;
-        if (body.skin_autoload !== undefined)
-            updates.autoload = body.skin_autoload;
-        if (body.public !== undefined) updates.public_profile = body.public;
-
-        if (body.nick_search !== undefined) {
-            if (!session.user.profile)
-                throw new LocaleException(
-                    responses_minecraft.ACCOUNT_NOT_CONNECTED,
-                    400
-                );
-
+        if (
+            body.minecraft_nick_searchable !== undefined &&
+            session.user.profile
+        ) {
             await this.prisma.minecraft.update({
                 where: { id: session.user.profile.id },
-                data: { valid: body.nick_search }
+                data: { valid: body.minecraft_nick_searchable }
             });
         }
 
-        if (body.prefer_avatar) updates.prefer_avatar = body.prefer_avatar;
-
-        if (Object.keys(updates).length > 0) {
-            await this.prisma.userSettings.update({
-                where: { userId: session.user.id },
-                data: updates
-            });
-        }
+        await this.prisma.userSettings.update({
+            where: { userId: session.user.id },
+            data: {
+                prefer_avatar: body.preferred_avatar,
+                profile_theme: body.profile_theme,
+                autoload: body.minecraft_skin_autoload,
+                public_profile: body.public_profile
+            }
+        });
     }
 
     /** Subscribe to user by nickname */
