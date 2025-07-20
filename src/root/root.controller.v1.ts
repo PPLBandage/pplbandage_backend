@@ -128,7 +128,6 @@ export class RootController {
 
         const users = await this.prisma.user.findMany({
             where: {
-                discordId: { gte: '0' },
                 Bandage: { some: {} },
                 UserSettings: { banned: false, public_profile: true }
             }

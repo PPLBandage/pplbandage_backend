@@ -28,7 +28,6 @@ model User {
     username                   String              @default("")
     reserved_name              String?
     name                       String              @default("")
-    discordId                  String              @default("")
     sessions                   Sessions[]
     last_accessed              DateTime            @default(now())
     profile                    Minecraft?

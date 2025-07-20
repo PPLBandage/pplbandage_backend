@@ -46,7 +46,6 @@ export class UserService {
         this.logger.debug('Processed');
         return {
             userID: session.user.id,
-            discordID: session.user.discordId,
             username: session.user.username,
             name: session.user.reserved_name || session.user.name,
             joined_at: session.user.joined_at,
@@ -229,7 +228,6 @@ export class UserService {
 
         return {
             userID: user.id,
-            discordID: user.discordId,
             username: user.username,
             name: user.reserved_name || user.name,
             joined_at: user.joined_at,
@@ -266,7 +264,7 @@ export class UserService {
         );
 
         return {
-            discordID: user.discordId,
+            userID: user.id,
             username: user.username,
             name: user.reserved_name || user.name,
             banner_color: 'var(--main-card-color)', // TODO: Make it changeable
@@ -306,7 +304,6 @@ export class UserService {
                     username: user.username,
                     name: user.reserved_name || user.name,
                     joined_at: user.joined_at,
-                    discord_id: user.discordId,
                     flags: flags,
                     permissions: user.AccessRoles.reduce(
                         (acc, role) => acc | (1 << role.level),

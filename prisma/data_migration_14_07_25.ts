@@ -1,5 +1,6 @@
 // Перенос провайдеров логина в отдельные таблицы
 
+/*
 import { PrismaClient } from '@prisma/client';
 import axios from 'axios';
 import { randomUUID } from 'crypto';
@@ -71,3 +72,4 @@ main()
     .then(() => console.log('Success'))
     .catch(console.error);
 
+*/
