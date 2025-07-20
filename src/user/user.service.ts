@@ -89,13 +89,13 @@ export class UserService {
         });
 
         const available_avatars = [];
-        if (user.profile) available_avatars.push('minecraft');
         if (user.DiscordAuth && user.DiscordAuth.avatar_id)
             available_avatars.push('discord');
         if (user.GoogleAuth && user.GoogleAuth.avatar_id)
             available_avatars.push('google');
         if (user.TwitchAuth && user.TwitchAuth.avatar_id)
             available_avatars.push('twitch');
+        if (user.profile) available_avatars.push('minecraft');
 
         return {
             userID: user.id,
