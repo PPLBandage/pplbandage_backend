@@ -1,7 +1,6 @@
 import {
     Controller,
     Get,
-    Param,
     Req,
     Res,
     Post,
@@ -10,34 +9,37 @@ import {
     Body
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
-import { AuthService, generateCookie } from './auth.service';
+import { generateCookie } from './auth.service';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { DiscordAuthService } from './providers/discord/discord.service';
 import { MinecraftAuthService } from './providers/minecraft/minecraft.service';
 import { GoogleAuthService } from './providers/google/google.service';
 import { TwitchAuthService } from './providers/twitch/twitch.service';
+import { LocaleException } from 'src/interceptors/localization.interceptor';
+import responses from 'src/localization/common.localization';
 
 @Controller({ version: '1', path: 'auth' })
 @UseGuards(AuthGuard)
 export class AuthController {
     constructor(
-        private readonly authService: AuthService,
         private readonly discordAuthService: DiscordAuthService,
         private readonly minecraftAuthService: MinecraftAuthService,
         private readonly googleAuthService: GoogleAuthService,
         private readonly twitchAuthService: TwitchAuthService
     ) {}
 
-    @Post('/discord/:code')
+    @Post('discord')
     async discord(
-        @Param('code') code: string,
         @Req() request: Request,
-        @Res({ passthrough: true }) res: Response
+        @Res({ passthrough: true }) res: Response,
+        @Body() body: { code: string }
     ) {
         /* create session for discord user */
 
+        if (!body.code) throw new LocaleException(responses.INVALID_BODY, 400);
+
         const user_agent = request.headers['user-agent'] as string;
-        const data = await this.discordAuthService.login(code, user_agent);
+        const data = await this.discordAuthService.login(body.code, user_agent);
 
         const expires =
             Math.round(Date.now() / 1000) + Number(process.env.SESSION_TTL);
@@ -46,16 +48,21 @@ export class AuthController {
         return data;
     }
 
-    @Post('/minecraft/:code')
+    @Post('minecraft')
     async minecraftLogin(
-        @Param('code') code: string,
         @Req() request: Request,
-        @Res({ passthrough: true }) res: Response
+        @Res({ passthrough: true }) res: Response,
+        @Body() body: { code: string }
     ) {
         /* create session for minecraft user */
 
+        if (!body.code) throw new LocaleException(responses.INVALID_BODY, 400);
+
         const user_agent = request.headers['user-agent'] as string;
-        const data = await this.minecraftAuthService.login(code, user_agent);
+        const data = await this.minecraftAuthService.login(
+            body.code,
+            user_agent
+        );
 
         const expires =
             Math.round(Date.now() / 1000) + Number(process.env.SESSION_TTL);
@@ -64,7 +71,7 @@ export class AuthController {
         return data;
     }
 
-    @Post('/google')
+    @Post('google')
     async googleLogin(
         @Req() request: Request,
         @Res({ passthrough: true }) res: Response,
@@ -82,7 +89,7 @@ export class AuthController {
         return data;
     }
 
-    @Post('/twitch')
+    @Post('twitch')
     async twitchLogin(
         @Req() request: Request,
         @Res({ passthrough: true }) res: Response,
@@ -100,7 +107,7 @@ export class AuthController {
         return data;
     }
 
-    @Get('/url/discord')
+    @Get('url/discord')
     async urlDiscord(
         @Res() res: Response,
         @Query() query: { connect: boolean }
@@ -123,7 +130,7 @@ export class AuthController {
         res.redirect(login_url.toString());
     }
 
-    @Get('/url/google')
+    @Get('url/google')
     async urlGoogle(
         @Res() res: Response,
         @Query() query: { connect: boolean }
@@ -150,7 +157,7 @@ export class AuthController {
         res.redirect(login_url.toString());
     }
 
-    @Get('/url/twitch')
+    @Get('url/twitch')
     async urlTwitch(
         @Res() res: Response,
         @Query() query: { connect: boolean }

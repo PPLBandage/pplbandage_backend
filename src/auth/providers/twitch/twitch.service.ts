@@ -62,8 +62,6 @@ export class TwitchAuthService {
             }
         );
 
-        console.log(user_data_response.data);
-
         if (user_data_response.status !== 200)
             throw new LocaleException(responses_users.PROFILE_FETCH_ERROR, 500);
 
@@ -128,10 +126,7 @@ export class TwitchAuthService {
                 }
             });
         } else {
-            if (auth_record.avatar_id)
-                rm(auth_record.avatar_id).catch(e =>
-                    console.error(`Cannot delete old avatar: ${e}`)
-                );
+            if (auth_record.avatar_id) this.deleteAvatar(auth_record.avatar_id);
 
             await this.prisma.twitchAuth.update({
                 where: { id: auth_record.id },

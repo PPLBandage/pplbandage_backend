@@ -156,10 +156,7 @@ export class GoogleAuthService {
                 }
             });
         } else {
-            if (auth_record.avatar_id)
-                rm(auth_record.avatar_id).catch(e =>
-                    console.error(`Cannot delete old avatar: ${e}`)
-                );
+            if (auth_record.avatar_id) this.deleteAvatar(auth_record.avatar_id);
 
             await this.prisma.googleAuth.update({
                 where: { id: auth_record.id },

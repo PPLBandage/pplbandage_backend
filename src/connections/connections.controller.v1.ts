@@ -3,7 +3,6 @@ import {
     Controller,
     Delete,
     Get,
-    Param,
     Post,
     Req,
     UseGuards
@@ -28,20 +27,20 @@ export class ConnectionsController {
         return this.connectionsService.getConnections(request.session);
     }
 
-    @Post('minecraft/connect/:code')
+    @Post('minecraft')
     @Auth(AuthEnum.Strict)
     async connectMinecraft(
-        @Param('code') code: string,
-        @Req() request: RequestSession
+        @Req() request: RequestSession,
+        @Body() body: { code: string }
     ) {
         /* connect minecraft profile to account */
 
-        if (code.length != 6)
+        if (!body.code || body.code.length != 6)
             throw new LocaleException(responses_minecraft.CODE_NOT_FOUND, 404);
 
         return await this.connectionsService.connectMinecraft(
             request.session,
-            code
+            body.code
         );
     }
 

@@ -14,8 +14,6 @@ import { RolesEnum } from 'src/interfaces/types';
 import { UAParser } from 'ua-parser-js';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import responses from 'src/localization/common.localization';
-import responses_users from 'src/localization/users.localization';
-import responses_minecraft from 'src/localization/minecraft.localization';
 import { MinecraftService } from 'src/minecraft/minecraft.service';
 import { slugify } from 'transliteration';
 
@@ -140,42 +138,6 @@ export class AuthService {
             },
             include: { UserSettings: true }
         });
-    }
-
-    async loginMinecraft(code: string, user_agent: string) {
-        const minecraft_data = await this.minecraftService.getByCode(code);
-
-        const minecraft_record = await this.prisma.minecraft.findFirst({
-            where: { uuid: minecraft_data.UUID },
-            include: {
-                user: { include: { UserSettings: true, AccessRoles: true } }
-            }
-        });
-        if (!minecraft_record)
-            throw new LocaleException(
-                responses_minecraft.PROFILE_NOT_FOUND,
-                404
-            );
-
-        if (!minecraft_record.user)
-            throw new LocaleException(
-                responses_users.MINECRAFT_USER_NOT_FOUND,
-                404
-            );
-
-        if (minecraft_record.user.UserSettings?.banned) {
-            await this.prisma.sessions.deleteMany({
-                where: { userId: minecraft_record.user.id }
-            });
-            throw new LocaleException(responses.FORBIDDEN, 403);
-        }
-
-        const session = await this.createSession(
-            minecraft_record.user,
-            user_agent,
-            minecraft_record.user.AccessRoles
-        );
-        return { sessionId: session.sessionId };
     }
 
     async createSession(
