@@ -35,6 +35,7 @@
         "jsonwebtoken": "9.0.2",
         "morgan": "1.10.0",
         "sharp": "0.34.1",
+        "transliteration": "^2.3.5",
         "ua-parser-js": "2.0.3"
     },
     "devDependencies": {

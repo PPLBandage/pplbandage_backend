@@ -28,7 +28,7 @@ model User {
     username                   String              @default("")
     reserved_name              String?
     name                       String              @default("")
-    discordId                  String              @unique @default("")
+    discordId                  String              @default("")
     sessions                   Sessions[]
     last_accessed              DateTime            @default(now())
     profile                    Minecraft?
@@ -43,6 +43,11 @@ model User {
 
     subscriptions User[] @relation("UserSubs")
     subscribers   User[] @relation("UserSubs")
+
+    // Auth providers
+    DiscordAuth DiscordAuth?
+    GoogleAuth  GoogleAuth?
+    TwitchAuth  TwitchAuth?
 }
 
 model UserSettings {
@@ -54,7 +59,54 @@ model UserSettings {
     autoload       Boolean @default(true)
     public_profile Boolean @default(true)
     skip_ppl_check Boolean @default(false)
+
+    prefer_avatar String @default("")
 }
+
+// =================== AUTH PROVIDERS ===================
+
+model DiscordAuth {
+    id         Int     @id @default(autoincrement())
+    discord_id String  @unique
+    name       String
+    username   String
+    avatar_id  String?
+
+    user   User   @relation(fields: [userid], references: [id])
+    userid String @unique
+
+    connected_at DateTime @default(now())
+}
+
+model GoogleAuth {
+    id    Int    @id @default(autoincrement())
+    sub   String @unique
+    email String
+
+    name      String
+    avatar_id String?
+
+    user   User   @relation(fields: [userid], references: [id])
+    userid String @unique
+
+    connected_at DateTime @default(now())
+}
+
+model TwitchAuth {
+    id    Int    @id @default(autoincrement())
+    uid   String @unique
+    login String
+
+    name      String
+    avatar_id String?
+
+    user   User   @relation(fields: [userid], references: [id])
+    userid String @unique
+
+    connected_at DateTime @default(now())
+}
+
+// =============== END OF AUTH PROVIDERS ================
 
 model AccessRoles {
     id          Int    @id @default(autoincrement())
@@ -127,13 +179,6 @@ model Notifications {
     author        String   @default("Система")
     type          Int      @default(0)
     creation_date DateTime @default(now())
-}
-
-model Roles {
-    id    Int    @id @default(autoincrement())
-    ds_id String @default("")
-    title String @default("")
-    color Int    @default(0)
 }
 
 model KV {

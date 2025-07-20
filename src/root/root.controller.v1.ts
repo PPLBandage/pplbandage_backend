@@ -5,10 +5,8 @@ import {
     Header,
     HttpException,
     Inject,
-    Param,
     Post,
     Req,
-    StreamableFile,
     UsePipes,
     ValidationPipe
 } from '@nestjs/common';
@@ -174,18 +172,6 @@ export class RootController {
             `<@&${process.env.SYSTEM_ROLE_ID}> Client received client-side error:\n${body.content}\n\n` +
                 `User agent: ${ua}`,
             process.env.SYSTEM_CHANNEL_ID
-        );
-    }
-
-    @Get('/avatars/:user_id')
-    @Header('Content-Type', 'image/png')
-    async head(
-        @Param('user_id') user_id: string
-    ): Promise<StreamableFile | void> {
-        /* get user avatar by id */
-
-        return new StreamableFile(
-            Buffer.from(await this.userService.getAvatar(user_id), 'base64')
         );
     }
 }
