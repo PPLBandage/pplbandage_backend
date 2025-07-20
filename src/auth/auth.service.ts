@@ -98,7 +98,7 @@ export class AuthService {
     };
 
     filterUsername(username: string): string {
-        return username.replace(/[^A-Za-z0-9\-_.~:/?#\[\]@!$&'()*+,;=]/g, '');
+        return username.replace(/[^A-Za-z0-9_-]/g, '');
     }
 
     async createUser({
