@@ -97,6 +97,10 @@ export class AuthService {
         }
     };
 
+    filterUsername(username: string): string {
+        return username.replace(/[^A-Za-z0-9\-_.~:/?#\[\]@!$&'()*+,;=]/g, '');
+    }
+
     async createUser({
         name,
         username,
@@ -128,7 +132,7 @@ export class AuthService {
         return await this.prisma.user.create({
             data: {
                 id: generateSnowflake(BigInt(users_count)),
-                username: finalUsername,
+                username: this.filterUsername(finalUsername),
                 name,
                 UserSettings: { create: {} },
                 AccessRoles: {
