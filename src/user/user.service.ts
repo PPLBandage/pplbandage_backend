@@ -287,7 +287,14 @@ export class UserService {
 
         const users = await this.prisma.user.findMany({
             where: query_req,
-            include: { UserSettings: true, AccessRoles: true },
+            include: {
+                UserSettings: true,
+                AccessRoles: true,
+                DiscordAuth: true,
+                GoogleAuth: true,
+                profile: true,
+                TwitchAuth: true
+            },
             orderBy: { joined_at: 'asc' },
             take: take,
             skip: take * page
@@ -298,6 +305,12 @@ export class UserService {
             data: users.map(user => {
                 let flags = Number(user.UserSettings?.banned);
                 flags |= Number(user?.UserSettings?.skip_ppl_check) << 1;
+
+                // Connected auth providers
+                flags |= Number(!!user.DiscordAuth) << 2;
+                flags |= Number(!!user.GoogleAuth) << 3;
+                flags |= Number(!!user.TwitchAuth) << 4;
+                flags |= Number(!!user.profile) << 5;
 
                 return {
                     id: user.id,
