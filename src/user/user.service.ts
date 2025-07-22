@@ -101,7 +101,8 @@ export class UserService {
             public_profile: user.UserSettings?.public_profile,
             can_be_public: user.Bandage.length !== 0,
             avatar: {
-                current: user.UserSettings?.prefer_avatar || 'discord',
+                current:
+                    user.UserSettings?.prefer_avatar || available_avatars[0],
                 available: available_avatars
             }
         };
