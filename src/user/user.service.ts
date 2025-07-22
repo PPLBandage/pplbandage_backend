@@ -102,7 +102,7 @@ export class UserService {
             can_be_public: user.Bandage.length !== 0,
             avatar: {
                 current:
-                    user.UserSettings?.prefer_avatar || available_avatars[0],
+                    user.UserSettings?.prefer_avatar || available_avatars.at(0),
                 available: available_avatars
             }
         };
