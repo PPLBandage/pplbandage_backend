@@ -49,7 +49,7 @@ export class AuthController {
             Math.round(Date.now() / 1000) + Number(process.env.SESSION_TTL);
         res.setHeader('SetCookie', generateCookie(data.sessionId, expires));
 
-        return data;
+        return { session: data.sessionId };
     }
 
     @Post('minecraft')
@@ -73,7 +73,7 @@ export class AuthController {
             Math.round(Date.now() / 1000) + Number(process.env.SESSION_TTL);
         res.setHeader('SetCookie', generateCookie(data.sessionId, expires));
 
-        return data;
+        return { session: data.sessionId };
     }
 
     @Post('google')
@@ -92,7 +92,7 @@ export class AuthController {
             Math.round(Date.now() / 1000) + Number(process.env.SESSION_TTL);
         res.setHeader('SetCookie', generateCookie(data.sessionId, expires));
 
-        return data;
+        return { session: data.sessionId };
     }
 
     @Post('twitch')
@@ -111,7 +111,7 @@ export class AuthController {
             Math.round(Date.now() / 1000) + Number(process.env.SESSION_TTL);
         res.setHeader('SetCookie', generateCookie(data.sessionId, expires));
 
-        return data;
+        return { session: data.sessionId };
     }
 
     @Get('url/discord')
