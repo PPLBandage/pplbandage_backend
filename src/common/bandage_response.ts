@@ -96,7 +96,7 @@ export const generateResponse = (
             tags: el.tags.map(tag => tag.name),
             author: {
                 id: el.User.id,
-                name: el.User.reserved_name || el.User.name,
+                name: el.User.name,
                 username: el.User.username,
                 public: el.User.UserSettings?.public_profile
             },

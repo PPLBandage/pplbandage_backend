@@ -423,9 +423,9 @@ export class WorkshopService {
                 average_og_color: bandage.accent_color,
                 stars_count: bandage.stars.length,
                 author: {
-                    id: bandage.User?.id,
-                    name: bandage.User?.reserved_name || bandage.User?.name,
-                    username: bandage.User?.username,
+                    id: bandage.User.id,
+                    name: bandage.User.name,
+                    username: bandage.User.username,
                     public: bandage.User?.UserSettings?.public_profile
                 }
             }
@@ -475,7 +475,7 @@ export class WorkshopService {
                 stars_count: bandage.stars.length,
                 author: {
                     id: bandage.User.id,
-                    name: bandage.User.reserved_name || bandage.User.name,
+                    name: bandage.User.name,
                     username: bandage.User.username,
                     public: bandage.User.UserSettings?.public_profile
                 },
@@ -749,4 +749,3 @@ export class WorkshopService {
         return tags.map(tag => tag.name);
     }
 }
-

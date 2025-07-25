@@ -47,7 +47,7 @@ export class UserService {
         return {
             userID: session.user.id,
             username: session.user.username,
-            name: session.user.reserved_name || session.user.name,
+            name: session.user.name,
             joined_at: session.user.joined_at,
             banner_color: 'var(--main-card-color)', // TODO: Make it changeable
             has_unreaded_notifications: session.user.has_unreaded_notifications,
@@ -230,7 +230,7 @@ export class UserService {
         return {
             userID: user.id,
             username: user.username,
-            name: user.reserved_name || user.name,
+            name: user.name,
             joined_at: user.joined_at,
             banner_color: 'var(--main-card-color)', // TODO: Make it changeable
             works: generateResponse(bandages, session, can_view),
@@ -267,7 +267,7 @@ export class UserService {
         return {
             userID: user.id,
             username: user.username,
-            name: user.reserved_name || user.name,
+            name: user.name,
             banner_color: 'var(--main-card-color)', // TODO: Make it changeable
             works_count: user.Bandage.length,
             stars_count: stars_count
@@ -316,7 +316,7 @@ export class UserService {
                 return {
                     id: user.id,
                     username: user.username,
-                    name: user.reserved_name || user.name,
+                    name: user.name,
                     joined_at: user.joined_at,
                     flags: flags,
                     permissions: user.AccessRoles.reduce(
@@ -417,4 +417,3 @@ export class UserService {
         return { count };
     }
 }
-

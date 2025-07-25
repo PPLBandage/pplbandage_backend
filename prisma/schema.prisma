@@ -26,10 +26,8 @@ model Minecraft {
 model User {
     id                         String              @id
     username                   String              @default("")
-    reserved_name              String?
     name                       String              @default("")
     sessions                   Sessions[]
-    last_accessed              DateTime            @default(now())
     profile                    Minecraft?
     UserSettings               UserSettings?
     Bandage                    Bandage[]           @relation("UserBandages")
