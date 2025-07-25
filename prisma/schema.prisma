@@ -12,7 +12,7 @@ model Minecraft {
     uuid         String  @unique @default("")
     data         String  @default("")
     data_cape    String  @default("")
-    data_head    String  @default("iVBORw0KGgoAAAANSUhEUgAAACQAAAAkCAYAAADhAJiYAAABjUlEQVR4nO2Xu0vDUBTGT15NVdROxkHQ3UHdS0fxMeruUNHBP0EUN0VxcSmIk6OlONihU4fOdXDpoFBfRe1QAjW1pM3DKcEvpEnB5Q73m+6Pc+69Xw6Hk4SIK1qCt1iYG3f/BiwHE2VBBDZtC9iybGBRxHxFloBduI2o9v4tEBHhLgbEDcVJ9hbBngnKcjFhLJkAnkwIwDZhz7QME+Mu9pwn5irEDcVJHhQ429sCVhXsmZHkBHC308YDJHxW/esD+OS2FLixQ0QMVogbipM/PG4OduDtMqqqkPhj4hyRJIzrbR14VpsCfn15jDSynSvyd9lQYs6QP4eCPbO+fwG8kTkFzmbqwMGeyRU14ELlHDh/uBtqiLkKcUNx8ufQVXYZ5pA2PQOJspoCviuXIw/eXEkDN96egOvNFvBRocrn0FBizpA/h4w+fuP2Gjhn8pUq8Or8UuTBx5fXwGvpRWCBlNB9zFWIG4qT30PPn00IOE70j1rp4R5YUgZ+nhMRkdHFHjX7vdA85irEDXH9V7+JdWBxiEfBTAAAAABJRU5ErkJggg==")
+    data_head    String  @default("")
     nickname     String  @default("")
     expires      BigInt  @default(0)
     default_nick String  @default("")
