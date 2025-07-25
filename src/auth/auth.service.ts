@@ -294,8 +294,8 @@ export class AuthService {
                 is_mobile: ['mobile', 'tablet'].includes(
                     user_agent.device.type as string
                 ),
-                browser: user_agent.browser.name,
-                browser_version: user_agent.browser.version
+                browser: user_agent.browser.name ?? null,
+                browser_version: user_agent.browser.version ?? null
             };
         });
     }
@@ -324,4 +324,3 @@ export class AuthService {
         );
     }
 }
-
