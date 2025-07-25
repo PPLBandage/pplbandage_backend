@@ -5,7 +5,9 @@ import {
     Get,
     Post,
     Req,
-    UseGuards
+    UseGuards,
+    UsePipes,
+    ValidationPipe
 } from '@nestjs/common';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { ConnectionsService } from './connections.service';
@@ -15,6 +17,7 @@ import { RequestSession } from 'src/common/bandage_response';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import { Throttle } from '@nestjs/throttler';
 import responses_minecraft from 'src/localization/minecraft.localization';
+import { CodeDTO } from 'src/auth/dto/code.dto';
 
 @Controller({ version: '1', path: 'users/@me/connections' })
 @UseGuards(AuthGuard)
@@ -29,9 +32,10 @@ export class ConnectionsController {
 
     @Post('minecraft')
     @Auth(AuthEnum.Strict)
+    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async connectMinecraft(
         @Req() request: RequestSession,
-        @Body() body: { code: string }
+        @Body() body: CodeDTO
     ) {
         /* connect minecraft profile to account */
 
@@ -72,9 +76,10 @@ export class ConnectionsController {
 
     @Post('discord')
     @Auth(AuthEnum.Strict)
+    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async connectDiscord(
         @Req() request: RequestSession,
-        @Body() body: { code: string }
+        @Body() body: CodeDTO
     ) {
         /** Connect discord account */
 
@@ -94,10 +99,8 @@ export class ConnectionsController {
 
     @Post('google')
     @Auth(AuthEnum.Strict)
-    async connectGoogle(
-        @Req() request: RequestSession,
-        @Body() body: { code: string }
-    ) {
+    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+    async connectGoogle(@Req() request: RequestSession, @Body() body: CodeDTO) {
         /** Connect google account */
 
         await this.connectionsService.connectGoogle(request.session, body.code);
@@ -113,10 +116,8 @@ export class ConnectionsController {
 
     @Post('twitch')
     @Auth(AuthEnum.Strict)
-    async connectTwitch(
-        @Req() request: RequestSession,
-        @Body() body: { code: string }
-    ) {
+    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+    async connectTwitch(@Req() request: RequestSession, @Body() body: CodeDTO) {
         /** Connect twitch account */
 
         await this.connectionsService.connectTwitch(request.session, body.code);
@@ -130,4 +131,3 @@ export class ConnectionsController {
         await this.connectionsService.disconnectTwitch(request.session);
     }
 }
-

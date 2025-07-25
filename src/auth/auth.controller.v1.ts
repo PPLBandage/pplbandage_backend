@@ -6,7 +6,9 @@ import {
     Post,
     UseGuards,
     Query,
-    Body
+    Body,
+    UsePipes,
+    ValidationPipe
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { generateCookie } from './auth.service';
@@ -17,6 +19,7 @@ import { GoogleAuthService } from './providers/google/google.service';
 import { TwitchAuthService } from './providers/twitch/twitch.service';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import responses from 'src/localization/common.localization';
+import { CodeDTO } from './dto/code.dto';
 
 @Controller({ version: '1', path: 'auth' })
 @UseGuards(AuthGuard)
@@ -29,10 +32,11 @@ export class AuthController {
     ) {}
 
     @Post('discord')
+    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async discord(
         @Req() request: Request,
         @Res({ passthrough: true }) res: Response,
-        @Body() body: { code: string }
+        @Body() body: CodeDTO
     ) {
         /* create session for discord user */
 
@@ -49,10 +53,11 @@ export class AuthController {
     }
 
     @Post('minecraft')
+    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async minecraftLogin(
         @Req() request: Request,
         @Res({ passthrough: true }) res: Response,
-        @Body() body: { code: string }
+        @Body() body: CodeDTO
     ) {
         /* create session for minecraft user */
 
@@ -72,10 +77,11 @@ export class AuthController {
     }
 
     @Post('google')
+    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async googleLogin(
         @Req() request: Request,
         @Res({ passthrough: true }) res: Response,
-        @Body() body: { code: string }
+        @Body() body: CodeDTO
     ) {
         /* create session for google user */
 
@@ -90,10 +96,11 @@ export class AuthController {
     }
 
     @Post('twitch')
+    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async twitchLogin(
         @Req() request: Request,
         @Res({ passthrough: true }) res: Response,
-        @Body() body: { code: string }
+        @Body() body: CodeDTO
     ) {
         /* create session for twitch user */
 
@@ -184,4 +191,3 @@ export class AuthController {
         res.redirect(login_url.toString());
     }
 }
-
