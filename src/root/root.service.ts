@@ -43,7 +43,7 @@ export class RootService {
     }
 
     async getCommitInfo(sha: string): Promise<CommitType> {
-        const commit: string | null =
+        const commit: string | null | undefined =
             await this.cacheManager.get('build_commit');
         let data;
 
