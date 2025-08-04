@@ -146,7 +146,7 @@ export class ConnectionsController {
         );
     }
 
-    @Delete('twitch')
+    @Delete('telegram')
     @Auth(AuthEnum.Strict)
     async disconnectTelegram(@Req() request: RequestSession) {
         /** Disconnect telegram account */
