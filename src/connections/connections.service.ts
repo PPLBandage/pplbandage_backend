@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Session } from 'src/auth/auth.service';
 import { DiscordAuthService } from 'src/auth/providers/discord/discord.service';
 import { GoogleAuthService } from 'src/auth/providers/google/google.service';
+import { TelegramAuthService } from 'src/auth/providers/telegram/telegram.service';
 import { TwitchAuthService } from 'src/auth/providers/twitch/twitch.service';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import responses_minecraft from 'src/localization/minecraft.localization';
@@ -15,7 +16,8 @@ export class ConnectionsService {
         public minecraftService: MinecraftService,
         private discordAuthService: DiscordAuthService,
         private googleAuthService: GoogleAuthService,
-        private twitchAuthService: TwitchAuthService
+        private twitchAuthService: TwitchAuthService,
+        private telegramAuthService: TelegramAuthService
     ) {}
 
     /** Get list of connected accounts */
@@ -26,7 +28,8 @@ export class ConnectionsService {
                 profile: true,
                 DiscordAuth: true,
                 GoogleAuth: true,
-                TwitchAuth: true
+                TwitchAuth: true,
+                TelegramAuth: true
             }
         });
 
@@ -69,12 +72,22 @@ export class ConnectionsService {
               }
             : null;
 
+        const telegram = user.TelegramAuth
+            ? {
+                  id: user.TelegramAuth.telegram_id,
+                  login: user.TelegramAuth.login,
+                  name: user.TelegramAuth.name,
+                  connected_at: user.TelegramAuth.connected_at
+              }
+            : null;
+
         return {
             userID: user.id,
             google,
             twitch,
             discord,
-            minecraft
+            minecraft,
+            telegram
         };
     }
 
@@ -265,5 +278,43 @@ export class ConnectionsService {
         if (record.avatar_id)
             this.twitchAuthService.deleteAvatar(record.avatar_id);
     }
-}
 
+    /** Connect telegram account */
+    async connectTelegram(session: Session, code: string) {
+        const data = await this.telegramAuthService.getData(code);
+        const record = await this.prisma.telegramAuth.findFirst({
+            where: { telegram_id: data.id }
+        });
+
+        if (record)
+            throw new LocaleException(
+                responses_minecraft.ALREADY_CONNECTED,
+                409
+            );
+
+        const name = data.first_name || data.username || data.id;
+        await this.prisma.telegramAuth.create({
+            data: {
+                telegram_id: data.id,
+                name: name,
+                login: data.username,
+                user: { connect: { id: session.user.id } }
+            }
+        });
+    }
+
+    /** Disconnect telegram account */
+    async disconnectTelegram(session: Session) {
+        const record = await this.prisma.telegramAuth.findFirst({
+            where: { userid: session.user.id }
+        });
+
+        if (!record)
+            throw new LocaleException(
+                responses_minecraft.ACCOUNT_NOT_CONNECTED,
+                400
+            );
+
+        await this.prisma.telegramAuth.delete({ where: { id: record.id } });
+    }
+}

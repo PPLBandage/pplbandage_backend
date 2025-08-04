@@ -130,4 +130,27 @@ export class ConnectionsController {
 
         await this.connectionsService.disconnectTwitch(request.session);
     }
+
+    @Post('telegram')
+    @Auth(AuthEnum.Strict)
+    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+    async connectTelegram(
+        @Req() request: RequestSession,
+        @Body() body: CodeDTO
+    ) {
+        /** Connect telegram account */
+
+        await this.connectionsService.connectTelegram(
+            request.session,
+            body.code
+        );
+    }
+
+    @Delete('twitch')
+    @Auth(AuthEnum.Strict)
+    async disconnectTelegram(@Req() request: RequestSession) {
+        /** Disconnect telegram account */
+
+        await this.connectionsService.disconnectTelegram(request.session);
+    }
 }

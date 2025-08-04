@@ -7,6 +7,7 @@ import { AuthModule } from 'src/auth/auth.module';
 import { DiscordAuthModule } from 'src/auth/providers/discord/discord.module';
 import { GoogleAuthModule } from 'src/auth/providers/google/google.module';
 import { TwitchAuthModule } from 'src/auth/providers/twitch/twitch.module';
+import { TelegramAuthModule } from 'src/auth/providers/telegram/telegram.module';
 
 @Module({
     controllers: [ConnectionsController],
@@ -16,9 +17,9 @@ import { TwitchAuthModule } from 'src/auth/providers/twitch/twitch.module';
         AuthModule,
         DiscordAuthModule,
         GoogleAuthModule,
-        TwitchAuthModule
+        TwitchAuthModule,
+        TelegramAuthModule
     ],
     exports: [ConnectionsService]
 })
 export class ConnectionsModule {}
-

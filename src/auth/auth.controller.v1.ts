@@ -20,6 +20,7 @@ import { TwitchAuthService } from './providers/twitch/twitch.service';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import responses from 'src/localization/common.localization';
 import { CodeDTO } from './dto/code.dto';
+import { TelegramAuthService } from './providers/telegram/telegram.service';
 
 @Controller({ version: '1', path: 'auth' })
 @UseGuards(AuthGuard)
@@ -28,7 +29,8 @@ export class AuthController {
         private readonly discordAuthService: DiscordAuthService,
         private readonly minecraftAuthService: MinecraftAuthService,
         private readonly googleAuthService: GoogleAuthService,
-        private readonly twitchAuthService: TwitchAuthService
+        private readonly twitchAuthService: TwitchAuthService,
+        private readonly telegramAuthService: TelegramAuthService
     ) {}
 
     @Post('discord')
@@ -114,6 +116,28 @@ export class AuthController {
         return { session: data.sessionId };
     }
 
+    @Post('telegram')
+    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+    async telegramLogin(
+        @Req() request: Request,
+        @Res({ passthrough: true }) res: Response,
+        @Body() body: CodeDTO
+    ) {
+        /* create session for telegram user */
+
+        const user_agent = request.headers['user-agent'] as string;
+        const data = await this.telegramAuthService.login(
+            body.code,
+            user_agent
+        );
+
+        const expires =
+            Math.round(Date.now() / 1000) + Number(process.env.SESSION_TTL);
+        res.setHeader('SetCookie', generateCookie(data.sessionId, expires));
+
+        return { session: data.sessionId };
+    }
+
     @Get('url/discord')
     async urlDiscord(
         @Res() res: Response,
@@ -187,6 +211,22 @@ export class AuthController {
                 'redirect_uri',
                 process.env.TWITCH_MAIN_REDIRECT as string
             );
+        }
+        res.redirect(login_url.toString());
+    }
+
+    @Get('url/telegram')
+    async urlTelegram(
+        @Res() res: Response,
+        @Query() query: { connect: boolean }
+    ): Promise<void> {
+        /* get telegram oauth url */
+
+        const login_url = new URL(process.env.TELEGRAM_LOGIN_URL as string);
+        if (query.connect) {
+            login_url.searchParams.append('start', 'connect');
+        } else {
+            login_url.searchParams.append('start', 'login');
         }
         res.redirect(login_url.toString());
     }

@@ -42,9 +42,10 @@ model User {
     subscribers   User[] @relation("UserSubs")
 
     // Auth providers
-    DiscordAuth DiscordAuth?
-    GoogleAuth  GoogleAuth?
-    TwitchAuth  TwitchAuth?
+    DiscordAuth  DiscordAuth?
+    GoogleAuth   GoogleAuth?
+    TwitchAuth   TwitchAuth?
+    TelegramAuth TelegramAuth?
 }
 
 model UserSettings {
@@ -96,6 +97,19 @@ model TwitchAuth {
 
     name      String
     avatar_id String?
+
+    user   User   @relation(fields: [userid], references: [id])
+    userid String @unique
+
+    connected_at DateTime @default(now())
+}
+
+model TelegramAuth {
+    id          Int    @id @default(autoincrement())
+    telegram_id String @unique
+
+    name  String
+    login String?
 
     user   User   @relation(fields: [userid], references: [id])
     userid String @unique

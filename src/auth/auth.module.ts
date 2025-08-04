@@ -9,6 +9,7 @@ import { DiscordAuthModule } from './providers/discord/discord.module';
 import { MinecraftAuthModule } from './providers/minecraft/minecraft.module';
 import { GoogleAuthModule } from './providers/google/google.module';
 import { TwitchAuthModule } from './providers/twitch/twitch.module';
+import { TelegramAuthModule } from './providers/telegram/telegram.module';
 
 @Module({
     controllers: [AuthController],
@@ -18,9 +19,9 @@ import { TwitchAuthModule } from './providers/twitch/twitch.module';
         forwardRef(() => DiscordAuthModule),
         forwardRef(() => MinecraftAuthModule),
         forwardRef(() => GoogleAuthModule),
-        forwardRef(() => TwitchAuthModule)
+        forwardRef(() => TwitchAuthModule),
+        forwardRef(() => TelegramAuthModule)
     ],
     exports: [AuthService]
 })
 export class AuthModule {}
-
