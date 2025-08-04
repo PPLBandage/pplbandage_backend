@@ -294,7 +294,8 @@ export class UserService {
                 DiscordAuth: true,
                 GoogleAuth: true,
                 profile: true,
-                TwitchAuth: true
+                TwitchAuth: true,
+                TelegramAuth: true
             },
             orderBy: { joined_at: 'asc' },
             take: take,
@@ -312,6 +313,7 @@ export class UserService {
                 flags |= Number(!!user.GoogleAuth) << 3;
                 flags |= Number(!!user.TwitchAuth) << 4;
                 flags |= Number(!!user.profile) << 5;
+                flags |= Number(!!user.TelegramAuth) << 6;
 
                 return {
                     id: user.id,
