@@ -33,6 +33,7 @@ export class TelegramAuthService {
             }
         );
 
+        console.log(telegram_data.data);
         if (telegram_data.status !== 201)
             throw new LocaleException(responses_users.INVALID_OAUTH_CODE, 404);
 
