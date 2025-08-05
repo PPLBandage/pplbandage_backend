@@ -5,7 +5,13 @@ import responses from 'src/localization/users.localization';
 import { readFile } from 'fs/promises';
 import * as sharp from 'sharp';
 
-export const avatar_providers = ['discord', 'google', 'twitch', 'minecraft'];
+export const avatar_providers = [
+    'discord',
+    'google',
+    'twitch',
+    'minecraft',
+    'telegram'
+];
 
 @Injectable()
 export class AvatarsService {
@@ -149,5 +155,22 @@ export class AvatarsService {
 
         return buff;
     }
-}
 
+    /** Get user' telegram avatar */
+    async getTelegramAvatar(uid: string) {
+        const user = await this.prisma.user.findUnique({
+            where: { id: uid },
+            include: { TelegramAuth: true }
+        });
+
+        if (!user) throw new LocaleException(responses.USER_NOT_FOUND, 404);
+
+        if (!user.TelegramAuth || !user.TelegramAuth.avatar_id)
+            throw new LocaleException(responses.USER_NOT_FOUND, 404);
+
+        const buff = await this.getAvatar(user.TelegramAuth.avatar_id);
+        if (!buff) throw new LocaleException(responses.AVATAR_NOT_FOUND, 404);
+
+        return buff;
+    }
+}

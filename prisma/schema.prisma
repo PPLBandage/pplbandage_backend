@@ -108,8 +108,9 @@ model TelegramAuth {
     id          Int    @id @default(autoincrement())
     telegram_id String @unique
 
-    name  String
-    login String?
+    name      String
+    login     String?
+    avatar_id String?
 
     user   User   @relation(fields: [userid], references: [id])
     userid String @unique

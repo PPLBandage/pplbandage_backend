@@ -69,5 +69,14 @@ export class AvatarsController {
             await this.avatarsService.getTwitchAvatar(uid)
         );
     }
-}
 
+    @Get(':uid/telegram')
+    @Header('Content-Type', 'image/png')
+    async telegram(@Param('uid') uid: string) {
+        /* Get user' Telegram avatar */
+
+        return new StreamableFile(
+            await this.avatarsService.getTelegramAvatar(uid)
+        );
+    }
+}

@@ -81,6 +81,7 @@ export class UserService {
                 profile: true,
                 DiscordAuth: true,
                 GoogleAuth: true,
+                TelegramAuth: true,
                 TwitchAuth: true,
                 UserSettings: true,
                 Bandage: true
@@ -94,6 +95,8 @@ export class UserService {
             available_avatars.push('google');
         if (user.TwitchAuth && user.TwitchAuth.avatar_id)
             available_avatars.push('twitch');
+        if (user.TelegramAuth && user.TelegramAuth.avatar_id)
+            available_avatars.push('telegram');
         if (user.profile) available_avatars.push('minecraft');
 
         return {

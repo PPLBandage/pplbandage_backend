@@ -316,5 +316,7 @@ export class ConnectionsService {
             );
 
         await this.prisma.telegramAuth.delete({ where: { id: record.id } });
+        if (record.avatar_id)
+            this.twitchAuthService.deleteAvatar(record.avatar_id);
     }
 }
