@@ -26,6 +26,7 @@ export class AvatarsService {
                 profile: true,
                 GoogleAuth: true,
                 TwitchAuth: true,
+                TelegramAuth: true,
                 UserSettings: true
             }
         });
@@ -74,6 +75,15 @@ export class AvatarsService {
                 user.TwitchAuth.avatar_id
             ) {
                 buff = await this.getAvatar(user.TwitchAuth.avatar_id);
+                if (buff) break;
+            }
+
+            if (
+                provider === 'telegram' &&
+                user.TelegramAuth &&
+                user.TelegramAuth.avatar_id
+            ) {
+                buff = await this.getAvatar(user.TelegramAuth.avatar_id);
                 if (buff) break;
             }
         }
