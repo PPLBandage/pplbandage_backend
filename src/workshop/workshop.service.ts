@@ -367,8 +367,9 @@ export class WorkshopService {
         bandage: BandageFull,
         verified: boolean
     ) {
-        tags = tags.map(tag => tag.replace(/[^\p{L}\p{N} ]/gu, ''));
-        const loweredTags = tags.map(t => t.toLowerCase());
+        const loweredTags = tags.map(t =>
+            t.toLowerCase().replace(/[^\p{L}\p{N} ]/gu, '')
+        );
 
         const existingTags = await this.prisma.tags.findMany({
             where: { name_search: { in: loweredTags } }

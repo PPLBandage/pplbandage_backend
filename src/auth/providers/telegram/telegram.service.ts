@@ -5,15 +5,17 @@ import responses_users from 'src/localization/users.localization';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AuthService } from 'src/auth/auth.service';
 import { mkdir, rm, writeFile } from 'fs/promises';
-import { randomUUID } from 'crypto';
+import * as crypto from 'crypto';
 
 const cache_folder = process.env.CACHE_FOLDER + 'telegram/';
 
 interface TelegramUser {
-    id: string;
+    id: number;
     first_name: string;
-    last_name?: string;
-    username?: string;
+    username: string;
+    photo_url?: string;
+    auth_date?: number;
+    hash?: string;
 }
 
 @Injectable()
@@ -25,40 +27,50 @@ export class TelegramAuthService {
 
     /** Get user data by code */
     async getData(code: string): Promise<TelegramUser> {
-        // ----------------------- Get access token -------------------------------
-        const telegram_data = await axios.post(
-            `${process.env.TELEGRAM_API_URL}/code`,
-            {
-                token: process.env.TELEGRAM_SECRET,
-                code: code
-            },
-            {
-                validateStatus: () => true
-            }
-        );
+        const decoded = Buffer.from(code, 'base64');
+        const user_data: TelegramUser = JSON.parse(decoded.toString('utf-8'));
 
-        console.log(telegram_data.status);
-        console.log(telegram_data.data);
+        const data_check = (Object.keys(user_data) as Array<keyof TelegramUser>)
+            .filter(
+                (k): k is Exclude<keyof TelegramUser, 'hash'> => k !== 'hash'
+            )
+            .sort()
+            .map(k => `${k}=${user_data[k]}`)
+            .join('\n');
 
-        if (telegram_data.status !== 201)
-            throw new LocaleException(responses_users.INVALID_OAUTH_CODE, 404);
+        const secretKey = crypto
+            .createHash('sha256')
+            .update(process.env.TELEGRAM_BOT_TOKEN!)
+            .digest();
 
-        return telegram_data.data;
+        const hmac = crypto
+            .createHmac('sha256', secretKey)
+            .update(data_check)
+            .digest('hex');
+
+        if (hmac !== user_data.hash)
+            throw new LocaleException(responses_users.PROFILE_FETCH_ERROR, 400);
+
+        const authDate = parseInt(String(user_data.auth_date));
+        const now = Math.floor(Date.now() / 1000);
+        if (now - authDate > 86400)
+            throw new LocaleException(responses_users.PROFILE_FETCH_ERROR, 400);
+
+        return user_data;
     }
 
     /** Update avatar cache */
-    async updateAvatar(uid?: string): Promise<string | null> {
-        if (!uid) return null;
+    async updateAvatar(url?: string): Promise<string | null> {
+        if (!url) return null;
         await this.initCacheFolders();
 
-        const avatar_response = await axios.get(
-            `${process.env.TELEGRAM_API_URL}/avatar/${uid}`,
-            { responseType: 'arraybuffer' }
-        );
+        const avatar_response = await axios.get(url, {
+            responseType: 'arraybuffer'
+        });
 
         if (avatar_response.status !== 200) return null;
         const avatar = Buffer.from(avatar_response.data);
-        const filename = cache_folder + randomUUID();
+        const filename = cache_folder + crypto.randomUUID();
 
         await writeFile(filename, avatar);
         return filename;
@@ -76,15 +88,15 @@ export class TelegramAuthService {
     /** Create session for telegram user */
     async login(code: string, user_agent: string) {
         const data = await this.getData(code);
-        const avatar_path = await this.updateAvatar(data.id);
+        const avatar_path = await this.updateAvatar(data.photo_url);
 
         const auth_record = await this.prisma.telegramAuth.findUnique({
-            where: { telegram_id: data.id },
+            where: { telegram_id: data.id.toString() },
             include: { user: { include: { UserSettings: true } } }
         });
 
         let user = undefined;
-        const name = data.first_name || data.username || data.id;
+        const name = data.first_name || data.username || data.id.toString();
         if (!auth_record) {
             user = await this.authService.createUser({
                 name: name,
@@ -93,7 +105,7 @@ export class TelegramAuthService {
 
             await this.prisma.telegramAuth.create({
                 data: {
-                    telegram_id: data.id,
+                    telegram_id: data.id.toString(),
                     name: name,
                     login: data.username,
                     avatar_id: avatar_path,

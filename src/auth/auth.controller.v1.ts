@@ -222,12 +222,17 @@ export class AuthController {
     ): Promise<void> {
         /* get telegram oauth url */
 
-        const login_url = new URL(process.env.TELEGRAM_LOGIN_URL as string);
-        if (query.connect) {
-            login_url.searchParams.append('start', 'connect');
-        } else {
-            login_url.searchParams.append('start', 'login');
-        }
+        const login_url = new URL(process.env.TELEGRAM_API_URL as string);
+        login_url.searchParams.append('bot_id', process.env.TELEGRAM_BOT_ID!);
+        login_url.searchParams.append('origin', process.env.DOMAIN!);
+
+        const redirect_path = query.connect
+            ? '/me/accounts/connect/telegram'
+            : '/me/login/telegram';
+        login_url.searchParams.append(
+            'return_to',
+            `${process.env.DOMAIN}/${redirect_path}`
+        );
         res.redirect(login_url.toString());
     }
 }

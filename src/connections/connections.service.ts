@@ -282,8 +282,11 @@ export class ConnectionsService {
     /** Connect telegram account */
     async connectTelegram(session: Session, code: string) {
         const data = await this.telegramAuthService.getData(code);
+        const avatar = await this.telegramAuthService.updateAvatar(
+            data.photo_url
+        );
         const record = await this.prisma.telegramAuth.findFirst({
-            where: { telegram_id: data.id }
+            where: { telegram_id: data.id.toString() }
         });
 
         if (record)
@@ -292,12 +295,13 @@ export class ConnectionsService {
                 409
             );
 
-        const name = data.first_name || data.username || data.id;
+        const name = data.first_name || data.username || data.id.toString();
         await this.prisma.telegramAuth.create({
             data: {
-                telegram_id: data.id,
+                telegram_id: data.id.toString(),
                 name: name,
                 login: data.username,
+                avatar_id: avatar,
                 user: { connect: { id: session.user.id } }
             }
         });
@@ -317,6 +321,6 @@ export class ConnectionsService {
 
         await this.prisma.telegramAuth.delete({ where: { id: record.id } });
         if (record.avatar_id)
-            this.twitchAuthService.deleteAvatar(record.avatar_id);
+            this.telegramAuthService.deleteAvatar(record.avatar_id);
     }
 }
