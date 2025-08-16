@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import axios from 'axios';
-import { Session } from 'src/auth/auth.service';
 import { BandageFull } from 'src/common/bandage_response';
 
 const discord_url = process.env.DISCORD_URL;
@@ -9,11 +8,12 @@ const discord_url = process.env.DISCORD_URL;
 export class DiscordNotificationService {
     constructor() {}
 
-    async doNotification(content: string, channel?: string) {
+    async doNotification(content: string, embeds?: object[], channel?: string) {
         await axios.post(
             `${discord_url}/channels/${channel || process.env.MODERATION_CHANNEL_ID}/messages`,
             {
-                content: content
+                content: content,
+                embeds
             },
             {
                 validateStatus: () => true,
@@ -27,21 +27,43 @@ export class DiscordNotificationService {
     async doBandageNotification(
         message: string,
         bandage: BandageFull,
-        session: Session,
         bandage_tags?: string[]
     ) {
         try {
             const tags =
                 bandage_tags ?? bandage.tags?.map?.(tag => tag.name) ?? [];
-            await this.doNotification(
-                `<@&${process.env.MENTION_ROLE_ID}> ${message}\n` +
-                    `- **Название**: ${bandage.title}\n` +
-                    `- **Описание**: ${bandage.description || '<нет описания>'}\n` +
-                    `- **Имеет раздельные типы**: ${bandage.split_type ? 'Да' : 'Нет'}\n` +
-                    `- **Теги**: \`${tags.join('`, `')}\`\n` +
-                    `- **Создатель**: ${session.user.name}\n\n` +
-                    `**URL**: https://pplbandage.ru/workshop/${bandage.externalId}`
-            );
+
+            const embed = {
+                title: message,
+                description:
+                    `## [${bandage.title}](${process.env.DOMAIN}/workshop/${bandage.externalId})\n` +
+                    `${bandage.description || '<нет описания>'}`,
+                color: parseInt(bandage.accent_color.replace('#', ''), 16),
+                fields: [
+                    {
+                        name: 'Теги',
+                        value: `\`${tags.join('`, `')}\``
+                    },
+                    {
+                        name: 'Имеет раздельные типы',
+                        value: bandage.split_type ? 'Да' : 'Нет'
+                    }
+                ],
+                author: {
+                    name: bandage.User.name,
+                    url: `${process.env.DOMAIN}/users/${bandage.User.username}`
+                },
+                footer: {
+                    text: new Date(bandage.creationDate).toLocaleString()
+                },
+                image: {
+                    url: `${process.env.DOMAIN}/api/v1/workshop/e4dty4/og?token=${process.env.WORKSHOP_TOKEN}`
+                }
+            };
+
+            await this.doNotification(`<@&${process.env.MENTION_ROLE_ID}>`, [
+                embed
+            ]);
         } catch (e) {
             console.error(
                 `Cannot do Discord notification about https://pplbandage.ru/workshop/${bandage.externalId} (${e})`
@@ -49,4 +71,3 @@ export class DiscordNotificationService {
         }
     }
 }
-

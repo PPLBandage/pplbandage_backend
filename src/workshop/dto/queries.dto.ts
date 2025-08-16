@@ -10,6 +10,10 @@ export class WidthQueryDTO {
     @Max(1024)
     @IsDivisible(16)
     width?: number;
+
+    @IsOptional()
+    @IsString()
+    token?: string;
 }
 
 export class TagQueryDto {

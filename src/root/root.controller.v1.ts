@@ -150,6 +150,7 @@ export class RootController {
 
         await this.discordNotification.doNotification(
             `<@&${process.env.SYSTEM_ROLE_ID}> new feedback:\n${body.content}`,
+            [],
             process.env.SYSTEM_CHANNEL_ID
         );
     }
@@ -170,8 +171,8 @@ export class RootController {
         await this.discordNotification.doNotification(
             `<@&${process.env.SYSTEM_ROLE_ID}> Client received client-side error:\n${body.content}\n\n` +
                 `User agent: ${ua}`,
+            [],
             process.env.SYSTEM_CHANNEL_ID
         );
     }
 }
-

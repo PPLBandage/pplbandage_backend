@@ -92,7 +92,11 @@ export class WorkshopService {
         return bandage;
     }
 
-    async getBandageSession(id: string, session?: Session) {
+    async getBandageSession(
+        id: string,
+        session?: Session,
+        skip_session_check?: boolean
+    ) {
         /* Get and validate bandage from data base */
 
         const bandage = await this.prisma.bandage.findFirst({
@@ -117,7 +121,11 @@ export class WorkshopService {
             ? !hasAccess(session.user, RolesEnum.ManageBandages) &&
               session.user.id !== bandage.User?.id
             : true;
-        if ((hidden || bandage.access_level === 0) && no_access) {
+        if (
+            (hidden || bandage.access_level === 0) &&
+            no_access &&
+            !skip_session_check
+        ) {
             throw new LocaleException(responses.BANDAGE_NOT_FOUND, 404);
         }
 
@@ -350,7 +358,6 @@ export class WorkshopService {
         await this.discordNotifications.doBandageNotification(
             'Опубликована новая повязка',
             result as BandageFull,
-            session,
             body.tags ?? []
         );
 
@@ -433,10 +440,18 @@ export class WorkshopService {
         };
     }
 
-    async getBandage(id: string, session?: Session) {
+    async getBandage(
+        id: string,
+        session?: Session,
+        skip_session_check?: boolean
+    ) {
         /* get bandage by external id */
 
-        const bandage = await this.getBandageSession(id, session);
+        const bandage = await this.getBandageSession(
+            id,
+            session,
+            skip_session_check
+        );
 
         let permissions_level = 0;
         if (session) {
@@ -562,8 +577,7 @@ export class WorkshopService {
             ) {
                 await this.discordNotifications.doBandageNotification(
                     'Запрошена ремодерация повязки',
-                    result as BandageFull,
-                    session
+                    result as BandageFull
                 );
             }
         }

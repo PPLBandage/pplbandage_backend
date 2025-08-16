@@ -129,7 +129,11 @@ export class WorkshopController {
 
         const requested_width = query.width ?? 512;
 
-        const data = await this.bandageService.getBandage(id, request.session);
+        const data = await this.bandageService.getBandage(
+            id,
+            request.session,
+            query.token === process.env.WORKSHOP_TOKEN
+        );
 
         const bandage_buff = Buffer.from(data.data.base64, 'base64');
         const metadata = await sharp(bandage_buff).metadata();

@@ -145,17 +145,17 @@ export class AuthController {
     ): Promise<void> {
         /* get discord oauth url */
 
-        const login_url = new URL(process.env.DISCORD_LOGIN_URL as string);
+        const login_url = new URL(process.env.DISCORD_LOGIN_URL!);
 
         if (query.connect) {
             login_url.searchParams.append(
                 'redirect_uri',
-                process.env.DISCORD_REDIRECT_CONNECT as string
+                process.env.DISCORD_REDIRECT_CONNECT!
             );
         } else {
             login_url.searchParams.append(
                 'redirect_uri',
-                process.env.DISCORD_MAIN_REDIRECT as string
+                process.env.DISCORD_MAIN_REDIRECT!
             );
         }
         res.redirect(login_url.toString());
@@ -168,21 +168,21 @@ export class AuthController {
     ): Promise<void> {
         /* get google oauth url */
 
-        const login_url = new URL(process.env.GOOGLE_LOGIN_URL as string);
+        const login_url = new URL(process.env.GOOGLE_LOGIN_URL!);
         login_url.searchParams.append(
             'client_id',
-            process.env.GOOGLE_CLIENT_ID as string
+            process.env.GOOGLE_CLIENT_ID!
         );
 
         if (query.connect) {
             login_url.searchParams.append(
                 'redirect_uri',
-                process.env.GOOGLE_REDIRECT_CONNECT as string
+                process.env.GOOGLE_REDIRECT_CONNECT!
             );
         } else {
             login_url.searchParams.append(
                 'redirect_uri',
-                process.env.GOOGLE_MAIN_REDIRECT as string
+                process.env.GOOGLE_MAIN_REDIRECT!
             );
         }
         res.redirect(login_url.toString());
@@ -195,21 +195,21 @@ export class AuthController {
     ): Promise<void> {
         /* get twitch oauth url */
 
-        const login_url = new URL(process.env.TWITCH_LOGIN_URL as string);
+        const login_url = new URL(process.env.TWITCH_LOGIN_UR!);
         login_url.searchParams.append(
             'client_id',
-            process.env.TWITCH_CLIENT_ID as string
+            process.env.TWITCH_CLIENT_ID!
         );
 
         if (query.connect) {
             login_url.searchParams.append(
                 'redirect_uri',
-                process.env.TWITCH_REDIRECT_CONNECT as string
+                process.env.TWITCH_REDIRECT_CONNECT!
             );
         } else {
             login_url.searchParams.append(
                 'redirect_uri',
-                process.env.TWITCH_MAIN_REDIRECT as string
+                process.env.TWITCH_MAIN_REDIRECT!
             );
         }
         res.redirect(login_url.toString());
