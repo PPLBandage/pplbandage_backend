@@ -1,6 +1,10 @@
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+import {
+    Injectable,
+    CanActivate,
+    ExecutionContext,
+    HttpException
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Response } from 'express';
 import { RequestSessionWeak } from 'src/common/bandage_response';
 import { Roles } from 'src/decorators/access.decorator';
 import { RolesEnum } from 'src/interfaces/types';
@@ -11,7 +15,6 @@ export class RolesGuard implements CanActivate {
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request: RequestSessionWeak = context.switchToHttp().getRequest();
-        const response: Response = context.switchToHttp().getResponse();
         const roles = this.reflector.get(Roles, context.getHandler());
         const user_roles = request.session?.user.AccessRoles.map(
             role => role.level
@@ -29,11 +32,6 @@ export class RolesGuard implements CanActivate {
             return true;
         }
 
-        response.status(403).send({
-            statusCode: 403,
-            message: 'Forbidden',
-            message_ru: 'Доступ запрещен'
-        });
-        return false;
+        throw new HttpException('Forbidden', 403);
     }
 }

@@ -16,15 +16,8 @@ import { Request } from 'express';
 import { RootService, SitemapProps } from './root.service';
 import { FeedbackDTO } from 'src/user/dto/body.dto';
 import { DiscordNotificationService } from 'src/notifications/discord.service';
-import { UserService } from 'src/user/user.service';
 import axios from 'axios';
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
-
-export const UNAUTHORIZED = {
-    statusCode: 401,
-    message: 'UNAUTHORIZED',
-    message_ru: 'Неавторизован'
-};
 
 @Controller({ version: '1' })
 export class RootController {
@@ -32,7 +25,6 @@ export class RootController {
         private prisma: PrismaService,
         private readonly rootService: RootService,
         private readonly discordNotification: DiscordNotificationService,
-        private readonly userService: UserService,
         @Inject(CACHE_MANAGER) private cacheManager: Cache
     ) {}
 
@@ -108,8 +100,8 @@ export class RootController {
             { loc: 'https://pplbandage.ru/tutorials', priority: 0.7 },
             { loc: 'https://pplbandage.ru/tutorials/bandage', priority: 0.7 },
             { loc: 'https://pplbandage.ru/tutorials/colorable', priority: 0.7 },
+            { loc: 'https://pplbandage.ru/tutorials/rules', priority: 0.7 },
             { loc: 'https://pplbandage.ru/me', priority: 0.5 },
-            { loc: 'https://pplbandage.ru/tos', priority: 0.5 },
             { loc: 'https://pplbandage.ru/contacts', priority: 0.5 }
         ];
 

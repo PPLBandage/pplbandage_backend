@@ -2,14 +2,14 @@ import {
     Injectable,
     CanActivate,
     ExecutionContext,
-    Logger
+    Logger,
+    HttpException
 } from '@nestjs/common';
 import { Response } from 'express';
 import { AuthService } from 'src/auth/auth.service';
 import { Reflector } from '@nestjs/core';
 import { Auth } from 'src/decorators/auth.decorator';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { UNAUTHORIZED } from 'src/root/root.controller.v1';
 import { RequestSessionWeak } from 'src/common/bandage_response';
 
 @Injectable()
@@ -42,10 +42,8 @@ export class AuthGuard implements CanActivate {
         );
 
         this.logger.debug('Session validated');
-        if (!session && strict === 'Strict') {
-            response.status(401).send(UNAUTHORIZED);
-            return false;
-        }
+        if (!session && strict === 'Strict')
+            throw new HttpException('Unauthorized', 401);
 
         request.session = session;
         if (session) {

@@ -19,11 +19,7 @@ import responses from 'src/localization/common.localization';
  * Constructor parameters:
  * - message: An object containing localized messages, structured as:
  * ```ts
- *   {
- *     [key: string]: {
- *       [locale: string]: string
- *     }
- *   }
+ *   { [locale: string]: string }
  * ```
  * - status: HTTP status code
  */
