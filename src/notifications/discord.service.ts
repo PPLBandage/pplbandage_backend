@@ -51,7 +51,8 @@ export class DiscordNotificationService {
                 ],
                 author: {
                     name: bandage.User.name,
-                    url: `${process.env.DOMAIN}/users/${bandage.User.username}`
+                    url: `${process.env.DOMAIN}/users/${bandage.User.username}`,
+                    icon_url: `${process.env.DOMAIN}/api/v1/avatars/${bandage.User.id}`
                 },
                 footer: {
                     text: new Date(bandage.creationDate).toLocaleString()
