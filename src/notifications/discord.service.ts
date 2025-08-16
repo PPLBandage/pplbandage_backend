@@ -57,7 +57,7 @@ export class DiscordNotificationService {
                     text: new Date(bandage.creationDate).toLocaleString()
                 },
                 image: {
-                    url: `${process.env.DOMAIN}/api/v1/workshop/e4dty4/og?token=${process.env.WORKSHOP_TOKEN}`
+                    url: `${process.env.DOMAIN}/api/v1/workshop/${bandage.externalId}/og?token=${process.env.WORKSHOP_TOKEN}`
                 }
             };
 
