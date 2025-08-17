@@ -282,7 +282,6 @@ export class UserService {
             ? {
                   OR: [
                       { name: { contains: query } },
-                      { reserved_name: { contains: query } },
                       { username: { contains: query } },
                       { id: { contains: query } }
                   ]
