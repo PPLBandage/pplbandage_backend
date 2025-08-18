@@ -15,10 +15,6 @@ export class UpdateUsersDto {
     @IsOptional()
     @IsBoolean()
     banned?: boolean;
-
-    @IsOptional()
-    @IsBoolean()
-    skip_ppl_check?: boolean;
 }
 
 export class UpdateSelfUserDto {
@@ -27,6 +23,11 @@ export class UpdateSelfUserDto {
     @Min(0)
     @Max(2)
     profile_theme?: number;
+
+    @IsString()
+    @IsOptional()
+    @MaxLength(7)
+    theme_color?: string;
 
     @IsBoolean()
     @IsOptional()
@@ -51,4 +52,3 @@ export class FeedbackDTO {
     @MaxLength(1500)
     content!: string;
 }
-

@@ -49,7 +49,7 @@ export class UserService {
             username: session.user.username,
             name: session.user.name,
             joined_at: session.user.joined_at,
-            banner_color: 'var(--main-card-color)', // TODO: Make it changeable
+            banner_color: session.user.UserSettings?.theme_color,
             has_unreaded_notifications: session.user.has_unreaded_notifications,
             roles: session.user.AccessRoles.filter(
                 role => role.public_name
@@ -235,7 +235,7 @@ export class UserService {
             username: user.username,
             name: user.name,
             joined_at: user.joined_at,
-            banner_color: 'var(--main-card-color)', // TODO: Make it changeable
+            banner_color: user.UserSettings?.theme_color,
             works: generateResponse(bandages, session, can_view),
             is_self: user.id == session?.user?.id,
             profile_theme: user.UserSettings?.profile_theme,
@@ -271,7 +271,7 @@ export class UserService {
             userID: user.id,
             username: user.username,
             name: user.name,
-            banner_color: 'var(--main-card-color)', // TODO: Make it changeable
+            banner_color: user.UserSettings?.theme_color,
             works_count: user.Bandage.length,
             stars_count: stars_count
         };
@@ -308,7 +308,7 @@ export class UserService {
         return {
             data: users.map(user => {
                 let flags = Number(user.UserSettings?.banned);
-                flags |= Number(user?.UserSettings?.skip_ppl_check) << 1;
+                // flags |= Number(user?.UserSettings?.skip_ppl_check) << 1;
 
                 // Connected auth providers
                 flags |= Number(!!user.DiscordAuth) << 2;
@@ -352,8 +352,7 @@ export class UserService {
         await this.prisma.userSettings.update({
             where: { userId: user.id },
             data: {
-                banned: data.banned,
-                skip_ppl_check: data.skip_ppl_check
+                banned: data.banned
             }
         });
     }
@@ -378,7 +377,8 @@ export class UserService {
                 prefer_avatar: body.preferred_avatar,
                 profile_theme: body.profile_theme,
                 autoload: body.minecraft_skin_autoload,
-                public_profile: body.public_profile
+                public_profile: body.public_profile,
+                theme_color: body.theme_color
             }
         });
     }

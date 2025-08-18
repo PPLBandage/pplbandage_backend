@@ -54,6 +54,7 @@ model UserSettings {
     userId         String  @unique
     banned         Boolean @default(false)
     profile_theme  Int     @default(0)
+    theme_color    String  @default("var(--main-card-color)")
     autoload       Boolean @default(true)
     public_profile Boolean @default(true)
     skip_ppl_check Boolean @default(false)
