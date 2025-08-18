@@ -22,7 +22,7 @@ export class UserService {
         /* get user, associated with session */
 
         this.logger.debug('Received /@me request');
-        if (session.user.UserSettings?.banned) {
+        if (session.user.UserSettings!.banned) {
             await this.prisma.sessions.deleteMany({
                 where: { userId: session.user.id }
             });
@@ -32,7 +32,7 @@ export class UserService {
         this.logger.debug('User updated');
 
         const starred_bandages = await this.prisma.bandage.findMany({
-            where: { userId: session.user.id, stars: { some: {} } },
+            where: { userId: session.user.id },
             include: { stars: true }
         });
 
@@ -49,16 +49,9 @@ export class UserService {
             username: session.user.username,
             name: session.user.name,
             joined_at: session.user.joined_at,
-            banner_color: session.user.UserSettings?.theme_color,
+            banner_color: session.user.UserSettings!.theme_color,
+            profile_theme: session.user.UserSettings!.profile_theme,
             has_unreaded_notifications: session.user.has_unreaded_notifications,
-            roles: session.user.AccessRoles.filter(
-                role => role.public_name
-            ).map(role => ({
-                id: role.id,
-                name: role.public_name,
-                icon: role.icon
-            })),
-            profile_theme: session.user.UserSettings?.profile_theme,
             stars_count: stars_count,
             subscribers_count: session.user.subscribers.length
         };
@@ -101,11 +94,11 @@ export class UserService {
 
         return {
             userID: user.id,
-            public_profile: user.UserSettings?.public_profile,
+            public_profile: user.UserSettings!.public_profile,
             can_be_public: user.Bandage.length !== 0,
             avatar: {
                 current:
-                    user.UserSettings?.prefer_avatar || available_avatars.at(0),
+                    user.UserSettings!.prefer_avatar || available_avatars.at(0),
                 available: available_avatars
             }
         };
@@ -176,7 +169,7 @@ export class UserService {
 
         const can_view = hasAccess(session?.user, RolesEnum.UpdateUsers);
         if (
-            (user.UserSettings?.banned || !user.UserSettings?.public_profile) &&
+            (user.UserSettings!.banned || !user.UserSettings!.public_profile) &&
             !can_view
         )
             throw new LocaleException(responses.USER_NOT_FOUND, 404);
@@ -187,8 +180,8 @@ export class UserService {
     async getUserByNickname(username: string, session?: Session) {
         const user = await this._getUserByNickname(username, session);
 
-        if (user.id === session?.user?.id) {
-            return { is_self: user.id === session?.user?.id };
+        if (session && user.id === session.user.id) {
+            return { is_self: true };
         }
 
         const can_view = hasAccess(session?.user, RolesEnum.UpdateUsers);
@@ -209,9 +202,10 @@ export class UserService {
             throw new LocaleException(responses.USER_NOT_FOUND, 404);
 
         const starred_bandages = await this.prisma.bandage.findMany({
-            where: { userId: user.id, stars: { some: {} } },
+            where: { userId: user.id },
             include: { stars: true }
         });
+
         const stars_count = starred_bandages.reduce(
             (acc, current_val) => acc + current_val.stars.length,
             0
@@ -235,17 +229,9 @@ export class UserService {
             username: user.username,
             name: user.name,
             joined_at: user.joined_at,
-            banner_color: user.UserSettings?.theme_color,
+            profile_theme: user.UserSettings!.profile_theme,
+            banner_color: user.UserSettings!.theme_color,
             works: generateResponse(bandages, session, can_view),
-            is_self: user.id == session?.user?.id,
-            profile_theme: user.UserSettings?.profile_theme,
-            roles: user.AccessRoles.filter(role => role.public_name).map(
-                role => ({
-                    id: role.id,
-                    name: role.public_name,
-                    icon: role.icon
-                })
-            ),
             stars_count: stars_count,
             subscribers_count: user.subscribers.length,
             is_subscribed: subscribed,
@@ -333,12 +319,12 @@ export class UserService {
         };
     }
 
-    async updateUser(session: Session, username: string, data: UpdateUsersDto) {
-        const user = await this.prisma.user.findFirst({
-            where: { username: username },
-            include: { AccessRoles: true }
-        });
-        if (!user) throw new LocaleException(responses.USER_NOT_FOUND, 404);
+    async updateUserAdmin(
+        session: Session,
+        username: string,
+        data: UpdateUsersDto
+    ) {
+        const user = await this._getUserByNickname(username, session);
 
         if (
             hasAccess(user, RolesEnum.UpdateUsers) &&
@@ -392,8 +378,7 @@ export class UserService {
 
         await this.prisma.user.update({
             where: { id: session.user.id },
-            data: { subscriptions: { connect: { id: user.id } } },
-            include: { subscribers: true }
+            data: { subscriptions: { connect: { id: user.id } } }
         });
 
         const count = await this.prisma.user.count({
@@ -411,8 +396,7 @@ export class UserService {
 
         await this.prisma.user.update({
             where: { id: session.user.id },
-            data: { subscriptions: { disconnect: { id: user.id } } },
-            include: { subscribers: true }
+            data: { subscriptions: { disconnect: { id: user.id } } }
         });
 
         const count = await this.prisma.user.count({

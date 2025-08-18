@@ -20,16 +20,13 @@ import { RolesGuard } from 'src/guards/roles.guard';
 import { AuthEnum, RolesEnum } from 'src/interfaces/types';
 import { Auth } from 'src/decorators/auth.decorator';
 import { Roles } from 'src/decorators/access.decorator';
-import type { Request } from 'express';
 import { UpdateSelfUserDto, UpdateUsersDto } from './dto/body.dto';
 import {
     RequestSession,
     RequestSessionWeak
 } from 'src/common/bandage_response';
 import { PageTakeDTO, PageTakeQueryDTO } from './dto/queries.dto';
-import { LocaleException } from 'src/interceptors/localization.interceptor';
 import { AuthService } from 'src/auth/auth.service';
-import responses from 'src/localization/common.localization';
 import { LocalAccessThrottlerGuard } from 'src/guards/throttlerLocalAccess.guard';
 
 @Controller({ version: '1', path: 'users' })
@@ -44,7 +41,7 @@ export class UserController {
     @Get('@me')
     @Auth(AuthEnum.Strict)
     async me(@Req() request: RequestSession) {
-        /* get user data. associated with session */
+        /* get user data, associated with session */
 
         return await this.userService.getUser(request.session);
     }
@@ -62,18 +59,11 @@ export class UserController {
     }
 
     @Delete('@me')
-    async logout(@Req() request: Request): Promise<void> {
+    @Auth(AuthEnum.Strict)
+    async logout(@Req() request: RequestSession): Promise<void> {
         /* log out user */
 
-        const user_agent = request.headers['user-agent'];
-        const session = await this.authService.validateSession(
-            request.cookies.sessionId,
-            user_agent as string,
-            true
-        );
-        if (!session) throw new LocaleException(responses.UNAUTHORIZED, 401);
-
-        await this.authService.logout(session);
+        await this.authService.logout(request.session);
     }
 
     @Get('/@me/sessions')
@@ -201,7 +191,7 @@ export class UserController {
     ) {
         /* Update user by nickname */
 
-        await this.userService.updateUser(request.session, username, body);
+        await this.userService.updateUserAdmin(request.session, username, body);
     }
 
     @Get('/')
@@ -218,4 +208,3 @@ export class UserController {
         );
     }
 }
-

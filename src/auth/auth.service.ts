@@ -14,7 +14,6 @@ import { RolesEnum } from 'src/interfaces/types';
 import { UAParser } from 'ua-parser-js';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import responses from 'src/localization/common.localization';
-import { MinecraftService } from 'src/minecraft/minecraft.service';
 import { slugify } from 'transliteration';
 
 const EPOCH = 1672531200000n;
@@ -77,10 +76,7 @@ export const generateSnowflake = (increment: bigint, date?: Date): string => {
 @Injectable()
 export class AuthService {
     private readonly logger = new Logger(AuthService.name);
-    constructor(
-        private prisma: PrismaService,
-        private readonly minecraftService: MinecraftService
-    ) {}
+    constructor(private prisma: PrismaService) {}
 
     userInclude = {
         User: {
