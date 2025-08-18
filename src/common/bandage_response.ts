@@ -71,19 +71,17 @@ export const generateResponse = (
     data: BandageFull[],
     session?: Session,
     suppress_ban?: boolean
-) => {
-    /* generate list of works response by provided array of bandages */
-
-    const result = data.map(el => {
-        if (el.User?.UserSettings?.banned && !suppress_ban) return undefined;
+) =>
+    data.reduce((acc: unknown[], el) => {
+        if (el.User.UserSettings!.banned && !suppress_ban) return acc;
         if (
             el.BandageModeration &&
-            el.BandageModeration?.is_hides &&
+            el.BandageModeration.is_hides &&
             !suppress_ban
         )
-            return undefined;
+            return acc;
 
-        return {
+        acc.push({
             id: el.id,
             external_id: el.externalId,
             title: el.title,
@@ -98,13 +96,12 @@ export const generateResponse = (
                 id: el.User.id,
                 name: el.User.name,
                 username: el.User.username,
-                public: el.User.UserSettings?.public_profile
+                public: el.User.UserSettings!.public_profile
             },
             access_level: el.access_level,
             star_type: el.star_type,
             moderation: generateModerationState(el)
-        };
-    });
+        });
 
-    return result.filter(el => el !== undefined);
-};
+        return acc;
+    }, []);

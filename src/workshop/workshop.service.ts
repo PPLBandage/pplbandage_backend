@@ -434,7 +434,7 @@ export class WorkshopService {
                     id: bandage.User.id,
                     name: bandage.User.name,
                     username: bandage.User.username,
-                    public: bandage.User?.UserSettings?.public_profile
+                    public: bandage.User.UserSettings!.public_profile
                 }
             }
         };
@@ -493,7 +493,7 @@ export class WorkshopService {
                     id: bandage.User.id,
                     name: bandage.User.name,
                     username: bandage.User.username,
-                    public: bandage.User.UserSettings?.public_profile
+                    public: bandage.User.UserSettings!.public_profile
                 },
                 tags: bandage.tags.map(tag => tag.name),
                 me_profile: me_profile,
@@ -742,7 +742,7 @@ export class WorkshopService {
         return generateResponse(
             bandages.sort((a, b) => {
                 if (a.BandageModeration?.type === 'review') return -1;
-                if (b.BandageModeration?.type === 'review') return 1;
+                if (b.BandageModeration?.type === 'denied') return 1;
                 return 0;
             }),
             session,
