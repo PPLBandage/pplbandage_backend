@@ -5,6 +5,7 @@ import {
     IsNumber,
     IsOptional,
     IsString,
+    Matches,
     Max,
     MaxLength,
     Min
@@ -24,9 +25,8 @@ export class UpdateSelfUserDto {
     @Max(2)
     profile_theme?: number;
 
-    @IsString()
     @IsOptional()
-    @MaxLength(7)
+    @Matches(/^#([0-9A-Fa-f]{3}){1,2}$/)
     theme_color?: string;
 
     @IsBoolean()
