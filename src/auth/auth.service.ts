@@ -145,7 +145,7 @@ export class AuthService {
         user_agent: string,
         roles: AccessRoles[]
     ) {
-        if (user.UserSettings?.banned) {
+        if (user.UserSettings!.banned) {
             await this.prisma.sessions.deleteMany({
                 where: { userId: user.id }
             });

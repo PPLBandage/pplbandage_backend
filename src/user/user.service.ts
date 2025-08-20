@@ -121,19 +121,25 @@ export class UserService {
         return generateResponse(result, session, true);
     }
 
-    async getStars(session: Session) {
-        /* get user's favorite (stars) */
+    async getStars(session: Session, page: number, take: number) {
+        /* get user's favorite (stars) with pagination */
 
         const results = (await this.prisma
             .$queryRaw`SELECT * FROM _UserStars ORDER BY rowid ASC`) as [
             { A: number; B: string }
         ];
-        const bandages = results.filter(record => record.B === session.user.id);
+        const bandages = results
+            .filter(record => record.B === session.user.id)
+            .reverse();
+        const paginatedBandages = bandages.slice(
+            page * take,
+            (page + 1) * take
+        );
 
         const result = await Promise.all(
-            bandages.map(
+            paginatedBandages.map(
                 async record =>
-                    await this.prisma.bandage.findFirst({
+                    (await this.prisma.bandage.findFirst({
                         where: {
                             id: record.A,
                             User: { UserSettings: { banned: false } }
@@ -144,14 +150,13 @@ export class UserService {
                             User: { include: { UserSettings: true } },
                             BandageModeration: { include: { issuer: true } }
                         }
-                    })
+                    }))!
             )
         );
-        return generateResponse(
-            result.filter(i => !!i),
-            session,
-            false
-        );
+        return {
+            data: generateResponse(result, session, false),
+            totalCount: bandages.length
+        };
     }
 
     async _getUserByNickname(username: string, session?: Session) {

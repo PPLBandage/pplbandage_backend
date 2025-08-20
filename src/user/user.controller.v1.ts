@@ -106,10 +106,18 @@ export class UserController {
 
     @Get('@me/stars')
     @Auth(AuthEnum.Strict)
-    async getStars(@Req() request: RequestSession) {
+    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+    async getStars(
+        @Req() request: RequestSession,
+        @Query() query: PageTakeDTO
+    ) {
         /* get user's stars */
 
-        return await this.userService.getStars(request.session);
+        return await this.userService.getStars(
+            request.session,
+            query.page ?? 0,
+            query.take ?? 24
+        );
     }
 
     @Get('@me/settings')
