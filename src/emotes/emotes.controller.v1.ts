@@ -54,7 +54,7 @@ export class EmotesController {
                 );
 
             const data = search_result.data as GQLResponse;
-            if (data.data.emotes.items.length === 0) {
+            if (!data.data || data.data.emotes.items.length === 0) {
                 await this.cacheManager.set(cache_key, '404', this.ttl);
                 throw new HttpException(`Emote \`${query.q}\` not found`, 404);
             }
