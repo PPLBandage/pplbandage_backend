@@ -47,6 +47,12 @@ export class EmotesController {
                 variables: { query: query.q }
             });
 
+            if (search_result.status !== 200)
+                throw new HttpException(
+                    'Cannot get emote info',
+                    search_result.status
+                );
+
             const data = search_result.data as GQLResponse;
             if (data.data.emotes.items.length === 0) {
                 await this.cacheManager.set(cache_key, '404', this.ttl);
