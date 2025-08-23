@@ -95,12 +95,10 @@ export class RootController {
         /* Generate sitemap */
 
         let urls: SitemapProps[] = [
-            { loc: 'https://pplbandage.ru/', priority: 1 },
+            { loc: 'https://pplbandage.ru', priority: 1 },
             { loc: 'https://pplbandage.ru/workshop', priority: 0.8 },
-            { loc: 'https://pplbandage.ru/tutorials', priority: 0.7 },
-            { loc: 'https://pplbandage.ru/tutorials/bandage', priority: 0.7 },
-            { loc: 'https://pplbandage.ru/tutorials/colorable', priority: 0.7 },
-            { loc: 'https://pplbandage.ru/tutorials/rules', priority: 0.7 },
+            { loc: 'https://pplbandage.ru/blog', priority: 0.7 },
+            { loc: 'https://pplbandage.ru/tos', priority: 0.7 },
             { loc: 'https://pplbandage.ru/me', priority: 0.5 },
             { loc: 'https://pplbandage.ru/contacts', priority: 0.5 }
         ];
