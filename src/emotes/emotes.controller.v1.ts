@@ -34,12 +34,12 @@ export class EmotesController {
             const search_result = await axios.post('https://7tv.io/v3/gql', {
                 query: `
                 query ($query: String!) {
-                    emotes(query: $query, limit: 1, filter: {exact_match: true}) {
+                    emotes(query: $query, limit: 1, filter: { exact_match: true }) {
                         items {
-                        id
-                        name
-                        host {
-                            url
+                            id
+                            name
+                            host {
+                                url
                         }
                     }
                 }
