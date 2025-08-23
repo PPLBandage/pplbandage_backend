@@ -10,6 +10,7 @@ import { RootModule } from './root/root.module';
 import { CustomThrottlerGuard } from './guards/throttlerBehindProxy.guard';
 import { AvatarsModule } from './avatars/avatars.module';
 import { ConnectionsModule } from './connections/connections.module';
+import { EmotesModule } from './emotes/emotes.module';
 
 @Module({
     providers: [{ provide: APP_GUARD, useClass: CustomThrottlerGuard }],
@@ -22,8 +23,8 @@ import { ConnectionsModule } from './connections/connections.module';
         UsersModule,
         WorkshopModule,
         AvatarsModule,
-        ConnectionsModule
+        ConnectionsModule,
+        EmotesModule
     ]
 })
 export class AppModule {}
-
