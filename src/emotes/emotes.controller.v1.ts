@@ -22,11 +22,11 @@ export class EmotesController {
             throw new HttpException('Query parameter `q` must be set', 400);
 
         const ulidRegex = /^[0-9A-HJKMNP-TV-Z]{26}$/;
-        const isUlid = ulidRegex.test(query.q);
+        const isUlid = ulidRegex.test(query.q.toUpperCase());
 
         const id = isUlid
             ? query.q
-            : (await this.emotesService.searchEmote(query.q)).id;
+            : (await this.emotesService.searchEmote(query.q.toUpperCase())).id;
 
         return new StreamableFile(
             Buffer.from(await this.emotesService.getEmote(id), 'base64'),
