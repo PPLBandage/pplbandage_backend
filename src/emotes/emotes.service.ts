@@ -49,15 +49,14 @@ export class EmotesService {
         return data.data.emotes.items.at(0)!;
     }
 
-    async getEmote(q: string): Promise<string> {
-        const search_result = await this.searchEmote(q);
-        const cache_key = `emote-${search_result.host}`;
+    async getEmote(id: string): Promise<string> {
+        const cache_key = `emote-${id}`;
         const cache: string | null | undefined =
             await this.cacheManager.get(cache_key);
         if (cache && cache !== '404') return cache;
 
         const image = await axios.get(
-            `https:${search_result.host.url}/1x.webp`,
+            `https://cdn.7tv.app/emote/${id}/1x.webp`,
             {
                 responseType: 'arraybuffer'
             }

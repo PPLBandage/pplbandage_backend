@@ -7,8 +7,8 @@ import {
     HttpException,
     StreamableFile
 } from '@nestjs/common';
-import { TagQueryDto } from 'src/workshop/dto/queries.dto';
 import { EmotesService } from './emotes.service';
+import { QueryDto } from './dto/queries.dto';
 
 @Controller({ version: '1', path: 'emote' })
 export class EmotesController {
@@ -17,12 +17,19 @@ export class EmotesController {
 
     @Get()
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-    async getEmote(@Query() query: TagQueryDto) {
+    async getEmote(@Query() query: QueryDto) {
         if (!query.q)
             throw new HttpException('Query parameter `q` must be set', 400);
 
+        const ulidRegex = /^[0-9A-HJKMNP-TV-Z]{26}$/;
+        const isUlid = ulidRegex.test(query.q);
+
+        const id = isUlid
+            ? query.q
+            : (await this.emotesService.searchEmote(query.q)).id;
+
         return new StreamableFile(
-            Buffer.from(await this.emotesService.getEmote(query.q), 'base64'),
+            Buffer.from(await this.emotesService.getEmote(id), 'base64'),
             { type: 'image/webp' }
         );
     }
