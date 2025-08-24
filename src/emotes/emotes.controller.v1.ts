@@ -5,7 +5,8 @@ import {
     Query,
     ValidationPipe,
     HttpException,
-    StreamableFile
+    StreamableFile,
+    Header
 } from '@nestjs/common';
 import { EmotesService } from './emotes.service';
 import { QueryDto } from './dto/queries.dto';
@@ -17,6 +18,7 @@ export class EmotesController {
 
     @Get()
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+    @Header('Cache-Control', 'public, max-age=86400, immutable')
     async getEmote(@Query() query: QueryDto) {
         if (!query.q)
             throw new HttpException('Query parameter `q` must be set', 400);
