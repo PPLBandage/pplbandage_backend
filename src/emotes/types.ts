@@ -1,13 +1,15 @@
 export interface GQLResponse {
     data: {
         emotes: {
-            items: {
-                id: string;
-                name: string;
-                host: {
-                    url: string;
-                };
-            }[];
+            items: Items[];
         };
     } | null;
+}
+
+export interface Items {
+    id: string;
+    name: string;
+    host: {
+        url: string;
+    };
 }

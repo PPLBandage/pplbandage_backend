@@ -5,64 +5,25 @@ import {
     Query,
     ValidationPipe,
     HttpException,
-    Res,
-    Inject
+    StreamableFile
 } from '@nestjs/common';
-import axios from 'axios';
 import { TagQueryDto } from 'src/workshop/dto/queries.dto';
-import { GQLResponse } from './types';
-import { Response } from 'express';
-import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
+import { EmotesService } from './emotes.service';
 
-@Controller({ version: '1', path: 'emotes' })
+@Controller({ version: '1', path: 'emote' })
 export class EmotesController {
-    constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
+    constructor(private readonly emotesService: EmotesService) {}
     ttl: number = 1000 * 60 * 60 * 24;
 
-    @Get('search')
+    @Get()
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-    async getEmote(@Query() query: TagQueryDto, @Res() res: Response) {
+    async getEmote(@Query() query: TagQueryDto) {
         if (!query.q)
             throw new HttpException('Query parameter `q` must be set', 400);
 
-        const cache_key = `emote-${query.q}`;
-        let cache = await this.cacheManager.get(cache_key);
-        if (cache === '404')
-            throw new HttpException(`Emote \`${query.q}\` not found`, 404);
-
-        if (!cache) {
-            const search_result = await axios.post('https://7tv.io/v3/gql', {
-                query: `
-                query ($query: String!) {
-                    emotes(query: $query, limit: 1, filter: { exact_match: true }) {
-                        items {
-                            id
-                            name
-                            host {
-                                url
-                        }
-                    }
-                }
-            }`,
-                variables: { query: query.q }
-            });
-
-            if (search_result.status !== 200)
-                throw new HttpException(
-                    'Cannot get emote info',
-                    search_result.status
-                );
-
-            const data = search_result.data as GQLResponse;
-            if (!data.data || data.data.emotes.items.length === 0) {
-                await this.cacheManager.set(cache_key, '404', this.ttl);
-                throw new HttpException(`Emote \`${query.q}\` not found`, 404);
-            }
-
-            cache = data.data.emotes.items.at(0)!.host.url;
-            await this.cacheManager.set(cache_key, cache, this.ttl);
-        }
-
-        res.redirect(`https:${cache}/1x.webp`);
+        return new StreamableFile(
+            Buffer.from(await this.emotesService.getEmote(query.q), 'base64'),
+            { type: 'image/webp' }
+        );
     }
 }
