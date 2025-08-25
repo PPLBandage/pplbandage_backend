@@ -195,7 +195,7 @@ export class AuthController {
     ): Promise<void> {
         /* get twitch oauth url */
 
-        const login_url = new URL(process.env.TWITCH_LOGIN_UR!);
+        const login_url = new URL(process.env.TWITCH_LOGIN_URL!);
         login_url.searchParams.append(
             'client_id',
             process.env.TWITCH_CLIENT_ID!

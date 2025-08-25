@@ -1,14 +1,16 @@
 import { HttpException, Inject, Injectable } from '@nestjs/common';
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 import axios from 'axios';
-import { GQLResponse, Items } from './types';
+import { GQLResponse } from './types';
 
 @Injectable()
 export class EmotesService {
     constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
     ttl: number = 1000 * 60 * 60 * 24;
 
-    async searchEmote(q: string): Promise<Items> {
+    async searchEmote(
+        q: string
+    ): Promise<NonNullable<GQLResponse['data']>['emotes']['items'][0]> {
         const cache = await this.cacheManager.get(`emote-search-${q}`);
         if (cache && cache !== '404') return JSON.parse(cache as string);
 
