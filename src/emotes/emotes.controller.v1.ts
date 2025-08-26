@@ -4,7 +4,6 @@ import {
     UsePipes,
     Query,
     ValidationPipe,
-    HttpException,
     StreamableFile,
     Header
 } from '@nestjs/common';
@@ -20,9 +19,6 @@ export class EmotesController {
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     @Header('Cache-Control', 'public, max-age=86400, immutable')
     async getEmote(@Query() query: QueryDto) {
-        if (!query.q)
-            throw new HttpException('Query parameter `q` must be set', 400);
-
         const ulidRegex = /^[0-9A-HJKMNP-TV-Z]{26}$/;
         const isUlid = ulidRegex.test(query.q.toUpperCase());
 
