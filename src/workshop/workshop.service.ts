@@ -302,6 +302,15 @@ export class WorkshopService {
     async createBandage(body: CreateBandageDto, session: Session) {
         /* create bandage */
 
+        const { height } = await this.validateBandage(body.base64);
+
+        if (body.split_type) {
+            if (!body.base64_slim)
+                throw new LocaleException(responses_common.INVALID_BODY, 400);
+
+            await this.validateBandage(body.base64_slim, height as number);
+        }
+
         const count = await this.prisma.bandage.count({
             where: {
                 userId: session.user.id,
@@ -438,6 +447,64 @@ export class WorkshopService {
                 }
             }
         };
+    }
+
+    async getOGImage(id: string, w: number, session?: Session, token?: string) {
+        const requested_width = w ?? 512;
+
+        const data = await this.getBandage(
+            id,
+            session,
+            token === process.env.WORKSHOP_TOKEN
+        );
+
+        const bandage_buff = Buffer.from(data.data.base64, 'base64');
+        const metadata = await sharp(bandage_buff).metadata();
+        const original_width = metadata.width as number;
+        const original_height = metadata.height as number;
+
+        const factor = requested_width / original_width;
+        const width = original_width * factor;
+        const height = original_height * factor;
+
+        const bandage = sharp({
+            create: {
+                width: width,
+                height: height / 2,
+                channels: 4,
+                background: { r: 0, g: 0, b: 0, alpha: 0 }
+            }
+        }).png();
+
+        const firstLayer = await sharp(bandage_buff)
+            .extract({
+                left: 0,
+                top: original_height / 2,
+                width: original_width,
+                height: original_height / 2
+            })
+            .resize(width, height / 2, { kernel: sharp.kernel.nearest })
+            .modulate({ lightness: -5 })
+            .png()
+            .toBuffer();
+
+        const secondLayer = await sharp(bandage_buff)
+            .extract({
+                left: 0,
+                top: 0,
+                width: original_width,
+                height: original_height / 2
+            })
+            .resize(width, height / 2, { kernel: sharp.kernel.nearest })
+            .png()
+            .toBuffer();
+
+        bandage.composite([
+            { input: firstLayer, top: 0, left: 0, blend: 'over' },
+            { input: secondLayer, top: 0, left: 0, blend: 'over' }
+        ]);
+
+        return await bandage.toBuffer();
     }
 
     async getBandage(
@@ -609,8 +676,8 @@ export class WorkshopService {
             const bandage_buff = Buffer.from(base64, 'base64');
             const bandage_sharp = sharp(bandage_buff);
             metadata = await bandage_sharp.metadata();
-            width = metadata.width as number;
-            height = metadata.height as number;
+            width = metadata.width;
+            height = metadata.height;
         } catch {
             throw new LocaleException(
                 responses.ERROR_WHILE_BANDAGE_PROCESSING,

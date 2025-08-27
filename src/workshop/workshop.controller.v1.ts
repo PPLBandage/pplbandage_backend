@@ -18,7 +18,6 @@ import {
 import { WorkshopService } from './workshop.service';
 import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { AuthGuard } from 'src/guards/auth.guard';
-import * as sharp from 'sharp';
 import { AuthEnum, RolesEnum } from 'src/interfaces/types';
 import { Auth } from 'src/decorators/auth.decorator';
 import { CreateBandageDto } from './dto/createBandage.dto';
@@ -34,8 +33,6 @@ import {
     WorkshopSearchQueryDTO
 } from 'src/workshop/dto/queries.dto';
 import { SetQueryDTO } from 'src/user/dto/queries.dto';
-import responses_common from 'src/localization/common.localization';
-import { LocaleException } from 'src/interceptors/localization.interceptor';
 import { LocalAccessGuard } from 'src/guards/localAccess.guard';
 import { generateKey } from 'src/guards/throttlerViews';
 import { LocalAccessThrottlerGuard } from 'src/guards/throttlerLocalAccess.guard';
@@ -76,21 +73,6 @@ export class WorkshopController {
     ) {
         /* create work */
 
-        const { height } = await this.bandageService.validateBandage(
-            body.base64
-        );
-
-        if (body.split_type) {
-            if (!body.base64_slim) {
-                throw new LocaleException(responses_common.INVALID_BODY, 400);
-            }
-
-            await this.bandageService.validateBandage(
-                body.base64_slim,
-                height as number
-            );
-        }
-
         return await this.bandageService.createBandage(body, request.session);
     }
 
@@ -127,61 +109,14 @@ export class WorkshopController {
     ): Promise<StreamableFile | void> {
         /* get bandage image render (for OpenGraph) */
 
-        const requested_width = query.width ?? 512;
-
-        const data = await this.bandageService.getBandage(
-            id,
-            request.session,
-            query.token === process.env.WORKSHOP_TOKEN
+        return new StreamableFile(
+            await this.bandageService.getOGImage(
+                id,
+                query.width ?? 1024,
+                request.session,
+                query.token
+            )
         );
-
-        const bandage_buff = Buffer.from(data.data.base64, 'base64');
-        const metadata = await sharp(bandage_buff).metadata();
-        const original_width = metadata.width as number;
-        const original_height = metadata.height as number;
-
-        const factor = requested_width / original_width;
-        const width = original_width * factor;
-        const height = original_height * factor;
-
-        const bandage = sharp({
-            create: {
-                width: width,
-                height: height / 2,
-                channels: 4,
-                background: { r: 0, g: 0, b: 0, alpha: 0 }
-            }
-        }).png();
-
-        const firstLayer = await sharp(bandage_buff)
-            .extract({
-                left: 0,
-                top: original_height / 2,
-                width: original_width,
-                height: original_height / 2
-            })
-            .resize(width, height / 2, { kernel: sharp.kernel.nearest })
-            .modulate({ lightness: -5 })
-            .png()
-            .toBuffer();
-
-        const secondLayer = await sharp(bandage_buff)
-            .extract({
-                left: 0,
-                top: 0,
-                width: original_width,
-                height: original_height / 2
-            })
-            .resize(width, height / 2, { kernel: sharp.kernel.nearest })
-            .png()
-            .toBuffer();
-
-        bandage.composite([
-            { input: firstLayer, top: 0, left: 0, blend: 'over' },
-            { input: secondLayer, top: 0, left: 0, blend: 'over' }
-        ]);
-
-        return new StreamableFile(await bandage.toBuffer());
     }
 
     @Put(':id')
@@ -194,15 +129,7 @@ export class WorkshopController {
     ) {
         /* edit bandage info */
 
-        if (!body) {
-            throw new LocaleException(responses_common.INVALID_BODY, 400);
-        }
-
-        return await this.bandageService.updateBandage(
-            id,
-            body,
-            request.session
-        );
+        await this.bandageService.updateBandage(id, body, request.session);
     }
 
     @Put(':id/archive')

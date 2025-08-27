@@ -3,7 +3,7 @@ import * as cookieParser from 'cookie-parser';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import * as morgan from 'morgan';
 import { AppModule } from './app.module';
-import { ConsoleLogger, VersioningType } from '@nestjs/common';
+import { ConsoleLogger, HttpException, VersioningType } from '@nestjs/common';
 import { LocaleInterceptor } from './interceptors/localization.interceptor';
 
 async function bootstrap() {
@@ -21,11 +21,12 @@ async function bootstrap() {
             if (!origin || allowedOrigins.indexOf(origin) !== -1) {
                 callback(null, true);
             } else {
-                callback(new Error('Not allowed by CORS'));
+                callback(new HttpException('Not allowed by CORS', 403));
             }
         },
         credentials: true
     });
+
     app.use(morgan(':method :url :status - :response-time ms'));
     app.useBodyParser('json', { limit: '10mb' });
     app.setGlobalPrefix('api');
