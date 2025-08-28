@@ -6,7 +6,9 @@ import {
     StreamableFile,
     ValidationPipe,
     UsePipes,
-    Header
+    Header,
+    UseGuards,
+    Req
 } from '@nestjs/common';
 import { MinecraftService } from 'src/minecraft/minecraft.service';
 import * as sharp from 'sharp';
@@ -14,6 +16,10 @@ import { PageTakeQueryDTO, PixelWidthQueryDTO } from './dto/queries.dto';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import responses from 'src/localization/minecraft.localization';
 import { Throttle } from '@nestjs/throttler';
+import { AuthGuard } from 'src/guards/auth.guard';
+import { Auth } from 'src/decorators/auth.decorator';
+import { AuthEnum } from 'src/interfaces/types';
+import { RequestSessionWeak } from 'src/common/bandage_response';
 
 @Controller({ path: 'minecraft', version: '1' })
 export class MinecraftController {
@@ -79,6 +85,18 @@ export class MinecraftController {
         return await this.minecraftService.generateSvg(
             sharp(Buffer.from(cache.data, 'base64')),
             query.pixel_width ?? 50
+        );
+    }
+
+    @Get('/main-page-skin')
+    @UseGuards(AuthGuard)
+    @Auth(AuthEnum.Weak)
+    async getMainPageSkin(@Req() request: RequestSessionWeak) {
+        /** Get skin for main page render */
+
+        return new StreamableFile(
+            await this.minecraftService.getMainPageSkin(request.session),
+            { type: 'image/png' }
         );
     }
 }

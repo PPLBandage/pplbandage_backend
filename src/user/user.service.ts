@@ -369,7 +369,8 @@ export class UserService {
                 profile_theme: body.profile_theme,
                 autoload: body.minecraft_skin_autoload,
                 public_profile: body.public_profile,
-                theme_color: body.theme_color
+                theme_color: body.theme_color,
+                minecraft_main_page_skin: body.minecraft_main_page_skin
             }
         });
     }

@@ -44,6 +44,10 @@ export class UpdateSelfUserDto {
     @IsOptional()
     @IsIn(avatar_providers)
     preferred_avatar?: string;
+
+    @IsBoolean()
+    @IsOptional()
+    minecraft_main_page_skin?: boolean;
 }
 
 export class FeedbackDTO {

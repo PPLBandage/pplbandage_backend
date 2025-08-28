@@ -41,7 +41,9 @@ export class ConnectionsService {
                       Number(user.profile.expires) -
                       parseInt(process.env.TTL as string),
                   valid: user.profile.valid,
-                  autoload: session.user.UserSettings?.autoload
+                  autoload: session.user.UserSettings?.autoload,
+                  minecraft_main_page_skin:
+                      session.user.UserSettings?.minecraft_main_page_skin
               }
             : null;
 

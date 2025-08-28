@@ -55,9 +55,11 @@ model UserSettings {
     banned         Boolean @default(false)
     profile_theme  Int     @default(0)
     theme_color    String  @default("var(--main-card-color)")
-    autoload       Boolean @default(true)
     public_profile Boolean @default(true)
     skip_ppl_check Boolean @default(false)
+
+    autoload                 Boolean @default(true)
+    minecraft_main_page_skin Boolean @default(false)
 
     prefer_avatar String @default("")
 }

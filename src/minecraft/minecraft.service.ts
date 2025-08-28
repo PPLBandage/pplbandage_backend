@@ -5,6 +5,8 @@ import { HttpException, Injectable } from '@nestjs/common';
 import { Buffer } from 'buffer';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import responses from 'src/localization/minecraft.localization';
+import { readdir, readFile } from 'fs/promises';
+import { Session } from 'src/auth/auth.service';
 
 @Injectable()
 export class MinecraftService {
@@ -358,5 +360,24 @@ export class MinecraftService {
             `</svg>`
         ].join('\n');
     }
-}
 
+    async getMainPageSkin(session?: Session) {
+        if (
+            session?.user.profile?.data &&
+            session.user.UserSettings?.minecraft_main_page_skin
+        ) {
+            return Buffer.from(session.user.profile.data, 'base64');
+        }
+
+        const target = './data/cache/main_page_skins';
+        const contents = await readdir(target, {
+            withFileTypes: true
+        });
+        const skins = contents
+            .filter(i => i.isFile())
+            .map(i => `${target}/${i.name}`);
+
+        const random_skin = skins[Math.floor(Math.random() * skins.length)];
+        return readFile(random_skin);
+    }
+}
