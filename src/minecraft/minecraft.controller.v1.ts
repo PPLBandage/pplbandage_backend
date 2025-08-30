@@ -41,16 +41,16 @@ export class MinecraftController {
     }
 
     @Get('/head/:name')
-    @Header('Content-Type', 'image/png')
     async head(@Param('name') name: string): Promise<StreamableFile> {
         /* get minecraft head by nickname / UUID */
 
         const cache = await this.minecraftService.updateSkinCache(name);
-        return new StreamableFile(Buffer.from(cache.data_head, 'base64'));
+        return new StreamableFile(Buffer.from(cache.data_head, 'base64'), {
+            type: 'image/png'
+        });
     }
 
     @Get('/cape/:name')
-    @Header('Content-Type', 'image/png')
     async cape(@Param('name') name: string): Promise<StreamableFile | void> {
         /* get minecraft cape by nickname / UUID */
 
@@ -58,7 +58,9 @@ export class MinecraftController {
         if (!cache.data_cape)
             throw new LocaleException(responses.CAPE_NOT_FOUND, 404);
 
-        return new StreamableFile(Buffer.from(cache.data_cape, 'base64'));
+        return new StreamableFile(Buffer.from(cache.data_cape, 'base64'), {
+            type: 'image/png'
+        });
     }
 
     @Get('/suggest')
