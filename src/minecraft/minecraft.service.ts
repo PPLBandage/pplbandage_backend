@@ -368,7 +368,8 @@ export class MinecraftService {
         ) {
             return {
                 data: Buffer.from(session.user.profile.data, 'base64'),
-                name: session.user.profile.default_nick
+                name: session.user.profile.default_nick,
+                slim: String(session.user.profile.slim)
             };
         }
 
@@ -381,7 +382,8 @@ export class MinecraftService {
         const random_skin = skins[Math.floor(Math.random() * skins.length)];
         return {
             data: await readFile(`${target}/${random_skin}`),
-            name: random_skin.split('.').at(0)!
+            name: random_skin.split('.').at(0)!,
+            slim: random_skin.split('.').at(1)!
         };
     }
 }

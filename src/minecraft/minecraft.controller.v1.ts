@@ -104,6 +104,7 @@ export class MinecraftController {
         );
 
         response.setHeader('X-name', encodeURIComponent(skin.name));
+        response.setHeader('X-slim', skin.slim);
         return new StreamableFile(skin.data, { type: 'image/png' });
     }
 }
