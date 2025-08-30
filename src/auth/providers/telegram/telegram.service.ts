@@ -65,7 +65,8 @@ export class TelegramAuthService {
         await this.initCacheFolders();
 
         const avatar_response = await axios.get(url, {
-            responseType: 'arraybuffer'
+            responseType: 'arraybuffer',
+            validateStatus: () => true
         });
 
         if (avatar_response.status !== 200) return null;

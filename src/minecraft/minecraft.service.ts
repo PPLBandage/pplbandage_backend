@@ -366,18 +366,22 @@ export class MinecraftService {
             session?.user.profile?.data &&
             session.user.UserSettings?.minecraft_main_page_skin
         ) {
-            return Buffer.from(session.user.profile.data, 'base64');
+            return {
+                data: Buffer.from(session.user.profile.data, 'base64'),
+                name: session.user.profile.default_nick
+            };
         }
 
-        const target = './data/cache/main_page_skins';
+        const target = process.env.CACHE_FOLDER + 'main_page_skins';
         const contents = await readdir(target, {
             withFileTypes: true
         });
-        const skins = contents
-            .filter(i => i.isFile())
-            .map(i => `${target}/${i.name}`);
+        const skins = contents.filter(i => i.isFile()).map(i => i.name);
 
         const random_skin = skins[Math.floor(Math.random() * skins.length)];
-        return readFile(random_skin);
+        return {
+            data: await readFile(`${target}/${random_skin}`),
+            name: random_skin.split('.').at(0)!
+        };
     }
 }

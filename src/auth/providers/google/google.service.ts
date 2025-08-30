@@ -67,7 +67,7 @@ export class GoogleAuthService {
 
         const avatar_response = await axios.get(
             this.resizeGoogleAvatarUrl(url, 512),
-            { responseType: 'arraybuffer' }
+            { responseType: 'arraybuffer', validateStatus: () => true }
         );
 
         if (avatar_response.status !== 200) return null;
@@ -179,4 +179,3 @@ export class GoogleAuthService {
         );
     }
 }
-

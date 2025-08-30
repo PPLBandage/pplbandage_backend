@@ -8,7 +8,8 @@ import {
     UsePipes,
     Header,
     UseGuards,
-    Req
+    Req,
+    Res
 } from '@nestjs/common';
 import { MinecraftService } from 'src/minecraft/minecraft.service';
 import * as sharp from 'sharp';
@@ -20,6 +21,7 @@ import { AuthGuard } from 'src/guards/auth.guard';
 import { Auth } from 'src/decorators/auth.decorator';
 import { AuthEnum } from 'src/interfaces/types';
 import { RequestSessionWeak } from 'src/common/bandage_response';
+import { Response } from 'express';
 
 @Controller({ path: 'minecraft', version: '1' })
 export class MinecraftController {
@@ -91,12 +93,17 @@ export class MinecraftController {
     @Get('/main-page-skin')
     @UseGuards(AuthGuard)
     @Auth(AuthEnum.Weak)
-    async getMainPageSkin(@Req() request: RequestSessionWeak) {
+    async getMainPageSkin(
+        @Req() request: RequestSessionWeak,
+        @Res({ passthrough: true }) response: Response
+    ) {
         /** Get skin for main page render */
 
-        return new StreamableFile(
-            await this.minecraftService.getMainPageSkin(request.session),
-            { type: 'image/png' }
+        const skin = await this.minecraftService.getMainPageSkin(
+            request.session
         );
+
+        response.setHeader('X-name', encodeURIComponent(skin.name));
+        return new StreamableFile(skin.data, { type: 'image/png' });
     }
 }

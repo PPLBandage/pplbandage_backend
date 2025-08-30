@@ -91,7 +91,7 @@ export class DiscordAuthService {
 
         const avatar_response = await axios.get(
             `${process.env.DISCORD_AVATAR}/${user_id}/${avatar_hash}.png?size=512`,
-            { responseType: 'arraybuffer' }
+            { responseType: 'arraybuffer', validateStatus: () => true }
         );
 
         if (avatar_response.status !== 200) return null;
@@ -164,4 +164,3 @@ export class DiscordAuthService {
         );
     }
 }
-
