@@ -55,4 +55,8 @@ export class FeedbackDTO {
     @IsNotEmpty()
     @MaxLength(1500)
     content!: string;
+
+    @IsBoolean()
+    @IsNotEmpty()
+    anonym!: boolean;
 }

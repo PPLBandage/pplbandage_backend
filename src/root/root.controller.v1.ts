@@ -7,6 +7,7 @@ import {
     Inject,
     Post,
     Req,
+    UseGuards,
     UsePipes,
     ValidationPipe
 } from '@nestjs/common';
@@ -18,6 +19,10 @@ import { FeedbackDTO } from 'src/user/dto/body.dto';
 import { DiscordNotificationService } from 'src/notifications/discord.service';
 import axios from 'axios';
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
+import { AuthGuard } from 'src/guards/auth.guard';
+import { AuthEnum } from 'src/interfaces/types';
+import { Auth } from 'src/decorators/auth.decorator';
+import { RequestSessionWeak } from 'src/common/bandage_response';
 
 @Controller({ version: '1' })
 export class RootController {
@@ -135,11 +140,21 @@ export class RootController {
     @Post('/feedback')
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     @Throttle({ default: { limit: 1, ttl: 1000 * 60 } })
-    async feedback(@Body() body: FeedbackDTO) {
+    @UseGuards(AuthGuard)
+    @Auth(AuthEnum.Weak)
+    async feedback(
+        @Req() request: RequestSessionWeak,
+        @Body() body: FeedbackDTO
+    ) {
         /* Receive feedback */
 
+        const user =
+            !request.session || body.anonym
+                ? 'anonym'
+                : `[${request.session.user.name}](${process.env.DOMAIN}/users/${request.session.user.username})`;
+
         await this.discordNotification.doNotification(
-            `<@&${process.env.SYSTEM_ROLE_ID}> new feedback:\n${body.content}`,
+            `<@&${process.env.SYSTEM_ROLE_ID}> new feedback from ${user}:\n${body.content}`,
             [],
             process.env.SYSTEM_CHANNEL_ID
         );

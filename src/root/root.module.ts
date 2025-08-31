@@ -5,6 +5,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CacheModule } from '@nestjs/cache-manager';
 import { DiscordNotificationService } from 'src/notifications/discord.service';
 import { UserService } from 'src/user/user.service';
+import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
     controllers: [RootController],
@@ -14,6 +15,6 @@ import { UserService } from 'src/user/user.service';
         DiscordNotificationService,
         UserService
     ],
-    imports: [CacheModule.register()]
+    imports: [CacheModule.register(), AuthModule]
 })
 export class RootModule {}
