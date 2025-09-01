@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { HttpException, Inject, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { hasAccess, Session } from 'src/auth/auth.service';
 import { UpdateSelfUserDto, UpdateUsersDto } from './dto/body.dto';
@@ -409,5 +409,29 @@ export class UserService {
             where: { subscriptions: { some: { id: user.id } } }
         });
         return { count };
+    }
+
+    async deleteMe(session: Session) {
+        if (
+            session.user.AccessRoles.some(i => i.level === RolesEnum.SuperAdmin)
+        )
+            throw new HttpException('Admin cannot delete self account', 403);
+
+        const user_id = session.user.id;
+        await this.prisma.$transaction(async tx => {
+            await tx.user.update({
+                where: { id: user_id },
+                data: {
+                    subscriptions: { set: [] },
+                    subscribers: { set: [] },
+                    stars: { set: [] },
+                    notifications: { set: [] },
+                    profile: { disconnect: {} },
+                    AccessRoles: { set: [] }
+                }
+            });
+
+            await tx.user.delete({ where: { id: user_id } });
+        });
     }
 }

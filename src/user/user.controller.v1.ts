@@ -66,6 +66,21 @@ export class UserController {
         await this.authService.logout(request.session);
     }
 
+    /*
+     * Note: Исторически сложилось так, что `DELETE /users/@me`
+     * используется для выхода с аккаунта. Я не буду переносить этот эндпоинт
+     * на удаление аккаунта из соображений безопасности и обратной совместимости <3
+     *
+     * Потому, простите за этот костыль)
+     */
+    @Delete('@me/delete')
+    @Auth(AuthEnum.Strict)
+    async deleteAccount(@Req() request: RequestSession): Promise<void> {
+        /* delete user */
+
+        await this.userService.deleteMe(request.session);
+    }
+
     @Get('/@me/sessions')
     @Auth(AuthEnum.Strict)
     async getSessions(@Req() request: RequestSession) {

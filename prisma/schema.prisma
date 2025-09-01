@@ -19,7 +19,7 @@ model Minecraft {
     valid        Boolean @default(true)
     slim         Boolean @default(false)
 
-    user   User?   @relation(fields: [userId], references: [id])
+    user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
     userId String? @unique
 }
 
@@ -50,7 +50,7 @@ model User {
 
 model UserSettings {
     id             Int     @id @default(autoincrement())
-    User           User    @relation(fields: [userId], references: [id])
+    User           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
     userId         String  @unique
     banned         Boolean @default(false)
     profile_theme  Int     @default(0)
@@ -73,7 +73,7 @@ model DiscordAuth {
     username   String
     avatar_id  String?
 
-    user   User   @relation(fields: [userid], references: [id])
+    user   User   @relation(fields: [userid], references: [id], onDelete: Cascade)
     userid String @unique
 
     connected_at DateTime @default(now())
@@ -87,7 +87,7 @@ model GoogleAuth {
     name      String
     avatar_id String?
 
-    user   User   @relation(fields: [userid], references: [id])
+    user   User   @relation(fields: [userid], references: [id], onDelete: Cascade)
     userid String @unique
 
     connected_at DateTime @default(now())
@@ -101,7 +101,7 @@ model TwitchAuth {
     name      String
     avatar_id String?
 
-    user   User   @relation(fields: [userid], references: [id])
+    user   User   @relation(fields: [userid], references: [id], onDelete: Cascade)
     userid String @unique
 
     connected_at DateTime @default(now())
@@ -115,7 +115,7 @@ model TelegramAuth {
     login     String?
     avatar_id String?
 
-    user   User   @relation(fields: [userid], references: [id])
+    user   User   @relation(fields: [userid], references: [id], onDelete: Cascade)
     userid String @unique
 
     connected_at DateTime @default(now())
@@ -136,7 +136,7 @@ model Sessions {
     id            Int      @id @default(autoincrement())
     sessionId     String   @unique @default("")
     User_Agent    String   @default("")
-    User          User     @relation(fields: [userId], references: [id])
+    User          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
     userId        String
     last_accessed DateTime @default(now())
 }
@@ -149,7 +149,7 @@ model Bandage {
     base64             String             @default("")
     base64_slim        String             @default("")
     split_type         Boolean            @default(false)
-    User               User               @relation("UserBandages", fields: [userId], references: [id])
+    User               User               @relation("UserBandages", fields: [userId], references: [id], onDelete: Cascade)
     userId             String
     BandageModeration  BandageModeration?
     creationDate       DateTime           @default(now())
@@ -175,7 +175,7 @@ model BandageModeration {
 
     bandage   Bandage @relation(fields: [bandageId], references: [id], onDelete: Cascade)
     bandageId Int     @unique
-    issuer    User    @relation(fields: [userId], references: [id])
+    issuer    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
     userId    String
 }
 
