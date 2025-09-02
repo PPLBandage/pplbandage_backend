@@ -333,6 +333,7 @@ export class WorkshopService {
             .toBuffer({ resolveWithObject: false });
         const [r, g, b] = data;
 
+        const is_moderator = hasAccess(session.user, RolesEnum.ManageBandages);
         const result = await this.prisma.bandage.create({
             data: {
                 externalId: Math.random().toString(36).substring(2, 8),
@@ -344,15 +345,17 @@ export class WorkshopService {
                 split_type: body.split_type ?? false,
                 User: { connect: { id: session.user.id } },
                 accent_color: rgbToHex(r, g, b),
-                BandageModeration: {
-                    create: {
-                        type: 'review',
-                        message: 'Ваша повязка сейчас проходит модерацию',
-                        is_hides: true,
-                        is_first: true,
-                        userId: session.user.id
-                    }
-                }
+                BandageModeration: !is_moderator
+                    ? {
+                          create: {
+                              type: 'review',
+                              message: 'Ваша повязка сейчас проходит модерацию',
+                              is_hides: true,
+                              is_first: true,
+                              userId: session.user.id
+                          }
+                      }
+                    : undefined
             },
             include: { User: true, tags: true }
         });
@@ -364,11 +367,12 @@ export class WorkshopService {
             false
         );
 
-        await this.discordNotifications.doBandageNotification(
-            'Опубликована новая повязка',
-            result as BandageFull,
-            body.tags ?? []
-        );
+        if (!is_moderator)
+            await this.discordNotifications.doBandageNotification(
+                'Опубликована новая повязка',
+                result as BandageFull,
+                body.tags ?? []
+            );
 
         await this.notifications.createBandageCreationNotification(
             result as BandageFull
