@@ -3,6 +3,13 @@ import { BandageFull } from 'src/common/bandage_response';
 import { Telegraf } from 'telegraf';
 import { InputFile } from 'telegraf/typings/core/types/typegram';
 
+export const ThreadType = {
+    General: 1,
+    Moderation: 2,
+    Feedback: 17,
+    Errors: 15
+};
+
 @Injectable()
 export class TelegramService implements OnModuleInit {
     private bot: Telegraf;
@@ -60,7 +67,7 @@ export class TelegramService implements OnModuleInit {
 
             const message_o = await this.sendPhotoToThread(
                 process.env.GROUP_ID!,
-                2,
+                ThreadType.Moderation,
                 {
                     url: `${process.env.DOMAIN}/api/v1/workshop/${bandage.externalId}/og?token=${process.env.WORKSHOP_TOKEN}`,
                     filename: 'Bandage'

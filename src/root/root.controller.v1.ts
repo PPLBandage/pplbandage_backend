@@ -22,7 +22,10 @@ import { AuthGuard } from 'src/guards/auth.guard';
 import { AuthEnum } from 'src/interfaces/types';
 import { Auth } from 'src/decorators/auth.decorator';
 import { RequestSessionWeak } from 'src/common/bandage_response';
-import { TelegramService } from 'src/notifications/telegram.service';
+import {
+    TelegramService,
+    ThreadType
+} from 'src/notifications/telegram.service';
 
 @Controller({ version: '1' })
 export class RootController {
@@ -155,7 +158,7 @@ export class RootController {
 
         await this.telegramService.sendToThread(
             process.env.GROUP_ID!,
-            17,
+            ThreadType.Feedback,
             `New feedback from ${user}:\n${body.content}`
         );
     }
@@ -175,7 +178,7 @@ export class RootController {
 
         await this.telegramService.sendToThread(
             process.env.GROUP_ID!,
-            15,
+            ThreadType.Errors,
             `Client received client-side error:\n${body.content}\n\n` +
                 `User agent: ${ua}`
         );
