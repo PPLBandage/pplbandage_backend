@@ -11,6 +11,7 @@ import { CustomThrottlerGuard } from './guards/throttlerBehindProxy.guard';
 import { AvatarsModule } from './avatars/avatars.module';
 import { ConnectionsModule } from './connections/connections.module';
 import { EmotesModule } from './emotes/emotes.module';
+import { TelegramModule } from './notifications/telegram.module';
 
 @Module({
     providers: [{ provide: APP_GUARD, useClass: CustomThrottlerGuard }],
@@ -24,7 +25,8 @@ import { EmotesModule } from './emotes/emotes.module';
         WorkshopModule,
         AvatarsModule,
         ConnectionsModule,
-        EmotesModule
+        EmotesModule,
+        TelegramModule
     ]
 })
 export class AppModule {}

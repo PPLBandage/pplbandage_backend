@@ -16,20 +16,20 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { Request } from 'express';
 import { RootService, SitemapProps } from './root.service';
 import { FeedbackDTO } from 'src/user/dto/body.dto';
-import { DiscordNotificationService } from 'src/notifications/discord.service';
 import axios from 'axios';
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { AuthEnum } from 'src/interfaces/types';
 import { Auth } from 'src/decorators/auth.decorator';
 import { RequestSessionWeak } from 'src/common/bandage_response';
+import { TelegramService } from 'src/notifications/telegram.service';
 
 @Controller({ version: '1' })
 export class RootController {
     constructor(
         private prisma: PrismaService,
         private readonly rootService: RootService,
-        private readonly discordNotification: DiscordNotificationService,
+        private readonly telegramService: TelegramService,
         @Inject(CACHE_MANAGER) private cacheManager: Cache
     ) {}
 
@@ -153,10 +153,10 @@ export class RootController {
                 ? 'anonym'
                 : `[${request.session.user.name}](${process.env.DOMAIN}/users/${request.session.user.username})`;
 
-        await this.discordNotification.doNotification(
-            `<@&${process.env.SYSTEM_ROLE_ID}> new feedback from ${user}:\n${body.content}`,
-            [],
-            process.env.SYSTEM_CHANNEL_ID
+        await this.telegramService.sendToThread(
+            process.env.GROUP_ID!,
+            17,
+            `New feedback from ${user}:\n${body.content}`
         );
     }
 
@@ -173,11 +173,11 @@ export class RootController {
             return;
         }
 
-        await this.discordNotification.doNotification(
-            `<@&${process.env.SYSTEM_ROLE_ID}> Client received client-side error:\n${body.content}\n\n` +
-                `User agent: ${ua}`,
-            [],
-            process.env.SYSTEM_CHANNEL_ID
+        await this.telegramService.sendToThread(
+            process.env.GROUP_ID!,
+            15,
+            `Client received client-side error:\n${body.content}\n\n` +
+                `User agent: ${ua}`
         );
     }
 }

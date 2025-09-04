@@ -7,7 +7,6 @@ import { hasAccess, Session } from 'src/auth/auth.service';
 import { RolesEnum } from 'src/interfaces/types';
 import { CreateBandageDto } from './dto/createBandage.dto';
 import { EditBandageDto } from './dto/editBandage.dto';
-import { DiscordNotificationService } from 'src/notifications/discord.service';
 import {
     BandageFull,
     generateFlags,
@@ -17,6 +16,7 @@ import {
 import responses from 'src/localization/workshop.localization';
 import responses_common from 'src/localization/common.localization';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
+import { TelegramService } from 'src/notifications/telegram.service';
 
 // Relevance settings
 const downgrade_factor = 1.5;
@@ -60,7 +60,7 @@ export class WorkshopService {
     constructor(
         private prisma: PrismaService,
         private readonly notifications: NotificationService,
-        private readonly discordNotifications: DiscordNotificationService
+        private readonly telegramNotifications: TelegramService
     ) {}
 
     async getBandagesCount() {
@@ -368,7 +368,7 @@ export class WorkshopService {
         );
 
         if (!is_moderator)
-            await this.discordNotifications.doBandageNotification(
+            await this.telegramNotifications.doBandageNotification(
                 'Опубликована новая повязка',
                 result as BandageFull,
                 body.tags ?? []
@@ -646,7 +646,7 @@ export class WorkshopService {
                 !bandage.BandageModeration ||
                 bandage.BandageModeration?.type === 'denied'
             ) {
-                await this.discordNotifications.doBandageNotification(
+                await this.telegramNotifications.doBandageNotification(
                     'Запрошена ремодерация повязки',
                     result as BandageFull
                 );
