@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { BandageFull } from 'src/common/bandage_response';
 import { Telegraf } from 'telegraf';
 import { InputFile } from 'telegraf/typings/core/types/typegram';
@@ -12,6 +12,7 @@ export const ThreadType = {
 
 @Injectable()
 export class TelegramService implements OnModuleInit {
+    private readonly logger = new Logger(TelegramService.name);
     private bot: Telegraf;
 
     constructor() {
@@ -22,7 +23,7 @@ export class TelegramService implements OnModuleInit {
         this.bot.command('ping', ctx => ctx.reply('pong'));
 
         this.bot.launch();
-        console.log('Telegram bot started');
+        this.logger.log('Telegram bot started');
     }
 
     async sendToThread(
@@ -65,7 +66,7 @@ export class TelegramService implements OnModuleInit {
                 `*Теги*\n${`\`${tags.join('`, `')}\``}\n\n` +
                 `*Имеет раздельные типы*\n${bandage.split_type ? 'Да' : 'Нет'}`;
 
-            const message_o = await this.sendPhotoToThread(
+            await this.sendPhotoToThread(
                 process.env.GROUP_ID!,
                 ThreadType.Moderation,
                 {
@@ -74,15 +75,15 @@ export class TelegramService implements OnModuleInit {
                 },
                 text
             );
-
-            await this.bot.telegram.pinChatMessage(
-                process.env.GROUP_ID!,
-                message_o.message_id,
-                { disable_notification: true }
-            );
         } catch (e) {
-            console.error(
+            this.logger.error(
                 `Cannot do Telegram notification about https://pplbandage.ru/workshop/${bandage.externalId} (${e})`
+            );
+
+            await this.sendToThread(
+                process.env.GROUP_ID!,
+                ThreadType.Moderation,
+                `${process.env.DOMAIN}/workshop/${bandage.externalId}`
             );
         }
     }
