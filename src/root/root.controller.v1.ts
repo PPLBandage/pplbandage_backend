@@ -15,7 +15,7 @@ import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Request } from 'express';
 import { RootService, SitemapProps } from './root.service';
-import { FeedbackDTO } from 'src/user/dto/body.dto';
+import { ErrorReportDTO, FeedbackDTO } from 'src/user/dto/body.dto';
 import axios from 'axios';
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 import { AuthGuard } from 'src/guards/auth.guard';
@@ -166,7 +166,7 @@ export class RootController {
     @Post('/error-report')
     @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     @Throttle({ default: { limit: 5, ttl: 1000 * 60 } })
-    async errorReport(@Body() body: FeedbackDTO, @Req() req: Request) {
+    async errorReport(@Body() body: ErrorReportDTO, @Req() req: Request) {
         /* Receive error report */
 
         const ua = req.headers['user-agent'] ?? 'Unknown agent';

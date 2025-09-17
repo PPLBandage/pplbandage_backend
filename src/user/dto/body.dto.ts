@@ -60,3 +60,10 @@ export class FeedbackDTO {
     @IsNotEmpty()
     anonym!: boolean;
 }
+
+export class ErrorReportDTO {
+    @IsString()
+    @IsNotEmpty()
+    @MaxLength(1500)
+    content!: string;
+}
