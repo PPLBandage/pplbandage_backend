@@ -6,9 +6,7 @@ import {
     Post,
     UseGuards,
     Query,
-    Body,
-    UsePipes,
-    ValidationPipe
+    Body
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { generateCookie } from './auth.service';
@@ -34,7 +32,6 @@ export class AuthController {
     ) {}
 
     @Post('discord')
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async discord(
         @Req() request: Request,
         @Res({ passthrough: true }) res: Response,
@@ -55,7 +52,6 @@ export class AuthController {
     }
 
     @Post('minecraft')
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async minecraftLogin(
         @Req() request: Request,
         @Res({ passthrough: true }) res: Response,
@@ -79,7 +75,6 @@ export class AuthController {
     }
 
     @Post('google')
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async googleLogin(
         @Req() request: Request,
         @Res({ passthrough: true }) res: Response,
@@ -98,7 +93,6 @@ export class AuthController {
     }
 
     @Post('twitch')
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async twitchLogin(
         @Req() request: Request,
         @Res({ passthrough: true }) res: Response,
@@ -117,7 +111,6 @@ export class AuthController {
     }
 
     @Post('telegram')
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async telegramLogin(
         @Req() request: Request,
         @Res({ passthrough: true }) res: Response,

@@ -1,12 +1,4 @@
-import {
-    Controller,
-    Get,
-    UsePipes,
-    Query,
-    ValidationPipe,
-    StreamableFile,
-    Header
-} from '@nestjs/common';
+import { Controller, Get, Query, StreamableFile, Header } from '@nestjs/common';
 import { EmotesService } from './emotes.service';
 import { QueryDto } from './dto/queries.dto';
 
@@ -16,7 +8,6 @@ export class EmotesController {
     ttl: number = 1000 * 60 * 60 * 24;
 
     @Get()
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     @Header('Cache-Control', 'public, max-age=86400, immutable')
     async getEmote(@Query() query: QueryDto) {
         const ulidRegex = /^[0-9A-HJKMNP-TV-Z]{26}$/;

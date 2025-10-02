@@ -5,9 +5,7 @@ import {
     Get,
     Post,
     Req,
-    UseGuards,
-    UsePipes,
-    ValidationPipe
+    UseGuards
 } from '@nestjs/common';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { ConnectionsService } from './connections.service';
@@ -32,7 +30,6 @@ export class ConnectionsController {
 
     @Post('minecraft')
     @Auth(AuthEnum.Strict)
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async connectMinecraft(
         @Req() request: RequestSession,
         @Body() body: CodeDTO
@@ -76,7 +73,6 @@ export class ConnectionsController {
 
     @Post('discord')
     @Auth(AuthEnum.Strict)
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async connectDiscord(
         @Req() request: RequestSession,
         @Body() body: CodeDTO
@@ -99,7 +95,6 @@ export class ConnectionsController {
 
     @Post('google')
     @Auth(AuthEnum.Strict)
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async connectGoogle(@Req() request: RequestSession, @Body() body: CodeDTO) {
         /** Connect google account */
 
@@ -116,7 +111,6 @@ export class ConnectionsController {
 
     @Post('twitch')
     @Auth(AuthEnum.Strict)
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async connectTwitch(@Req() request: RequestSession, @Body() body: CodeDTO) {
         /** Connect twitch account */
 
@@ -133,7 +127,6 @@ export class ConnectionsController {
 
     @Post('telegram')
     @Auth(AuthEnum.Strict)
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async connectTelegram(
         @Req() request: RequestSession,
         @Body() body: CodeDTO

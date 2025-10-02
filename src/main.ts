@@ -3,7 +3,12 @@ import * as cookieParser from 'cookie-parser';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import * as morgan from 'morgan';
 import { AppModule } from './app.module';
-import { ConsoleLogger, HttpException, VersioningType } from '@nestjs/common';
+import {
+    ConsoleLogger,
+    HttpException,
+    ValidationPipe,
+    VersioningType
+} from '@nestjs/common';
 import { LocaleInterceptor } from './interceptors/localization.interceptor';
 
 async function bootstrap() {
@@ -33,6 +38,12 @@ async function bootstrap() {
     app.useGlobalInterceptors(new LocaleInterceptor());
 
     app.enableVersioning({ type: VersioningType.URI });
+    app.useGlobalPipes(
+        new ValidationPipe({
+            whitelist: true,
+            transform: true
+        })
+    );
 
     app.use(cookieParser());
     await app.listen(8001);

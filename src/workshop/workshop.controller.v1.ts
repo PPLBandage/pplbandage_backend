@@ -10,8 +10,6 @@ import {
     Post,
     Body,
     UseGuards,
-    ValidationPipe,
-    UsePipes,
     HttpCode,
     Header
 } from '@nestjs/common';
@@ -46,7 +44,6 @@ export class WorkshopController {
 
     @Get()
     @Auth(AuthEnum.Weak)
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async bandages(
         @Req() request: RequestSession,
         @Query() query: WorkshopSearchQueryDTO
@@ -66,7 +63,6 @@ export class WorkshopController {
     @HttpCode(201)
     @Auth(AuthEnum.Strict)
     @Throttle({ default: { limit: 1, ttl: 10000 } })
-    @UsePipes(new ValidationPipe({ whitelist: true }))
     async create_bandage(
         @Req() request: RequestSession,
         @Body() body: CreateBandageDto
@@ -101,7 +97,6 @@ export class WorkshopController {
     @Get(':id/og')
     @Auth(AuthEnum.Weak)
     @Header('Content-Type', 'image/png')
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async getBandageImage(
         @Param('id') id: string,
         @Req() request: RequestSessionWeak,
@@ -121,7 +116,6 @@ export class WorkshopController {
 
     @Put(':id')
     @Auth(AuthEnum.Strict)
-    @UsePipes(new ValidationPipe({ whitelist: true }))
     async editBandage(
         @Param('id') id: string,
         @Req() request: RequestSession,
@@ -152,7 +146,6 @@ export class WorkshopController {
     }
 
     @Get('tags/suggest')
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async suggestTag(@Query() query: TagQueryDto) {
         /* Suggest tags list */
         return await this.bandageService.suggestTag(query.q);
@@ -161,7 +154,6 @@ export class WorkshopController {
     @Put(':id/moderation')
     @Auth(AuthEnum.Strict)
     @Roles([RolesEnum.ManageBandages])
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async changeBandageModeration(
         @Param('id') id: string,
         @Req() request: RequestSession,
@@ -193,7 +185,6 @@ export class WorkshopController {
 
     @Put('star/:id')
     @Auth(AuthEnum.Strict)
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async setStar(
         @Param('id') id: string,
         @Query() query: SetQueryDTO,

@@ -8,8 +8,6 @@ import {
     Post,
     Body,
     UseGuards,
-    ValidationPipe,
-    UsePipes,
     Patch,
     HttpException
 } from '@nestjs/common';
@@ -48,7 +46,6 @@ export class UserController {
 
     @Patch('@me')
     @Auth(AuthEnum.Strict)
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async updateMe(
         @Req() request: RequestSession,
         @Body() body: UpdateSelfUserDto
@@ -121,7 +118,6 @@ export class UserController {
 
     @Get('@me/stars')
     @Auth(AuthEnum.Strict)
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async getStars(
         @Req() request: RequestSession,
         @Query() query: PageTakeDTO
@@ -145,7 +141,6 @@ export class UserController {
 
     @Get('@me/notifications')
     @Auth(AuthEnum.Strict)
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async getNotifications(
         @Req() request: RequestSession,
         @Query() query: PageTakeDTO
@@ -206,7 +201,6 @@ export class UserController {
     @Patch(':username')
     @Auth(AuthEnum.Strict)
     @Roles([RolesEnum.UpdateUsers])
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async updateUser(
         @Param('username') username: string,
         @Req() request: RequestSession,
@@ -220,7 +214,6 @@ export class UserController {
     @Get('/')
     @Auth(AuthEnum.Strict)
     @Roles([RolesEnum.UpdateUsers])
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async getUsers(@Query() query: PageTakeQueryDTO) {
         /* Get list of registered users */
 

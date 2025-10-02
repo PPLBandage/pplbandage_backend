@@ -4,8 +4,6 @@ import {
     Param,
     Query,
     StreamableFile,
-    ValidationPipe,
-    UsePipes,
     Header,
     UseGuards,
     Req,
@@ -28,7 +26,6 @@ export class MinecraftController {
     constructor(private readonly minecraftService: MinecraftService) {}
 
     @Get('/skin/:name')
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async skin(@Param('name') name: string) {
         /* get minecraft skin by nickname / UUID */
 
@@ -64,7 +61,6 @@ export class MinecraftController {
     }
 
     @Get('/suggest')
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     @Throttle({ default: { limit: 300, ttl: 1000 * 60 } })
     async suggest(@Query() query: PageTakeQueryDTO) {
         /* search nicknames by requested fragment */
@@ -78,7 +74,6 @@ export class MinecraftController {
 
     @Get('/head/:name/svg')
     @Header('Content-Type', 'image/svg+xml')
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async headSVG(
         @Param('name') name: string,
         @Query() query: PixelWidthQueryDTO

@@ -7,9 +7,7 @@ import {
     Inject,
     Post,
     Req,
-    UseGuards,
-    UsePipes,
-    ValidationPipe
+    UseGuards
 } from '@nestjs/common';
 import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -141,7 +139,6 @@ export class RootController {
     }
 
     @Post('/feedback')
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     @Throttle({ default: { limit: 1, ttl: 1000 * 60 } })
     @UseGuards(AuthGuard)
     @Auth(AuthEnum.Weak)
@@ -164,7 +161,6 @@ export class RootController {
     }
 
     @Post('/error-report')
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     @Throttle({ default: { limit: 5, ttl: 1000 * 60 } })
     async errorReport(@Body() body: ErrorReportDTO, @Req() req: Request) {
         /* Receive error report */

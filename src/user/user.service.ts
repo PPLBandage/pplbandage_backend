@@ -1,10 +1,9 @@
-import { HttpException, Inject, Injectable, Logger } from '@nestjs/common';
+import { HttpException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { hasAccess, Session } from 'src/auth/auth.service';
 import { UpdateSelfUserDto, UpdateUsersDto } from './dto/body.dto';
 import { generateResponse } from 'src/common/bandage_response';
 import { RolesEnum } from 'src/interfaces/types';
-import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 
 import responses from 'src/localization/users.localization';
@@ -13,10 +12,7 @@ import responses_common from 'src/localization/common.localization';
 @Injectable()
 export class UserService {
     private readonly logger = new Logger(UserService.name);
-    constructor(
-        private prisma: PrismaService,
-        @Inject(CACHE_MANAGER) private cacheManager: Cache
-    ) {}
+    constructor(private prisma: PrismaService) {}
 
     async getUser(session: Session) {
         /* get user, associated with session */
