@@ -8,10 +8,16 @@ import { AuthModule } from 'src/auth/auth.module';
 import { UsersModule } from 'src/user/user.module';
 import { MinecraftModule } from 'src/minecraft/minecraft.module';
 import { TelegramModule } from 'src/notifications/telegram.module';
+import { KVDataBase } from 'src/prisma/kv.service';
 
 @Module({
     controllers: [WorkshopController],
-    providers: [WorkshopService, PrismaService, NotificationService],
+    providers: [
+        WorkshopService,
+        PrismaService,
+        NotificationService,
+        KVDataBase
+    ],
     imports: [
         CacheModule.register(),
         AuthModule,

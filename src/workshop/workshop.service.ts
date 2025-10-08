@@ -17,11 +17,7 @@ import responses from 'src/localization/workshop.localization';
 import responses_common from 'src/localization/common.localization';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import { TelegramService } from 'src/notifications/telegram.service';
-
-// Relevance settings
-const downgrade_factor = 1.5;
-const start_boost = 1; // In stars
-const start_boost_duration = 7; // In days
+import { KVDataBase } from 'src/prisma/kv.service';
 
 export const sort_keys = ['popular_up', 'date_up', 'name_up', 'relevant_up'];
 
@@ -60,7 +56,8 @@ export class WorkshopService {
     constructor(
         private prisma: PrismaService,
         private readonly notifications: NotificationService,
-        private readonly telegramNotifications: TelegramService
+        private readonly telegramNotifications: TelegramService,
+        private readonly kvService: KVDataBase
     ) {}
 
     async getBandagesCount() {
@@ -239,6 +236,27 @@ export class WorkshopService {
 
         const count = await this.prisma.bandage.count({ where: where });
 
+        const [
+            start_boost_duration_raw,
+            start_boost_raw,
+            downgrade_factor_raw,
+            views_to_stars_relation_raw
+        ] = await Promise.all([
+            this.kvService.get('start-boost-duration'),
+            this.kvService.get('start-boost-amount'),
+            this.kvService.get('start-boost-downgrade-factor'),
+            this.kvService.get('views-to-stars-relation')
+        ]);
+
+        const start_boost_duration = parseFloat(
+            start_boost_duration_raw ?? '7'
+        );
+        const start_boost = parseFloat(start_boost_raw ?? '1');
+        const downgrade_factor = parseFloat(downgrade_factor_raw ?? '1.2');
+        const views_to_stars_relation = parseFloat(
+            views_to_stars_relation_raw ?? '150'
+        );
+
         const getRelevance = (bandage: {
             stars: unknown[];
             creationDate: Date;
@@ -253,7 +271,7 @@ export class WorkshopService {
                 bandage.stars.length + // Real stars count
                 (daysSinceCreation < start_boost_duration ? start_boost : 0) + // Start boost
                 bandage.relevance_modifier + // Relevance modifier
-                bandage.views / 150; // Views count, represented as stars
+                bandage.views / views_to_stars_relation; // Views count, represented as stars
             return stars / Math.pow(daysSinceCreation + 1, downgrade_factor);
         };
 
