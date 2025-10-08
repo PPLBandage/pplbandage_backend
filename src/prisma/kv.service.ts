@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 
+type RecordType = Record<
+    string,
+    { id: number; value: string; modified: Date; created: Date }
+>;
+
 @Injectable()
 export class KVDataBase {
     constructor(private prisma: PrismaService) {}
@@ -38,5 +43,19 @@ export class KVDataBase {
         } catch {
             return false;
         }
+    }
+
+    /** Get all records (for API) */
+    async getAll(): Promise<RecordType> {
+        const records = await this.prisma.kV.findMany();
+        return records.reduce((acc: RecordType, record) => {
+            acc[record.key] = {
+                id: record.id,
+                value: record.value,
+                modified: record.edited,
+                created: record.created
+            };
+            return acc;
+        }, {});
     }
 }
