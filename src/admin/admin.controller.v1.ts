@@ -14,7 +14,7 @@ export class AdminController {
 
     @Get('kv')
     @Auth(AuthEnum.Strict)
-    @Roles([RolesEnum.SuperAdmin])
+    @Roles([RolesEnum.ManageKV])
     async getKvList() {
         /** Get all KV keys */
 
@@ -23,7 +23,7 @@ export class AdminController {
 
     @Post('kv')
     @Auth(AuthEnum.Strict)
-    @Roles([RolesEnum.SuperAdmin])
+    @Roles([RolesEnum.ManageKV])
     async createKv(@Body() body: CreateKvDTO) {
         /** Create record */
 
@@ -32,7 +32,7 @@ export class AdminController {
 
     @Delete('kv')
     @Auth(AuthEnum.Strict)
-    @Roles([RolesEnum.SuperAdmin])
+    @Roles([RolesEnum.ManageKV])
     async deleteKv(@Body() body: DeleteKvDTO) {
         /** Delete record */
 
