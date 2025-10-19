@@ -1,11 +1,4 @@
-import {
-    Controller,
-    Get,
-    Param,
-    Header,
-    StreamableFile,
-    Res
-} from '@nestjs/common';
+import { Controller, Get, Param, StreamableFile, Res } from '@nestjs/common';
 import { AvatarsService } from './avatars.service';
 import { Response } from 'express';
 
@@ -14,7 +7,6 @@ export class AvatarsController {
     constructor(private readonly avatarsService: AvatarsService) {}
 
     @Get(':uid')
-    @Header('Content-Type', 'image/png')
     async mainAvatar(
         @Param('uid') uid: string,
         @Res({ passthrough: true }) res: Response
@@ -27,56 +19,56 @@ export class AvatarsController {
             return;
         }
 
-        return new StreamableFile(buff);
+        return new StreamableFile(buff, { type: 'image/png' });
     }
 
     @Get(':uid/discord')
-    @Header('Content-Type', 'image/png')
     async discord(@Param('uid') uid: string) {
         /* Get user' Discord avatar */
 
         return new StreamableFile(
-            await this.avatarsService.getDiscordAvatar(uid)
+            await this.avatarsService.getDiscordAvatar(uid),
+            { type: 'image/png' }
         );
     }
 
     @Get(':uid/minecraft')
-    @Header('Content-Type', 'image/png')
     async minecraft(@Param('uid') uid: string) {
         /* Get user' Minecraft avatar */
 
         return new StreamableFile(
-            await this.avatarsService.getMinecraftAvatar(uid)
+            await this.avatarsService.getMinecraftAvatar(uid),
+            { type: 'image/png' }
         );
     }
 
     @Get(':uid/google')
-    @Header('Content-Type', 'image/png')
     async google(@Param('uid') uid: string) {
         /* Get user' Google avatar */
 
         return new StreamableFile(
-            await this.avatarsService.getGoogleAvatar(uid)
+            await this.avatarsService.getGoogleAvatar(uid),
+            { type: 'image/png' }
         );
     }
 
     @Get(':uid/twitch')
-    @Header('Content-Type', 'image/png')
     async twitch(@Param('uid') uid: string) {
         /* Get user' Twitch avatar */
 
         return new StreamableFile(
-            await this.avatarsService.getTwitchAvatar(uid)
+            await this.avatarsService.getTwitchAvatar(uid),
+            { type: 'image/png' }
         );
     }
 
     @Get(':uid/telegram')
-    @Header('Content-Type', 'image/png')
     async telegram(@Param('uid') uid: string) {
         /* Get user' Telegram avatar */
 
         return new StreamableFile(
-            await this.avatarsService.getTelegramAvatar(uid)
+            await this.avatarsService.getTelegramAvatar(uid),
+            { type: 'image/png' }
         );
     }
 }
