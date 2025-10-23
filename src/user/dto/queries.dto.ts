@@ -20,7 +20,7 @@ export class PageTakeDTO {
     @IsOptional()
     @Type(() => Number)
     @Min(1)
-    @Max(50)
+    @Max(100)
     take?: number;
 
     @IsNumber()
@@ -30,21 +30,8 @@ export class PageTakeDTO {
     page?: number;
 }
 
-export class PageTakeQueryDTO {
+export class PageTakeQueryDTO extends PageTakeDTO {
     @IsString()
     @IsOptional()
     query?: string;
-
-    @IsNumber()
-    @IsOptional()
-    @Type(() => Number)
-    @Min(1)
-    @Max(100)
-    take?: number;
-
-    @IsNumber()
-    @IsOptional()
-    @Type(() => Number)
-    @Min(0)
-    page?: number;
 }
