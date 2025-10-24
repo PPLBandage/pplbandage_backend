@@ -63,7 +63,8 @@ export const generateModerationState = (el: BandageFull) => {
             id: bandage_moderation.issuer.id,
             name: bandage_moderation.issuer.name,
             username: bandage_moderation.issuer.username
-        }
+        },
+        issue_date: bandage_moderation.created
     };
 };
 
