@@ -1,17 +1,13 @@
 import { IsNotEmpty, IsString } from 'class-validator';
 
-export class CreateKvDTO {
-    @IsString()
-    @IsNotEmpty()
-    key!: string;
-
-    @IsString()
-    @IsNotEmpty()
-    value!: string;
-}
-
 export class DeleteKvDTO {
     @IsString()
     @IsNotEmpty()
     key!: string;
+}
+
+export class CreateKvDTO extends DeleteKvDTO {
+    @IsString()
+    @IsNotEmpty()
+    value!: string;
 }

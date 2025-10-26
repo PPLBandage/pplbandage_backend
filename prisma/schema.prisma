@@ -185,6 +185,8 @@ model Tags {
     name_search String    @default("")
     bandages    Bandage[] @relation("Tags")
     verified    Boolean   @default(false)
+
+    Events Events[]
 }
 
 model Notifications {
@@ -202,4 +204,14 @@ model KV {
     value   String   @default("")
     created DateTime @default(now())
     edited  DateTime @default(now())
+}
+
+model Events {
+    id         Int      @id @default(autoincrement())
+    name       String
+    start_date DateTime
+    end_date   DateTime
+    Tags       Tags[]
+
+    boost_amount Int
 }

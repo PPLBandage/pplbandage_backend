@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import * as sharp from 'sharp';
@@ -18,6 +18,7 @@ import responses_common from 'src/localization/common.localization';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import { TelegramService } from 'src/notifications/telegram.service';
 import { KVDataBase } from 'src/prisma/kv.service';
+import { EventsService } from './events/events.service';
 
 export const sort_keys = ['popular_up', 'date_up', 'name_up', 'relevant_up'];
 
@@ -57,7 +58,9 @@ export class WorkshopService {
         private prisma: PrismaService,
         private readonly notifications: NotificationService,
         private readonly telegramNotifications: TelegramService,
-        private readonly kvService: KVDataBase
+        private readonly kvService: KVDataBase,
+        @Inject(forwardRef(() => EventsService))
+        private readonly eventsService: EventsService
     ) {}
 
     async getBandagesCount() {
@@ -257,27 +260,36 @@ export class WorkshopService {
             views_to_stars_relation_raw ?? '150'
         );
 
-        const getRelevance = (bandage: {
-            stars: unknown[];
-            creationDate: Date;
-            relevance_modifier: number;
-            views: number;
-        }) => {
+        const getRelevance = async (bandage: (typeof data)[0]) => {
             const daysSinceCreation =
                 (Date.now() - new Date(bandage.creationDate).getTime()) /
                 (1000 * 60 * 60 * 24);
 
+            const eventBoost = await this.eventsService.getEventBoostForTags(
+                bandage.tags.map(tag => tag.name_search)
+            );
             const stars =
                 bandage.stars.length + // Real stars count
                 (daysSinceCreation < start_boost_duration ? start_boost : 0) + // Start boost
                 bandage.relevance_modifier + // Relevance modifier
+                eventBoost + // Event-based boost
                 bandage.views / views_to_stars_relation; // Views count, represented as stars
             return stars / Math.pow(daysSinceCreation + 1, downgrade_factor);
         };
 
         const startIndex = page * take;
+
+        // Calculate relevance for all items first
+        const relevanceMap = new Map<number, number>();
+        await Promise.all(
+            data.map(async bandage => {
+                const relevance = await getRelevance(bandage);
+                relevanceMap.set(bandage.id, relevance);
+            })
+        );
+
         const ratedWorks = data
-            .sort((a, b) => getRelevance(b) - getRelevance(a))
+            .sort((a, b) => relevanceMap.get(b.id)! - relevanceMap.get(a.id)!)
             .slice(startIndex, startIndex + take);
         const result = generateResponse(ratedWorks, session, available);
         return {
@@ -399,12 +411,7 @@ export class WorkshopService {
         return { external_id: result.externalId };
     }
 
-    /** Updates / creates list of tags for bandage */
-    async updateTagsForBandage(
-        tags: string[],
-        bandage: BandageFull,
-        verified: boolean
-    ) {
+    async createTags(tags: string[], verified: boolean) {
         const loweredTags = tags.map(t =>
             t.toLowerCase().replace(/[^\p{L}\p{N} ]/gu, '')
         );
@@ -434,6 +441,24 @@ export class WorkshopService {
             }
         }
 
+        return tagIds;
+    }
+
+    async clearTags() {
+        await this.prisma.tags.deleteMany({
+            where: {
+                AND: [{ bandages: { none: {} } }, { Events: { none: {} } }]
+            }
+        });
+    }
+
+    /** Connects list of tags for bandage */
+    async updateTagsForBandage(
+        tags: string[],
+        bandage: BandageFull,
+        verified: boolean
+    ) {
+        const tagIds = await this.createTags(tags, verified);
         await this.prisma.bandage.update({
             where: { id: bandage.id },
             data: {
@@ -443,9 +468,7 @@ export class WorkshopService {
             }
         });
 
-        await this.prisma.tags.deleteMany({
-            where: { bandages: { none: {} } }
-        });
+        await this.clearTags();
     }
 
     async getDataForOg(id: string, session?: Session) {

@@ -7,12 +7,12 @@ import { AuthEnum, RolesEnum } from 'src/interfaces/types';
 import { KVDataBase } from 'src/prisma/kv.service';
 import { CreateKvDTO, DeleteKvDTO } from './dto/kv.dto';
 
-@Controller({ version: '1', path: 'admin' })
+@Controller({ version: '1', path: 'admin/kv' })
 @UseGuards(AuthGuard, RolesGuard)
-export class AdminController {
+export class KvController {
     constructor(private readonly kvService: KVDataBase) {}
 
-    @Get('kv')
+    @Get()
     @Auth(AuthEnum.Strict)
     @Roles([RolesEnum.ManageKV])
     async getKvList() {
@@ -21,7 +21,7 @@ export class AdminController {
         return await this.kvService.getAll();
     }
 
-    @Post('kv')
+    @Post()
     @Auth(AuthEnum.Strict)
     @Roles([RolesEnum.ManageKV])
     async createKv(@Body() body: CreateKvDTO) {
@@ -30,7 +30,7 @@ export class AdminController {
         await this.kvService.set(body.key, body.value);
     }
 
-    @Delete('kv')
+    @Delete()
     @Auth(AuthEnum.Strict)
     @Roles([RolesEnum.ManageKV])
     async deleteKv(@Body() body: DeleteKvDTO) {

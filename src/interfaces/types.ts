@@ -1,6 +1,7 @@
 type ValueOf<T> = T[keyof T];
 
 export const RolesEnum = {
+    ManageEvents: 7,
     ManageKV: 6,
     SuperAdmin: 5,
     UpdateUsers: 3,

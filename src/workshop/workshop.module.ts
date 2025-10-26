@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { WorkshopController } from './workshop.controller.v1';
 import { WorkshopService } from './workshop.service';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -9,6 +9,7 @@ import { UsersModule } from 'src/user/user.module';
 import { MinecraftModule } from 'src/minecraft/minecraft.module';
 import { TelegramModule } from 'src/notifications/telegram.module';
 import { KVDataBase } from 'src/prisma/kv.service';
+import { EventsModule } from './events/events.module';
 
 @Module({
     controllers: [WorkshopController],
@@ -23,7 +24,9 @@ import { KVDataBase } from 'src/prisma/kv.service';
         AuthModule,
         UsersModule,
         MinecraftModule,
-        TelegramModule
-    ]
+        TelegramModule,
+        forwardRef(() => EventsModule)
+    ],
+    exports: [WorkshopService]
 })
 export class WorkshopModule {}
