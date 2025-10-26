@@ -1,35 +1,4 @@
-import type { Request } from 'express';
-import {
-    Bandage,
-    BandageModeration,
-    Tags,
-    User,
-    UserSettings
-} from '@prisma/client';
-import { Session } from 'src/auth/auth.service';
-
-export interface RequestSession extends Request {
-    session: Session;
-}
-
-export interface RequestSessionWeak extends Request {
-    session?: Session;
-}
-
-interface UserAuthor extends User {
-    UserSettings: UserSettings | null;
-}
-
-interface BandageModerationIssuer extends BandageModeration {
-    issuer: User;
-}
-
-export interface BandageFull extends Bandage {
-    User: UserAuthor;
-    stars: User[];
-    tags: Tags[];
-    BandageModeration: BandageModerationIssuer | null;
-}
+import { BandageFull, Session } from 'src/interfaces/interfaces';
 
 export const generateFlags = (el: BandageFull, session?: Session) => {
     const starred = el.stars.some(val => val.id === session?.user.id);

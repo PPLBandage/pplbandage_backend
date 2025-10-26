@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { BandageFull } from 'src/common/bandage_response';
+import { BandageFull } from 'src/interfaces/interfaces';
 import { Telegraf } from 'telegraf';
 import { InputFile } from 'telegraf/typings/core/types/typegram';
 

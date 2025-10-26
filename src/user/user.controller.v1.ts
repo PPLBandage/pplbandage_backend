@@ -19,13 +19,10 @@ import { AuthEnum, RolesEnum } from 'src/interfaces/types';
 import { Auth } from 'src/decorators/auth.decorator';
 import { Roles } from 'src/decorators/access.decorator';
 import { UpdateSelfUserDto, UpdateUsersDto } from './dto/body.dto';
-import {
-    RequestSession,
-    RequestSessionWeak
-} from 'src/common/bandage_response';
 import { PageTakeDTO, PageTakeQueryDTO } from './dto/queries.dto';
 import { AuthService } from 'src/auth/auth.service';
 import { LocalAccessThrottlerGuard } from 'src/guards/throttlerLocalAccess.guard';
+import { RequestSession, RequestSessionWeak } from 'src/interfaces/interfaces';
 
 @Controller({ version: '1', path: 'users' })
 @UseGuards(AuthGuard, RolesGuard)

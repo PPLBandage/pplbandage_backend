@@ -18,8 +18,8 @@ import { Throttle } from '@nestjs/throttler';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { Auth } from 'src/decorators/auth.decorator';
 import { AuthEnum } from 'src/interfaces/types';
-import { RequestSessionWeak } from 'src/common/bandage_response';
 import { Response } from 'express';
+import { RequestSessionWeak } from 'src/interfaces/interfaces';
 
 @Controller({ path: 'minecraft', version: '1' })
 export class MinecraftController {

@@ -11,11 +11,11 @@ import { AuthGuard } from 'src/guards/auth.guard';
 import { ConnectionsService } from './connections.service';
 import { Auth } from 'src/decorators/auth.decorator';
 import { AuthEnum } from 'src/interfaces/types';
-import { RequestSession } from 'src/common/bandage_response';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import { Throttle } from '@nestjs/throttler';
 import responses_minecraft from 'src/localization/minecraft.localization';
 import { CodeDTO } from 'src/auth/dto/code.dto';
+import { RequestSession } from 'src/interfaces/interfaces';
 
 @Controller({ version: '1', path: 'users/@me/connections' })
 @UseGuards(AuthGuard)

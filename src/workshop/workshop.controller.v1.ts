@@ -21,11 +21,6 @@ import { Auth } from 'src/decorators/auth.decorator';
 import { CreateBandageDto } from './dto/createBandage.dto';
 import { BandageModerationDto, EditBandageDto } from './dto/editBandage.dto';
 import {
-    BandageFull,
-    RequestSession,
-    RequestSessionWeak
-} from 'src/common/bandage_response';
-import {
     TagQueryDto,
     WidthQueryDTO,
     WorkshopSearchQueryDTO
@@ -36,6 +31,11 @@ import { generateKey } from 'src/guards/throttlerViews';
 import { LocalAccessThrottlerGuard } from 'src/guards/throttlerLocalAccess.guard';
 import { Roles } from 'src/decorators/access.decorator';
 import { RolesGuard } from 'src/guards/roles.guard';
+import {
+    BandageFull,
+    RequestSession,
+    RequestSessionWeak
+} from 'src/interfaces/interfaces';
 
 @Controller({ path: 'workshop', version: '1' })
 @UseGuards(AuthGuard, RolesGuard)

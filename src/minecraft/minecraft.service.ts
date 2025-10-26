@@ -6,7 +6,12 @@ import { Buffer } from 'buffer';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import responses from 'src/localization/minecraft.localization';
 import { readdir, readFile } from 'fs/promises';
-import { Session } from 'src/auth/auth.service';
+import {
+    EncodedResponse,
+    Profile,
+    SearchParams,
+    Session
+} from 'src/interfaces/interfaces';
 
 @Injectable()
 export class MinecraftService {

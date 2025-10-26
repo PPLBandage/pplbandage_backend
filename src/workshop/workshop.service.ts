@@ -3,12 +3,12 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import * as sharp from 'sharp';
 import { NotificationService } from '../notifications/notifications.service';
-import { hasAccess, Session } from 'src/auth/auth.service';
+import { hasAccess } from 'src/auth/auth.service';
 import { RolesEnum } from 'src/interfaces/types';
 import { CreateBandageDto } from './dto/createBandage.dto';
 import { EditBandageDto } from './dto/editBandage.dto';
+import { BandageFull, Session } from 'src/interfaces/interfaces';
 import {
-    BandageFull,
     generateFlags,
     generateModerationState,
     generateResponse

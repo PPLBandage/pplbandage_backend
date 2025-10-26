@@ -1,5 +1,15 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-interface EncodedResponse {
+import {
+    AccessRoles,
+    Bandage,
+    BandageModeration,
+    Minecraft,
+    Tags,
+    User,
+    UserSettings
+} from '@prisma/client';
+import { Request } from 'express';
+
+export interface EncodedResponse {
     timestamp: number;
     profileId: string;
     profileName: string;
@@ -16,7 +26,7 @@ interface EncodedResponse {
     };
 }
 
-interface Profile {
+export interface Profile {
     id: string;
     name: string;
     properties: {
@@ -25,22 +35,73 @@ interface Profile {
     }[];
 }
 
-interface SearchUnit {
+export interface SearchUnit {
     name: string;
     uuid: string;
     head: string;
 }
 
-interface SearchParams {
+export interface SearchParams {
     fragment: string;
     take: number;
     page: number;
 }
 
-interface Notifications {
+export interface Notifications {
     id?: number;
     content: string;
     author?: string;
     type?: number;
     creation_date?: Date;
+}
+
+export interface SessionToken {
+    userId: number;
+    access: number;
+    iat: number;
+    exp: number;
+}
+
+export interface Session {
+    sessionId: string;
+    cookie: string;
+    user: UserFull;
+}
+
+export interface UserFull extends User {
+    profile: Minecraft | null;
+    UserSettings: UserSettings | null;
+    Bandage: Bandage[];
+    stars: Bandage[];
+    notifications: Notifications[];
+    AccessRoles: AccessRoles[];
+    subscribers: User[];
+    subscriptions: User[];
+}
+
+export interface UserAccess extends User {
+    AccessRoles: AccessRoles[];
+}
+
+export interface RequestSession extends Request {
+    session: Session;
+}
+
+export interface RequestSessionWeak extends Request {
+    session?: Session;
+}
+
+export interface UserAuthor extends User {
+    UserSettings: UserSettings | null;
+}
+
+export interface BandageModerationIssuer extends BandageModeration {
+    issuer: User;
+}
+
+export interface BandageFull extends Bandage {
+    User: UserAuthor;
+    stars: User[];
+    tags: Tags[];
+    BandageModeration: BandageModerationIssuer | null;
 }

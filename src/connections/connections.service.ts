@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { Session } from 'src/auth/auth.service';
 import { DiscordAuthService } from 'src/auth/providers/discord/discord.service';
 import { GoogleAuthService } from 'src/auth/providers/google/google.service';
 import { TelegramAuthService } from 'src/auth/providers/telegram/telegram.service';
 import { TwitchAuthService } from 'src/auth/providers/twitch/twitch.service';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
+import { Session } from 'src/interfaces/interfaces';
 import responses_minecraft from 'src/localization/minecraft.localization';
 import { MinecraftService } from 'src/minecraft/minecraft.service';
 import { PrismaService } from 'src/prisma/prisma.service';

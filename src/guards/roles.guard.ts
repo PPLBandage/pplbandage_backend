@@ -5,8 +5,8 @@ import {
     HttpException
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { RequestSessionWeak } from 'src/common/bandage_response';
 import { Roles } from 'src/decorators/access.decorator';
+import { RequestSessionWeak } from 'src/interfaces/interfaces';
 import { RolesEnum } from 'src/interfaces/types';
 
 @Injectable()

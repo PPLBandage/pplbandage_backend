@@ -19,11 +19,11 @@ import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { AuthEnum } from 'src/interfaces/types';
 import { Auth } from 'src/decorators/auth.decorator';
-import { RequestSessionWeak } from 'src/common/bandage_response';
 import {
     TelegramService,
     ThreadType
 } from 'src/notifications/telegram.service';
+import { RequestSessionWeak } from 'src/interfaces/interfaces';
 
 @Controller({ version: '1' })
 export class RootController {

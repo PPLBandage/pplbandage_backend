@@ -1,6 +1,7 @@
 import { HttpException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { hasAccess, Session } from 'src/auth/auth.service';
+import { hasAccess } from 'src/auth/auth.service';
+import { Session } from 'src/interfaces/interfaces';
 import { UpdateSelfUserDto, UpdateUsersDto } from './dto/body.dto';
 import { generateResponse } from 'src/common/bandage_response';
 import { RolesEnum } from 'src/interfaces/types';

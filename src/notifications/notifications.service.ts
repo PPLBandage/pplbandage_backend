@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Session } from 'src/auth/auth.service';
-import { BandageFull } from 'src/common/bandage_response';
+import { BandageFull, Notifications, Session } from 'src/interfaces/interfaces';
 
 /**
 @types  

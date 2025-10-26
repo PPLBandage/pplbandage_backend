@@ -1,50 +1,20 @@
 import { HttpException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import {
-    Bandage,
-    Minecraft,
-    User,
-    UserSettings,
-    Notifications,
-    AccessRoles,
-    Prisma
-} from '@prisma/client';
+import { AccessRoles, Prisma } from '@prisma/client';
 import { sign, verify } from 'jsonwebtoken';
 import { RolesEnum } from 'src/interfaces/types';
 import { UAParser } from 'ua-parser-js';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import responses from 'src/localization/common.localization';
 import { slugify } from 'transliteration';
+import {
+    Session,
+    SessionToken,
+    UserAccess,
+    UserFull
+} from 'src/interfaces/interfaces';
 
 const EPOCH = 1672531200000n;
-
-interface SessionToken {
-    userId: number;
-    access: number;
-    iat: number;
-    exp: number;
-}
-
-export interface Session {
-    sessionId: string;
-    cookie: string;
-    user: UserFull;
-}
-
-export interface UserFull extends User {
-    profile: Minecraft | null;
-    UserSettings: UserSettings | null;
-    Bandage: Bandage[];
-    stars: Bandage[];
-    notifications: Notifications[];
-    AccessRoles: AccessRoles[];
-    subscribers: User[];
-    subscriptions: User[];
-}
-
-export interface UserAccess extends User {
-    AccessRoles: AccessRoles[];
-}
 
 export const generateCookie = (session: string, exp: number): string => {
     /* generate cookie string */
@@ -66,13 +36,6 @@ export const hasAccess = (
     );
 };
 
-export const generateSnowflake = (increment: bigint, date?: Date): string => {
-    const timestamp =
-        BigInt(date ? new Date(date).getTime() : Date.now()) - EPOCH;
-    const snowflake = (timestamp << 22n) | increment;
-    return snowflake.toString();
-};
-
 @Injectable()
 export class AuthService {
     private readonly logger = new Logger(AuthService.name);
@@ -92,6 +55,13 @@ export class AuthService {
             }
         }
     };
+
+    generateSnowflake(increment: bigint, date?: Date): string {
+        const timestamp =
+            BigInt(date ? new Date(date).getTime() : Date.now()) - EPOCH;
+        const snowflake = (timestamp << 22n) | increment;
+        return snowflake.toString();
+    }
 
     filterUsername(username: string): string {
         return username.replace(/[^A-Za-z0-9_-]/g, '');
@@ -127,7 +97,7 @@ export class AuthService {
         const users_count = await this.prisma.user.count();
         return await this.prisma.user.create({
             data: {
-                id: generateSnowflake(BigInt(users_count)),
+                id: this.generateSnowflake(BigInt(users_count)),
                 username: this.filterUsername(finalUsername),
                 name,
                 UserSettings: { create: {} },
@@ -145,7 +115,7 @@ export class AuthService {
         user_agent: string,
         roles: AccessRoles[]
     ) {
-        if (user.UserSettings!.banned) {
+        if (user.UserSettings?.banned) {
             await this.prisma.sessions.deleteMany({
                 where: { userId: user.id }
             });

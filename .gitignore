@@ -58,6 +58,7 @@ pids
 *.pid
 *.seed
 *.pid.lock
+CLAUDE.md
 .claude
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
