@@ -160,7 +160,8 @@ export class DiscordAuthService {
         return await this.authService.createSession(
             user,
             user_agent,
-            user_roles
+            user_roles,
+            'discord'
         );
     }
 }

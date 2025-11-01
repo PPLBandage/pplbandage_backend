@@ -18,7 +18,6 @@ export class UserService {
     async getUser(session: Session) {
         /* get user, associated with session */
 
-        this.logger.debug('Received /@me request');
         if (session.user.UserSettings!.banned) {
             await this.prisma.sessions.deleteMany({
                 where: { userId: session.user.id }
@@ -26,21 +25,16 @@ export class UserService {
             throw new LocaleException(responses_common.UNAUTHORIZED, 401);
         }
 
-        this.logger.debug('User updated');
-
         const starred_bandages = await this.prisma.bandage.findMany({
             where: { userId: session.user.id },
             include: { stars: true }
         });
-
-        this.logger.debug('Starred bandages got');
 
         const stars_count = starred_bandages.reduce(
             (acc, current_val) => acc + current_val.stars.length,
             0
         );
 
-        this.logger.debug('Processed');
         return {
             userID: session.user.id,
             username: session.user.username,
@@ -343,6 +337,12 @@ export class UserService {
         if (session.user.id === user.id && !!data.banned)
             throw new LocaleException(responses.SELFBAN, 400);
 
+        this.logger.log(
+            `Admin *${session.user.username}* updated user *${username}*:\n` +
+                `   *banned*: ${data.banned}`,
+            UserService.name,
+            true
+        );
         await this.prisma.userSettings.update({
             where: { userId: user.id },
             data: {
@@ -436,5 +436,11 @@ export class UserService {
 
             await tx.user.delete({ where: { id: user_id } });
         });
+
+        this.logger.log(
+            `User deleted: ${session.user.name}`,
+            UserService.name,
+            true
+        );
     }
 }

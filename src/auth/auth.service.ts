@@ -95,7 +95,7 @@ export class AuthService {
         }
 
         const users_count = await this.prisma.user.count();
-        return await this.prisma.user.create({
+        const data = await this.prisma.user.create({
             data: {
                 id: this.generateSnowflake(BigInt(users_count)),
                 username: this.filterUsername(finalUsername),
@@ -108,12 +108,24 @@ export class AuthService {
             },
             include: { UserSettings: true }
         });
+
+        this.logger.log(
+            `Registered new user: [${data.name}](${process.env.DOMAIN}/users/${data.username}) with id ${data.id}`,
+            AuthService.name,
+            true
+        );
+        return data;
     }
 
     async createSession(
-        user: { id: string; UserSettings: { banned: boolean } | null },
+        user: {
+            id: string;
+            UserSettings: { banned: boolean } | null;
+            name: string;
+        },
         user_agent: string,
-        roles: AccessRoles[]
+        roles: AccessRoles[],
+        provider?: string
     ) {
         if (user.UserSettings?.banned) {
             await this.prisma.sessions.deleteMany({
@@ -141,6 +153,13 @@ export class AuthService {
                 User: { connect: { id: user.id } }
             }
         });
+
+        this.logger.log(
+            `User *${user.name}* logged in through *${provider}*`,
+            AuthService.name,
+            true
+        );
+
         return token_record;
     }
 
@@ -242,6 +261,12 @@ export class AuthService {
         await this.prisma.sessions.delete({
             where: { sessionId: session.sessionId }
         });
+
+        this.logger.log(
+            `User *${session.user.name}* logged out`,
+            AuthService.name,
+            true
+        );
     }
 
     async getSessions(session: Session) {

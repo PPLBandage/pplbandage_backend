@@ -1,4 +1,4 @@
-import { Inject, Injectable, forwardRef } from '@nestjs/common';
+import { Inject, Injectable, Logger, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import * as sharp from 'sharp';
@@ -54,6 +54,7 @@ export const rgbToHex = (r: number, g: number, b: number) => {
 
 @Injectable()
 export class WorkshopService {
+    private readonly logger = new Logger(WorkshopService.name);
     constructor(
         private prisma: PrismaService,
         private readonly notifications: NotificationService,
@@ -711,6 +712,11 @@ export class WorkshopService {
         }
 
         await this.prisma.bandage.delete({ where: { id: bandage.id } });
+        this.logger.log(
+            `Bandage *${bandage.title}* with external id ${bandage.externalId} deleted!`,
+            WorkshopService.name,
+            true
+        );
     }
 
     async validateBandage(base64: string, heightInit?: number) {
@@ -763,6 +769,12 @@ export class WorkshopService {
             where: { externalId: externalId },
             data: { archived: true }
         });
+
+        this.logger.log(
+            `Bandage *${bandage.title}* with external id ${bandage.externalId} archived!`,
+            WorkshopService.name,
+            true
+        );
     }
 
     async addView(external_id: string) {

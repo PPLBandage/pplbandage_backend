@@ -147,7 +147,8 @@ export class TwitchAuthService {
         return await this.authService.createSession(
             user,
             user_agent,
-            user_roles
+            user_roles,
+            'twitch'
         );
     }
 }
