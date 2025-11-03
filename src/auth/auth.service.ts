@@ -110,7 +110,8 @@ export class AuthService {
         });
 
         this.logger.log(
-            `Registered new user: [${data.name}](${process.env.DOMAIN}/users/${data.username}) with id ${data.id}`,
+            `Registered new user: [${data.name}](${process.env.DOMAIN}/users/${data.username}) with id ${data.id}\n` +
+                `Total users count: ${users_count + 1}`,
             AuthService.name,
             true
         );
@@ -122,6 +123,7 @@ export class AuthService {
             id: string;
             UserSettings: { banned: boolean } | null;
             name: string;
+            username: string;
         },
         user_agent: string,
         roles: AccessRoles[],
@@ -155,7 +157,7 @@ export class AuthService {
         });
 
         this.logger.log(
-            `User *${user.name}* logged in through *${provider}*`,
+            `User [${user.name}](${process.env.DOMAIN}/users/${user.username}) logged in through *${provider}*`,
             AuthService.name,
             true
         );
@@ -263,7 +265,7 @@ export class AuthService {
         });
 
         this.logger.log(
-            `User *${session.user.name}* logged out`,
+            `User [${session.user.name}](${process.env.DOMAIN}/users/${session.user.username}) logged out`,
             AuthService.name,
             true
         );
