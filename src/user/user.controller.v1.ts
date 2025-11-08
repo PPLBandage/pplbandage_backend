@@ -151,6 +151,14 @@ export class UserController {
         );
     }
 
+    @Get('@me/subscriptions')
+    @Auth(AuthEnum.Strict)
+    async getMeSubscriptions(@Req() request: RequestSession) {
+        /* get user's subscriptions */
+
+        return await this.userService.getSubscriptions(request.session);
+    }
+
     @Get(':username')
     @Auth(AuthEnum.Weak)
     @UseGuards(LocalAccessThrottlerGuard)

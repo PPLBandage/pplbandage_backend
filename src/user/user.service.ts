@@ -414,6 +414,7 @@ export class UserService {
         return { count };
     }
 
+    /** Delete self account */
     async deleteMe(session: Session) {
         if (
             session.user.AccessRoles.some(i => i.level === RolesEnum.SuperAdmin)
@@ -442,5 +443,19 @@ export class UserService {
             UserService.name,
             true
         );
+    }
+
+    /** Get me subscriptions */
+    async getSubscriptions(session: Session) {
+        const subscribers = await this.prisma.user.findMany({
+            where: { subscribers: { some: { id: session.user.id } } }
+        });
+
+        return subscribers.map(user => ({
+            id: user.id,
+            name: user.name,
+            username: user.username,
+            joined_at: user.joined_at
+        }));
     }
 }
