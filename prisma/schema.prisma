@@ -46,6 +46,15 @@ model User {
     GoogleAuth   GoogleAuth?
     TwitchAuth   TwitchAuth?
     TelegramAuth TelegramAuth?
+
+    badges UserBadges[]
+}
+
+model UserBadges {
+    id          Int    @id @default(autoincrement())
+    internal_id Int    @unique
+    name        String
+    users       User[]
 }
 
 model UserSettings {

@@ -9,11 +9,19 @@ import { LocaleException } from 'src/interceptors/localization.interceptor';
 
 import responses from 'src/localization/users.localization';
 import responses_common from 'src/localization/common.localization';
+import { UserBadges } from '@prisma/client';
 
 @Injectable()
 export class UserService {
     private readonly logger = new Logger(UserService.name);
     constructor(private prisma: PrismaService) {}
+
+    buildUserBadges(badges: UserBadges[], offset: number) {
+        return badges.reduce(
+            (acc, val) => acc | (1 << (val.internal_id + offset)),
+            0
+        );
+    }
 
     async getUser(session: Session) {
         /* get user, associated with session */
@@ -44,7 +52,8 @@ export class UserService {
             profile_theme: session.user.UserSettings!.profile_theme,
             has_unreaded_notifications: session.user.has_unreaded_notifications,
             stars_count: stars_count,
-            subscribers_count: session.user.subscribers.length
+            subscribers_count: session.user.subscribers.length,
+            badges: this.buildUserBadges(session.user.badges, 0)
         };
     }
 
@@ -157,7 +166,8 @@ export class UserService {
                 Bandage: true,
                 UserSettings: true,
                 AccessRoles: true,
-                subscribers: true
+                subscribers: true,
+                badges: true
             }
         });
 
@@ -239,7 +249,8 @@ export class UserService {
             is_subscribed: subscribed,
             last_accessed: hasAccess(session?.user, RolesEnum.UpdateUsers)
                 ? last_accessed?.last_accessed
-                : undefined
+                : undefined,
+            badges: this.buildUserBadges(user.badges, 0)
         };
     }
 

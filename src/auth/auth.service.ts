@@ -51,7 +51,8 @@ export class AuthService {
                 stars: true,
                 AccessRoles: true,
                 subscribers: true,
-                subscriptions: true
+                subscriptions: true,
+                badges: true
             }
         }
     };

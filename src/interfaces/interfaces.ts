@@ -5,6 +5,7 @@ import {
     Minecraft,
     Tags,
     User,
+    UserBadges,
     UserSettings
 } from '@prisma/client';
 import { Request } from 'express';
@@ -77,6 +78,7 @@ export interface UserFull extends User {
     AccessRoles: AccessRoles[];
     subscribers: User[];
     subscriptions: User[];
+    badges: UserBadges[];
 }
 
 export interface UserAccess extends User {
