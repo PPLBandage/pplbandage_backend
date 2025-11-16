@@ -21,20 +21,14 @@ export class TelegramLogger implements LoggerService {
     log(message: string, context?: string, telegram?: boolean) {
         this.consoleLogger.log(message, context);
         if (telegram)
-            this.send(`*[LOG] ${context ? `[${context}]` : ''}* ${message}`);
+            this.send(`*[LOG]${context ? `[${context}]` : ''}* ${message}`);
     }
 
-    error(
-        message: string,
-        trace?: string,
-        context?: string,
-        telegram?: boolean
-    ) {
+    error(message: string, trace?: string, context?: string) {
         this.consoleLogger.error(message, trace, context);
-        if (telegram)
-            this.send(
-                `*[ERROR]${context ? `[${context}]` : ''}* ${message}\n${trace ?? ''}`
-            );
+        this.send(
+            `*[ERROR]${context ? `[${context}]` : ''}* ${message}\n${trace ?? ''}`
+        );
     }
 
     warn(message: string, context?: string, telegram?: boolean) {
