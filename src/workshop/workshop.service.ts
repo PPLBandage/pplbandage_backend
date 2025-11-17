@@ -633,25 +633,34 @@ export class WorkshopService {
         if (
             (!isBandageOwner && !canManageBandages) ||
             (bandage.archived && !canManageBandages)
-        ) {
+        )
             throw new LocaleException(responses_common.FORBIDDEN, 403);
-        }
 
-        let title = undefined;
-        let description = undefined;
-        let access_level = undefined;
+        const update_data: Record<string, unknown> = {
+            title: body.title,
+            description: body.description,
+            access_level: body.access_level,
+            colorable: body.colorable
+        };
+
+        const prev_data: Record<string, unknown> = {
+            title: bandage.title,
+            description: bandage.description,
+            access_level: bandage.access_level,
+            colorable: bandage.colorable
+        };
+
+        const dirty_data: Record<string, unknown> = Object.entries(prev_data)
+            .filter(([key, value]) => value !== update_data[key])
+            .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {});
+
+        const dirty_tags = bandage.tags.filter(
+            tag => !body.tags?.includes(tag.name)
+        );
+        if (dirty_tags.length) dirty_data.tags = dirty_tags;
 
         const admin = hasAccess(session.user, RolesEnum.ManageBandages);
-        if (body.title !== undefined) title = body.title;
-        if (body.description !== undefined) description = body.description;
-
-        if (body.access_level !== undefined) {
-            const check_al = body.access_level;
-            if (!isNaN(check_al) && check_al >= 0 && check_al <= 2)
-                access_level = check_al;
-        }
-
-        if (body.tags) {
+        if (dirty_data.tags && body.tags) {
             // Connect or create tags for bandage
             await this.updateTagsForBandage(
                 body.tags,
@@ -664,17 +673,20 @@ export class WorkshopService {
             where: {
                 id: bandage.id
             },
-            data: {
-                title: title,
-                description: description,
-                colorable: body.colorable,
-                access_level: access_level
-            },
+            data: update_data,
             include: { User: true, tags: true }
         });
 
-        // Do some notifications
-        if (!admin && !bandage.BandageModeration?.is_final) {
+        const remoderation_fields = ['title', 'description', 'tags'];
+        let needs_to_remoderate = Object.keys(dirty_data).some(val =>
+            remoderation_fields.includes(val as string)
+        );
+
+        if (admin || bandage.BandageModeration?.is_final)
+            needs_to_remoderate = false;
+
+        if (needs_to_remoderate) {
+            // Do some notifications
             await this.changeBandageModeration(
                 result as BandageFull,
                 session,

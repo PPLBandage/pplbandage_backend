@@ -6,7 +6,9 @@ import {
     IsNumber,
     IsOptional,
     IsString,
+    Max,
     MaxLength,
+    Min,
     MinLength
 } from 'class-validator';
 
@@ -31,11 +33,13 @@ export class EditBandageDto {
 
     @IsOptional()
     @IsNumber({}, { message: 'Поле `access_level` должно иметь тип number' })
+    @Min(0)
+    @Max(2)
     access_level?: number;
 
     @IsOptional()
     @IsBoolean({ message: 'Поле `colorable` должно иметь тип boolean' })
-    colorable!: boolean;
+    colorable?: boolean;
 }
 
 export class BandageModerationDto {
