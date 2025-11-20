@@ -195,6 +195,11 @@ export class AuthService {
                     where: { id: sessionDB.id }
                 });
             } finally {
+                this.logger.warn(
+                    `Kicked user ${sessionDB.User.name} from account due user-agent mismatch`,
+                    AuthService.name,
+                    true
+                );
                 return undefined;
             }
         }
