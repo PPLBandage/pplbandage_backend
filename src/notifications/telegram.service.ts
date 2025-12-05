@@ -19,6 +19,10 @@ export class TelegramService implements OnModuleInit {
         this.bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN!);
     }
 
+    escapeMd(text: string) {
+        return text.replace(/([_*\[\]()~`>#+\-=|{}.!])/g, '\\$1');
+    }
+
     async onModuleInit() {
         this.bot.command('ping', ctx => ctx.reply('pong'));
 
@@ -60,9 +64,9 @@ export class TelegramService implements OnModuleInit {
                 bandage_tags ?? bandage.tags?.map?.(tag => tag.name) ?? [];
 
             const text =
-                `${message} · __[${bandage.User.name}](${process.env.DOMAIN}/users/${bandage.User.username})__\n\n` +
-                `[${bandage.title}](${process.env.DOMAIN}/workshop/${bandage.externalId})\n` +
-                `${bandage.description || '<нет описания>'}\n\n` +
+                `${message} · __[${this.escapeMd(bandage.User.name)}](${process.env.DOMAIN}/users/${bandage.User.username})__\n\n` +
+                `[${this.escapeMd(bandage.title)}](${process.env.DOMAIN}/workshop/${bandage.externalId})\n` +
+                `${this.escapeMd(bandage.description || '<нет описания>')}\n\n` +
                 `*Теги*\n${`\`${tags.join('`, `')}\``}\n\n` +
                 `*Имеет раздельные типы*\n${bandage.split_type ? 'Да' : 'Нет'}`;
 
