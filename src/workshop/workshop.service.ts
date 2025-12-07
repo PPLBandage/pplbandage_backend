@@ -725,7 +725,7 @@ export class WorkshopService {
 
         await this.prisma.bandage.delete({ where: { id: bandage.id } });
         this.logger.log(
-            `Bandage *${bandage.title}* with external id ${bandage.externalId} deleted!`,
+            `Bandage *${bandage.title}* with external id ${bandage.externalId} deleted by ${session.user.name}`,
             WorkshopService.name,
             true
         );
@@ -783,7 +783,7 @@ export class WorkshopService {
         });
 
         this.logger.log(
-            `Bandage *${bandage.title}* with external id ${bandage.externalId} archived!`,
+            `Bandage *${bandage.title}* with external id ${bandage.externalId} archived by ${session.user.name}`,
             WorkshopService.name,
             true
         );
