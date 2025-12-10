@@ -226,6 +226,13 @@ export class MinecraftService {
                 let cause = e;
                 if (e instanceof LocaleException) {
                     cause = JSON.stringify(e.getResponse());
+
+                    // Delete record if profile not exists
+                    if (e.getStatus() === 404) {
+                        await this.prisma.minecraft.delete({
+                            where: { uuid: skin.uuid }
+                        });
+                    }
                 }
                 console.error(
                     `Cannot revalidate skin cache for ${skin.default_nick}! Cause: ${cause}`
