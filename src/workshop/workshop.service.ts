@@ -614,7 +614,8 @@ export class WorkshopService {
                 access_level: bandage.access_level,
                 accent_color: bandage.accent_color,
                 moderation: generateModerationState(bandage),
-                star_type: bandage.star_type
+                star_type: bandage.star_type,
+                views: bandage.views
             }
         };
     }
