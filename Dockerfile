@@ -1,16 +1,18 @@
 FROM node:20-alpine
 
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl ca-certificates
 
 WORKDIR /app
 
+COPY package*.json ./
+COPY prisma ./prisma
+
+RUN npm install
+RUN npx prisma generate
+
 COPY . .
 
-RUN npm i
-
-RUN npx prisma generate
-RUN npx prisma db push
 
 RUN npm run build
 
-CMD [ "npm", "run", "start" ]
+CMD ["npm", "run", "start"]
