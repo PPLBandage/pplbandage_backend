@@ -112,17 +112,15 @@ export class WorkshopController {
     ): Promise<StreamableFile | void> {
         /* get bandage image render (for OpenGraph) */
 
-        const bandage = await this.bandageService.getBandageSession(
+        const thumbnail = await this.bandageService.getThumbnail(
             id,
             request.session
         );
 
-        if (!bandage.thumbnail_asset) throw new NotFoundException();
+        if (!thumbnail) throw new NotFoundException();
         return new StreamableFile(
             createReadStream(
-                process.env.CACHE_FOLDER +
-                    'thumbnails/' +
-                    bandage.thumbnail_asset
+                process.env.CACHE_FOLDER + 'thumbnails/' + thumbnail
             ),
             { type: 'image/png' }
         );
@@ -239,8 +237,11 @@ export class WorkshopController {
     @Get(':id/has_thumbnail')
     @Auth(AuthEnum.Strict)
     @Roles([RolesEnum.RenderThumbnails])
-    async needsThumbnail(@Param('id') id: string) {
-        return await this.bandageService.hasThumbnail(id);
+    async needsThumbnail(
+        @Param('id') id: string,
+        @Req() request: RequestSession
+    ) {
+        return !!(await this.bandageService.getThumbnail(id, request.session));
     }
 
     @Post(':id/upload_thumbnail')

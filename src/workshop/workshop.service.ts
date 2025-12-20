@@ -905,17 +905,17 @@ export class WorkshopService {
     }
 
     /** Return true if rendered thumbnail not found */
-    async hasThumbnail(external_id: string) {
-        const bandage = await this.getBandageById(external_id);
+    async getThumbnail(external_id: string, session?: Session) {
+        const bandage = await this.getBandageSession(external_id, session);
 
-        if (!bandage.thumbnail_asset) return false;
+        if (!bandage.thumbnail_asset) return null;
         const path =
             process.env.CACHE_FOLDER + 'thumbnails/' + bandage.thumbnail_asset;
         try {
             await access(path, constants.F_OK);
-            return true;
+            return bandage.thumbnail_asset;
         } catch {
-            return false;
+            return null;
         }
     }
 
