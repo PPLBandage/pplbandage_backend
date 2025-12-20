@@ -37,13 +37,15 @@
         "sharp": "0.34.5",
         "telegraf": "^4.16.3",
         "transliteration": "^2.6.0",
-        "ua-parser-js": "2.0.7"
+        "ua-parser-js": "2.0.7",
+        "uuid": "^13.0.0"
     },
     "devDependencies": {
         "@nestjs/cli": "11.0.14",
         "@types/cookie-parser": "1.4.10",
         "@types/cron": "2.4.3",
         "@types/express": "5.0.6",
+        "@types/multer": "^2.0.0",
         "@types/node": "25.0.3",
         "@types/ua-parser-js": "0.7.39",
         "eslint": "^9.39.2",

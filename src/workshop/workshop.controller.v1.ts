@@ -11,7 +11,11 @@ import {
     Body,
     UseGuards,
     HttpCode,
-    Header
+    UseInterceptors,
+    UploadedFile,
+    ParseFilePipe,
+    MaxFileSizeValidator,
+    NotFoundException
 } from '@nestjs/common';
 import { WorkshopService } from './workshop.service';
 import { SkipThrottle, Throttle } from '@nestjs/throttler';
@@ -22,7 +26,6 @@ import { CreateBandageDto } from './dto/createBandage.dto';
 import { BandageModerationDto, EditBandageDto } from './dto/editBandage.dto';
 import {
     TagQueryDto,
-    WidthQueryDTO,
     WorkshopSearchQueryDTO
 } from 'src/workshop/dto/queries.dto';
 import { SetQueryDTO } from 'src/user/dto/queries.dto';
@@ -36,6 +39,11 @@ import {
     RequestSession,
     RequestSessionWeak
 } from 'src/interfaces/interfaces';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { v4 as uuid } from 'uuid';
+import { rm } from 'fs/promises';
+import { createReadStream } from 'fs';
 
 @Controller({ path: 'workshop', version: '1' })
 @UseGuards(AuthGuard, RolesGuard)
@@ -96,21 +104,25 @@ export class WorkshopController {
 
     @Get(':id/og')
     @Auth(AuthEnum.Weak)
-    @Header('Content-Type', 'image/png')
     async getBandageImage(
         @Param('id') id: string,
-        @Req() request: RequestSessionWeak,
-        @Query() query: WidthQueryDTO
+        @Req() request: RequestSessionWeak
     ): Promise<StreamableFile | void> {
         /* get bandage image render (for OpenGraph) */
 
+        const bandage = await this.bandageService.getBandageSession(
+            id,
+            request.session
+        );
+
+        if (!bandage.thumbnail_asset) throw new NotFoundException();
         return new StreamableFile(
-            await this.bandageService.getOGImage(
-                id,
-                query.width ?? 1024,
-                request.session,
-                query.token
-            )
+            createReadStream(
+                process.env.CACHE_FOLDER +
+                    'thumbnails/' +
+                    bandage.thumbnail_asset
+            ),
+            { type: 'image/png' }
         );
     }
 
@@ -220,5 +232,45 @@ export class WorkshopController {
         /* get bandage by external id */
 
         return await this.bandageService.getBandage(id, request.session);
+    }
+
+    @Get(':id/has_thumbnail')
+    @Auth(AuthEnum.Strict)
+    @Roles([RolesEnum.RenderThumbnails])
+    async needsThumbnail(@Param('id') id: string) {
+        return await this.bandageService.hasThumbnail(id);
+    }
+
+    @Post(':id/upload_thumbnail')
+    @Auth(AuthEnum.Strict)
+    @Roles([RolesEnum.RenderThumbnails])
+    @UseInterceptors(
+        FileInterceptor('file', {
+            storage: diskStorage({
+                destination: process.env.CACHE_FOLDER + 'thumbnails',
+                filename: (_, __, cb) => {
+                    cb(null, uuid());
+                }
+            })
+        })
+    )
+    async uploadFile(
+        @UploadedFile(
+            new ParseFilePipe({
+                fileIsRequired: true,
+                validators: [
+                    new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 })
+                ]
+            })
+        )
+        file: Express.Multer.File,
+        @Param('id') id: string
+    ) {
+        try {
+            await this.bandageService.setThumbnailAsset(id, file.filename);
+        } catch (e) {
+            await rm(file.path);
+            throw e;
+        }
     }
 }

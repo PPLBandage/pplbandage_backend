@@ -19,6 +19,7 @@ import { LocaleException } from 'src/interceptors/localization.interceptor';
 import { TelegramService } from 'src/notifications/telegram.service';
 import { KVDataBase } from 'src/prisma/kv.service';
 import { EventsService } from './events/events.service';
+import { access, constants } from 'fs/promises';
 
 export const sort_keys = ['popular_up', 'date_up', 'name_up', 'relevant_up'];
 
@@ -495,6 +496,7 @@ export class WorkshopService {
         };
     }
 
+    /* DEPRECATED!
     async getOGImage(id: string, w: number, session?: Session, token?: string) {
         const requested_width = w ?? 512;
 
@@ -552,6 +554,7 @@ export class WorkshopService {
 
         return await bandage.toBuffer();
     }
+        */
 
     async getBandage(
         id: string,
@@ -899,5 +902,28 @@ export class WorkshopService {
         });
 
         return tags.map(tag => tag.name);
+    }
+
+    /** Return true if rendered thumbnail not found */
+    async hasThumbnail(external_id: string) {
+        const bandage = await this.getBandageById(external_id);
+
+        if (!bandage.thumbnail_asset) return false;
+        const path =
+            process.env.CACHE_FOLDER + 'thumbnails/' + bandage.thumbnail_asset;
+        try {
+            await access(path, constants.F_OK);
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    async setThumbnailAsset(external_id: string, asset_id: string) {
+        const bandage = await this.getBandageById(external_id);
+        await this.prisma.bandage.update({
+            where: { id: bandage.id },
+            data: { thumbnail_asset: asset_id }
+        });
     }
 }
