@@ -15,7 +15,8 @@ import {
     UploadedFile,
     ParseFilePipe,
     MaxFileSizeValidator,
-    NotFoundException
+    NotFoundException,
+    Header
 } from '@nestjs/common';
 import { WorkshopService } from './workshop.service';
 import { SkipThrottle, Throttle } from '@nestjs/throttler';
@@ -104,6 +105,7 @@ export class WorkshopController {
 
     @Get(':id/og')
     @Auth(AuthEnum.Weak)
+    @Header('Cache-Control', 'public, max-age=86400')
     async getBandageImage(
         @Param('id') id: string,
         @Req() request: RequestSessionWeak

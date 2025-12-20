@@ -70,13 +70,9 @@ export class TelegramService implements OnModuleInit {
                 `*Теги*\n${`\`${tags.join('`, `')}\``}\n\n` +
                 `*Имеет раздельные типы*\n${bandage.split_type ? 'Да' : 'Нет'}`;
 
-            await this.sendPhotoToThread(
+            await this.sendToThread(
                 process.env.GROUP_ID!,
                 ThreadType.Moderation,
-                {
-                    url: `${process.env.DOMAIN}/api/v1/workshop/${bandage.externalId}/og?token=${process.env.WORKSHOP_TOKEN}`,
-                    filename: 'Bandage'
-                },
                 text
             );
         } catch (e) {
