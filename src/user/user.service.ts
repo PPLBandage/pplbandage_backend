@@ -254,8 +254,12 @@ export class UserService {
         };
     }
 
-    async getUserOg(username: string) {
-        const user = await this._getUserByNickname(username, undefined);
+    async getUserOg(username: string, session?: Session) {
+        const user = await this._getUserByNickname(username, session);
+        const can_view = hasAccess(session?.user, RolesEnum.UpdateUsers);
+
+        if (user.Bandage.length === 0 && !can_view)
+            throw new LocaleException(responses.USER_NOT_FOUND, 404);
 
         const starred_bandages = await this.prisma.bandage.findMany({
             where: { userId: user.id, stars: { some: {} } },

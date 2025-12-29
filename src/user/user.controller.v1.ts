@@ -197,10 +197,14 @@ export class UserController {
     }
 
     @Get(':username/og')
-    async userOg(@Param('username') username: string) {
+    @Auth(AuthEnum.Weak)
+    async userOg(
+        @Param('username') username: string,
+        @Req() request: RequestSessionWeak
+    ) {
         /* get user data by nickname */
 
-        return await this.userService.getUserOg(username);
+        return await this.userService.getUserOg(username, request.session);
     }
 
     @Patch(':username')
