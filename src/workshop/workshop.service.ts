@@ -584,14 +584,6 @@ export class WorkshopService {
             }
         }
 
-        const me_profile =
-            session?.user?.UserSettings?.autoload && session?.user?.profile
-                ? {
-                      uuid: session.user.profile.uuid,
-                      nickname: session.user.profile.nickname
-                  }
-                : undefined;
-
         return {
             data: {
                 id: bandage.id,
@@ -612,7 +604,6 @@ export class WorkshopService {
                     public: bandage.User.UserSettings!.public_profile
                 },
                 tags: bandage.tags.map(tag => tag.name),
-                me_profile: me_profile,
                 permissions_level: permissions_level,
                 access_level: bandage.access_level,
                 accent_color: bandage.accent_color,

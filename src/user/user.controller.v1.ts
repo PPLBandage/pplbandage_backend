@@ -9,7 +9,8 @@ import {
     Body,
     UseGuards,
     Patch,
-    HttpException
+    HttpException,
+    StreamableFile
 } from '@nestjs/common';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { UserService } from './user.service';
@@ -157,6 +158,14 @@ export class UserController {
         /* get user's subscriptions */
 
         return await this.userService.getSubscriptions(request.session);
+    }
+
+    @Get('@me/autoload-skin')
+    @Auth(AuthEnum.Weak)
+    async getAutoloadSkin(@Req() request: RequestSessionWeak) {
+        const data = this.userService.getSkinForAutoload(request.session);
+        if (!data) throw new HttpException('', 204);
+        return new StreamableFile(data, { type: 'image/png' });
     }
 
     @Get(':username')

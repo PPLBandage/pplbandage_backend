@@ -473,4 +473,14 @@ export class UserService {
             joined_at: user.joined_at
         }));
     }
+
+    /** Get minecraft skin for workshop skin autoload */
+    getSkinForAutoload(session?: Session) {
+        if (!session) return null;
+        if (session.user.UserSettings?.autoload && session.user.profile) {
+            return Buffer.from(session.user.profile.data, 'base64');
+        }
+
+        return null;
+    }
 }
