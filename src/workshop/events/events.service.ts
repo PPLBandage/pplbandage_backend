@@ -53,13 +53,21 @@ export class EventsService {
         }));
     }
 
-    private isDateInRange(start: Date, end: Date) {
+    private isDateInRange(start: Date, end: Date): boolean {
         const now = new Date();
-        start.setFullYear(now.getFullYear());
-        end.setFullYear(now.getFullYear());
-        if (end < start) end.setFullYear(now.getFullYear() + 1);
+        const year = now.getFullYear();
 
-        return now >= start && now <= end;
+        const startDate = new Date(start);
+        const endDate = new Date(end);
+
+        startDate.setFullYear(year);
+        endDate.setFullYear(year);
+
+        if (startDate <= endDate) {
+            return now >= startDate && now <= endDate;
+        }
+
+        return now >= startDate || now <= endDate;
     }
 
     async getEventBoostForTags(tags: string[]) {
