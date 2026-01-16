@@ -160,6 +160,14 @@ export class UserController {
         return await this.userService.getSubscriptions(request.session);
     }
 
+    @Get('@me/subscribers')
+    @Auth(AuthEnum.Strict)
+    async getMeSSubscribers(@Req() request: RequestSession) {
+        /* get user's subscribes */
+
+        return await this.userService.getSubscribers(request.session);
+    }
+
     @Get('@me/autoload-skin')
     @Auth(AuthEnum.Weak)
     async getAutoloadSkin(@Req() request: RequestSessionWeak) {

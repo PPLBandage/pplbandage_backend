@@ -474,6 +474,24 @@ export class UserService {
         }));
     }
 
+    /** Get me subscribers */
+    async getSubscribers(session: Session) {
+        const subscriptions = await this.prisma.user.findMany({
+            where: { subscriptions: { some: { id: session.user.id } } },
+            include: { subscribers: true }
+        });
+
+        return subscriptions.map(user => ({
+            id: user.id,
+            name: user.name,
+            username: user.username,
+            joined_at: user.joined_at,
+            subscribed: user.subscribers.some(
+                user => user.id === session.user.id
+            )
+        }));
+    }
+
     /** Get minecraft skin for workshop skin autoload */
     getSkinForAutoload(session?: Session) {
         if (!session) return null;
