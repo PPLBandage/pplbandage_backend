@@ -112,7 +112,10 @@ export class RootController {
         const bandages = await this.prisma.bandage.findMany({
             where: {
                 access_level: 2,
-                BandageModeration: { is_hides: false }
+                OR: [
+                    { BandageModeration: null },
+                    { BandageModeration: { is_hides: false } }
+                ]
             }
         });
         urls = urls.concat(
@@ -124,7 +127,14 @@ export class RootController {
 
         const users = await this.prisma.user.findMany({
             where: {
-                Bandage: { some: {} },
+                Bandage: {
+                    some: {
+                        OR: [
+                            { BandageModeration: null },
+                            { BandageModeration: { is_hides: false } }
+                        ]
+                    }
+                },
                 UserSettings: { banned: false, public_profile: true }
             }
         });
