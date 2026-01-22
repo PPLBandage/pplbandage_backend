@@ -102,7 +102,6 @@ export class RootController {
 
         let urls: SitemapProps[] = [
             { loc: 'https://pplbandage.ru', priority: 1 },
-            { loc: 'https://pplbandage.ru/workshop', priority: 0.8 },
             { loc: 'https://pplbandage.ru/blog', priority: 0.7 },
             { loc: 'https://pplbandage.ru/tos', priority: 0.7 },
             { loc: 'https://pplbandage.ru/me', priority: 0.5 },
@@ -122,6 +121,14 @@ export class RootController {
             bandages.map(bandage => ({
                 loc: `https://pplbandage.ru/workshop/${bandage.externalId}`,
                 priority: 0.6
+            }))
+        );
+
+        const totalPagesCount = Math.floor(bandages.length / 12);
+        urls = urls.concat(
+            Array.from({ length: totalPagesCount }).map((_, i) => ({
+                loc: `https://pplbandage.ru/workshop?page=${i}&amp;take=12`,
+                priority: 1
             }))
         );
 
