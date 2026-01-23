@@ -141,6 +141,7 @@ export class AuthService {
         const sessionId = sign(
             {
                 userId: user.id,
+                username: user.name,
                 access: this.generateAccessBitSet(roles)
             },
             'ppl_super_secret',
