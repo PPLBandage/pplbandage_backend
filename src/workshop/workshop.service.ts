@@ -19,7 +19,10 @@ import { LocaleException } from 'src/interceptors/localization.interceptor';
 import { TelegramService } from 'src/notifications/telegram.service';
 import { KVDataBase } from 'src/prisma/kv.service';
 import { EventsService } from './events/events.service';
-import { access, constants } from 'fs/promises';
+import { access, constants, writeFile } from 'fs/promises';
+import { ThumbnailsService } from 'src/thumbnails/thumbnails.service';
+import { v4 } from 'uuid';
+import { join } from 'path';
 
 export const sort_keys = ['popular_up', 'date_up', 'name_up', 'relevant_up'];
 
@@ -62,7 +65,8 @@ export class WorkshopService {
         private readonly telegramNotifications: TelegramService,
         private readonly kvService: KVDataBase,
         @Inject(forwardRef(() => EventsService))
-        private readonly eventsService: EventsService
+        private readonly eventsService: EventsService,
+        private readonly thumbnailsService: ThumbnailsService
     ) {}
 
     async getBandagesCount() {
@@ -399,18 +403,41 @@ export class WorkshopService {
             false
         );
 
-        if (!is_moderator)
-            await this.telegramNotifications.doBandageNotification(
-                'Опубликована новая повязка',
-                result as BandageFull,
-                body.tags ?? []
-            );
-
         await this.notifications.createBandageCreationNotification(
             result as BandageFull
         );
 
+        this.renderAndSetThumbnail(result as BandageFull)
+            .then(uuid => (result.thumbnail_asset = uuid))
+            .catch(e =>
+                this.logger.error(`Cannot render bandage thumbnail: `, e)
+            )
+            .finally(async () => {
+                if (!is_moderator)
+                    await this.telegramNotifications.doBandageNotification(
+                        'Опубликована новая повязка',
+                        result as BandageFull,
+                        body.tags ?? []
+                    );
+            });
+
         return { external_id: result.externalId };
+    }
+
+    async renderAndSetThumbnail(data: BandageFull) {
+        const render_res = await this.thumbnailsService.render(
+            data.base64,
+            data.colorable
+        );
+        const uuid = v4();
+        await writeFile(
+            join(process.env.CACHE_FOLDER!, 'thumbnails', uuid),
+            render_res,
+            'base64'
+        );
+        await this.setThumbnailAsset(data.externalId, uuid);
+
+        return uuid;
     }
 
     async createTags(tags: string[], verified: boolean) {
@@ -495,66 +522,6 @@ export class WorkshopService {
             }
         };
     }
-
-    /* DEPRECATED!
-    async getOGImage(id: string, w: number, session?: Session, token?: string) {
-        const requested_width = w ?? 512;
-
-        const data = await this.getBandage(
-            id,
-            session,
-            token === process.env.WORKSHOP_TOKEN
-        );
-
-        const bandage_buff = Buffer.from(data.data.base64, 'base64');
-        const metadata = await sharp(bandage_buff).metadata();
-        const original_width = metadata.width as number;
-        const original_height = metadata.height as number;
-
-        const factor = requested_width / original_width;
-        const width = original_width * factor;
-        const height = original_height * factor;
-
-        const bandage = sharp({
-            create: {
-                width: width,
-                height: height / 2,
-                channels: 4,
-                background: { r: 0, g: 0, b: 0, alpha: 0 }
-            }
-        }).png();
-
-        const firstLayer = await sharp(bandage_buff)
-            .extract({
-                left: 0,
-                top: original_height / 2,
-                width: original_width,
-                height: original_height / 2
-            })
-            .resize(width, height / 2, { kernel: sharp.kernel.nearest })
-            .modulate({ lightness: -5 })
-            .png()
-            .toBuffer();
-
-        const secondLayer = await sharp(bandage_buff)
-            .extract({
-                left: 0,
-                top: 0,
-                width: original_width,
-                height: original_height / 2
-            })
-            .resize(width, height / 2, { kernel: sharp.kernel.nearest })
-            .png()
-            .toBuffer();
-
-        bandage.composite([
-            { input: firstLayer, top: 0, left: 0, blend: 'over' },
-            { input: secondLayer, top: 0, left: 0, blend: 'over' }
-        ]);
-
-        return await bandage.toBuffer();
-    }
-        */
 
     async getBandage(
         id: string,
@@ -896,8 +863,12 @@ export class WorkshopService {
     }
 
     /** Return true if rendered thumbnail not found */
-    async getThumbnail(external_id: string, session?: Session) {
-        const bandage = await this.getBandageSession(external_id, session);
+    async getThumbnail(external_id: string, session?: Session, token?: string) {
+        const bandage = await this.getBandageSession(
+            external_id,
+            session,
+            token === process.env.WORKSHOP_TOKEN
+        );
 
         if (!bandage.thumbnail_asset) return null;
         const path =

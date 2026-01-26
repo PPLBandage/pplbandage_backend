@@ -11,10 +11,6 @@ import {
     Body,
     UseGuards,
     HttpCode,
-    UseInterceptors,
-    UploadedFile,
-    ParseFilePipe,
-    MaxFileSizeValidator,
     NotFoundException,
     Header
 } from '@nestjs/common';
@@ -40,10 +36,6 @@ import {
     RequestSession,
     RequestSessionWeak
 } from 'src/interfaces/interfaces';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { v4 as uuid } from 'uuid';
-import { rm } from 'fs/promises';
 import { createReadStream } from 'fs';
 
 @Controller({ path: 'workshop', version: '1' })
@@ -108,13 +100,15 @@ export class WorkshopController {
     @Header('Cache-Control', 'public, max-age=86400')
     async getBandageImage(
         @Param('id') id: string,
-        @Req() request: RequestSessionWeak
+        @Req() request: RequestSessionWeak,
+        @Query() query: { token?: string }
     ): Promise<StreamableFile | void> {
         /* get bandage image render (for OpenGraph) */
 
         const thumbnail = await this.bandageService.getThumbnail(
             id,
-            request.session
+            request.session,
+            query.token
         );
 
         if (!thumbnail) throw new NotFoundException();
@@ -232,48 +226,5 @@ export class WorkshopController {
         /* get bandage by external id */
 
         return await this.bandageService.getBandage(id, request.session);
-    }
-
-    @Get(':id/has_thumbnail')
-    @Auth(AuthEnum.Strict)
-    @Roles([RolesEnum.RenderThumbnails])
-    async needsThumbnail(
-        @Param('id') id: string,
-        @Req() request: RequestSession
-    ) {
-        return !!(await this.bandageService.getThumbnail(id, request.session));
-    }
-
-    @Post(':id/upload_thumbnail')
-    @Auth(AuthEnum.Strict)
-    @Roles([RolesEnum.RenderThumbnails])
-    @UseInterceptors(
-        FileInterceptor('file', {
-            storage: diskStorage({
-                destination: process.env.CACHE_FOLDER + 'thumbnails',
-                filename: (_, __, cb) => {
-                    cb(null, uuid());
-                }
-            })
-        })
-    )
-    async uploadFile(
-        @UploadedFile(
-            new ParseFilePipe({
-                fileIsRequired: true,
-                validators: [
-                    new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 })
-                ]
-            })
-        )
-        file: Express.Multer.File,
-        @Param('id') id: string
-    ) {
-        try {
-            await this.bandageService.setThumbnailAsset(id, file.filename);
-        } catch (e) {
-            await rm(file.path);
-            throw e;
-        }
     }
 }

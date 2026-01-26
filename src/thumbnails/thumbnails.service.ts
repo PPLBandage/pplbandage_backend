@@ -33,25 +33,48 @@ export class ThumbnailsService {
     }
 
     async launch() {
-        this.browser = await puppeteer.launch({
-            headless: true,
-            args: [
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--enable-3d-apis'
-            ]
-        });
+        if (!this.browser || !this.browser.connected) {
+            this.browser = await puppeteer.launch({
+                headless: true,
+                args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--enable-3d-apis'
+                ]
+            });
+        }
     }
 
     async stop() {
         if (!this.browser) return;
-        this.browser.close();
+        await this.browser.close();
+        this.browser = undefined;
     }
 
-    async render(b64: string, colorable: boolean) {
-        if (!this.browser) {
-            await this.launch();
+    async render(b64: string, colorable: boolean): Promise<string> {
+        const index = ++this.task_index;
+        try {
+            return await Promise.race([
+                this._render(index, b64, colorable),
+                new Promise<never>((_, reject) => setTimeout(reject, 80000))
+            ]);
+        } catch (e) {
+            throw e;
+        } finally {
+            const task = this.tasks.find(el => el.id == index);
+            if (task) {
+                await task.page.close();
+                this.tasks = this.tasks.filter(el => el.id !== index);
+            }
+
+            if (this.tasks.length === 0) {
+                this.stop();
+            }
         }
+    }
+
+    async _render(index: number, b64: string, colorable: boolean) {
+        await this.launch();
 
         const page = await this.browser!.newPage();
         const page_contents = this.template_page
@@ -59,20 +82,15 @@ export class ThumbnailsService {
             .replace('"{{COLORABLE}}"', colorable + '');
 
         await page.setContent(page_contents);
-        const index = ++this.task_index;
 
         this.tasks.push({
             id: index,
             page: page
         });
 
-        const render = async () => {
-            await page.waitForFunction(() => window.__RENDER_DONE__ === true);
-            const img = await page.evaluate(() => window.__RENDER_RESULT__!);
+        await page.waitForFunction(() => window.__RENDER_DONE__ === true);
+        const img = await page.evaluate(() => window.__RENDER_RESULT__!);
 
-            return img.replace('data:image/png;base64,', '');
-        };
-
-        return await Promise.race([render()]);
+        return img.replace('data:image/png;base64,', '');
     }
 }

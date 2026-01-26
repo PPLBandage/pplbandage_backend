@@ -10,6 +10,7 @@ import { MinecraftModule } from 'src/minecraft/minecraft.module';
 import { TelegramModule } from 'src/notifications/telegram.module';
 import { KVDataBase } from 'src/prisma/kv.service';
 import { EventsModule } from './events/events.module';
+import { ThumbnailsModule } from 'src/thumbnails/thumbnails.module';
 
 @Module({
     controllers: [WorkshopController],
@@ -25,6 +26,7 @@ import { EventsModule } from './events/events.module';
         UsersModule,
         MinecraftModule,
         TelegramModule,
+        ThumbnailsModule,
         forwardRef(() => EventsModule)
     ],
     exports: [WorkshopService]

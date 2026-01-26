@@ -70,11 +70,23 @@ export class TelegramService implements OnModuleInit {
                 `*Теги*\n${`\`${tags.join('`, `')}\``}\n\n` +
                 `*Имеет раздельные типы*\n${bandage.split_type ? 'Да' : 'Нет'}`;
 
-            await this.sendToThread(
-                process.env.GROUP_ID!,
-                ThreadType.Moderation,
-                text
-            );
+            if (bandage.thumbnail_asset !== null) {
+                await this.sendPhotoToThread(
+                    process.env.GROUP_ID!,
+                    2,
+                    {
+                        url: `${process.env.DOMAIN}/api/v1/workshop/${bandage.externalId}/og?token=${process.env.WORKSHOP_TOKEN}`,
+                        filename: 'Bandage'
+                    },
+                    text
+                );
+            } else {
+                await this.sendToThread(
+                    process.env.GROUP_ID!,
+                    ThreadType.Moderation,
+                    text
+                );
+            }
         } catch (e) {
             this.logger.error(
                 `Cannot do Telegram notification about https://pplbandage.ru/workshop/${bandage.externalId} (${e})`

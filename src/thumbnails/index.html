@@ -9,6 +9,49 @@
     <canvas id="render_canvas">
 </body>
 <script>
+
+    const fillPepe = (
+        input,
+        color
+    ) => {
+        let canvas;
+        if (input instanceof HTMLImageElement) {
+            canvas = document.createElement('canvas');
+            canvas.width = input.width;
+            canvas.height = input.height;
+            const context = canvas.getContext('2d');
+            if (context) context.drawImage(input, 0, 0, input.width, input.height);
+        } else {
+            canvas = input;
+        }
+
+        const context = canvas.getContext('2d', { willReadFrequently: true });
+        if (!context) return canvas;
+
+        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+
+        for (let y = 0; y < canvas.height; y++) {
+            for (let x = 0; x < canvas.width; x++) {
+                const index = (y * canvas.width + x) * 4;
+                const r = data[index];
+                const g = data[index + 1];
+                const b = data[index + 2];
+                const a = data[index + 3];
+
+                if (a !== 0 && r === g && g === b) {
+                    data[index] = (r / 255) * color[0];
+                    data[index + 1] = (g / 255) * color[1];
+                    data[index + 2] = (b / 255) * color[2];
+                    data[index + 3] = a;
+                }
+            }
+        }
+
+        context.putImageData(imageData, 0, 0);
+        return canvas;
+    };
+
     const asyncImage = (src) =>
         new Promise((resolve, reject) => {
             const img = new Image();
@@ -68,6 +111,7 @@
         return skin_canvas;
     };
     const base_skin = "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAAAsTAAALEwEAmpwYAAABaElEQVR4nO2aUQ6CMBBEXeMxegi4/yHgENwDv0y0Ktuy1CfpvMSPYmnGke62ZW1d18sW8zxvd3AYhsFq+ptVdXfxft+tZJCU0sfry7IUff/PXGkBNDKAFkAjA2gBNEVZwIvmZ4j237BpmkJ5Pkq+TkDWAdE8f+Z1QvcxQAbQAmhkAC2Apvs0aHkHb//v7e+j5wfjOG6O7/1h+f27zgMeeTvP46V5u/W6IKrvme5jwMcnIHey1tnWe4eovmfwINgaL2a97AW+zam97Zyj+5e2t+g+BsgAWgCNDKAF0MgAWgCNDKAF0HS/FH47D6D59YFI91NABtACaGQALYBGBtACaGQALYBGBtACaGQALYBGBtACaIoKJWuI1hfUvv+P0uQJSCm9vO/L263vr0FToMWgR9cXtKwoDZ8JRmuCongx4Sdngt6cbd2O0H0MkAFmdol8zo6eAFoAjQygBdDIAFoATTiP0fUF0aXwHQ6IwY3Gtf6jAAAAAElFTkSuQmCC"
+    const background = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAAEsCAYAAAB5fY51AAAAAXNSR0IArs4c6QAADvZJREFUeF7t3MFq5rgShuHuKxgGBpJF1oHs+v6vaeAwV5BBhhjMWJIPqnZK8tPrRvj/Snr9VtnOz/ePX58/Lvz7539/X/hfP3788edfl/6f9c5jkt95LvaL/VIS+AlYDkhJABAAoSSQ/YYJWBUfdIAd4BkOcHbARF8fYAHWlgBAA/QMgAYswAKsxtQ12hCsNzaCASzAAizA2hPIDlTAAizAAizA6r3bYGZiZjLDzCS7cTzt+hgWw2JYDIthMaxjAoySUTLKOhWuno+fL69vl950f5p6+r1jT3PkJ7/f8boMYFWg78A5cL/jwF01CfvvfP8BFmBtCTggAD0DoAELsACrMXBlRLlmj4AFWIAFWHsC2QENWIAFWIAFWL3XGsxMzExmmJlkN46nXR/DYlgMi2ExLIZ1TIBRMkpGWafC1fPBsBgWw2JY8xiWP5Hszu/OP37nf9os6bt+r4+fK3v1uwpyVY1dX673g9TjnnoAFmBtCThw9xw4N6SxjgawAAuwGjMsgBkDTHR+gAVYgAVYewLRgIleD7AAC7AAC7B672GZmZiZlASi78DWy9XCRdeDYTEshsWwGBbDOibAKBklo6xT4er5YFgMi2ExrHkMy990d+d35x+/80fPaqx3XhPfElb2qg2z9vBWfeesL2AB1paAAzznAb46+1mlvoAFWIDVmGE9DQjZfy9gARZgAdaeAGABAiAAwjRAACzAAizAAqzGHvh/ZqhaQkAFVECdBqiABViABViA1TFAj9ErAWWfIbi+88Kt8tpA9vr6NAc4tgSyb1TXB5QlAcACLMBqtAPM6Tyc77qBABZgARZg7QlkBzRgARZgARZg9Ybu36WU2e8gri9XC6IeuerBsBgWw2JYDIthHRNglJ5ylQQY25ixMSyGxbAYFsNiWAyrtwcYRz0hRn6eDcNiWAyLYc1jWP6mu9kK02E6XwlkNzsfP1f2quHo2HBUfvIrCUQDELAAa0sAYADmdwAGsAAGYBozp+gDYr1cIxOGBYAACIB7AtkBDViABViABViNPeCAOCDTHJDsxvG062NYDMsNxA1kmhsIYAEWYAEWYGkJjwl4bcBrAzO8NpC9xfRpToWs2Qvn+nI9blePe+oBWIC1JeDA3XPgmPaYaQMWYAFWY34BMGOAic4PsAALsABrTyAaMNHrARZgARZgAVbvKaGZiZlJSSD6Dmy9XC1cdD0YFsNiWAyLYTGsYwKMklEyyjoVrp4PhsWwGBbDYlgMi2H19gDjGDeO6BlR9vV8S1jZM9kL5/rWHi6r73l9AQuwtgQcEAAsCVydJX3XfgEswAKsRu+a/QA/7foAC7AAC7D2BLIDELAAC7AAC7B6T4i+qwfOfgdxfd7XMlOs04NhMSyGxbAYFsM6JsAoPYWb4SlcdsNnWAyLYTEshsWwGFZvDzCOekKM/Dwb3xJW9kx2NXZ9hvNPHM4DFmBtCQAgAM4AQMACLMBq9K5as1wPSwALsAALsPYEsgMasAALsAALsHpPiMxMzExmmJlkN46nXR/DYlgMi2ExLIZ1TIBRMkpGWafC1fPBsBgWw2JYDIthMazeHmAc48bxuBnWy+vbp4313wSethH83lzvG6nHeT18/FyhtQ3jAJcErs5W7Jd79gtgAdaWgAN3z4EDwLGHL4AFWIDVmIkAzBhgovMDLMACLMDaE4gGTPR6gAVYgAVYgNV78mhmYmZiqF0/Jc6Hp4RbAtGKar1cMw71WLseWkItoZZQS6gl1BIeE6D4WmCGP94C+5awkqHWYu3WQn3nrC9gAZbZXqMdYMa5zBiwAAuwAGtPIDugAQuwAAuwAKs3dDdDmHOGkP0O7PpytXDR9WBYDIthMSyGxbCOCTBKRlkSiDaOp63HsBgWw2JYDIthMazeHmAc9YQY+Xk2DIthMSyGNY9h+ZvuZitMh+l8JZDd7Hz8XNmrTxtm+r1rvw6wSn0BC7C2BFbZ0NkNwfWNdTSABViA1ZhhAcwYYKLzAyzAAizA2hOIBkz0eoAFWIAFWIDVewfHzMSQtyQQfQe2Xq4WLroeDIthMSyGxbAY1jEBRskoGWWdClfPB8NiWAyLYc1jWO8fvz57NuTOMH5niO7lrbf2rEZ9z+vrW8IKi2wYQCgJXG1V7Jd79gtgAdaWgAN3z4EDwLFZJmABFmA1ZiIAMwaY6PwAC7AAC7D2BKIBE70eYAEWYAEWYPWePJqZmJkYatdPifPhKeGWQLSiWi/XjEM91q6HllBLqCXUEmoJtYTHBCi+Fpjhj7fAPs2pZKi1WLu1UN856wtYgGW212gHmHEuMwYswAIswNoTyA5owAIswAIswOoN3c0Q5pwhZL8Du75cLVx0PRgWw2JYDIthMaxjAoySUZYEoo3jaesxLIbFsBgWw2JYDKu3BxhHPSFGfp4Nw2JYDIthzWNY/qa72QrTYTpfCWQ3Ox8/V/bq04aZfu/arwOsUl/AAqwtgVU2dHZDcH1jHQ1gARZgNWZYADMGmOj8AAuwAAuw9gSiARO9HmABFmABFmD13sExMzHkLQlE34Gtl6uFi64Hw2JYDIthMSyGdUyAUTJKRlmnwtXzwbAYFsNiWPMY1svr22fPhtwZxu8M0b289dae1ajveX19S1hhkQ0DCCWBq62K/XLPfgEswNoScODuOXAAODbLBCzAAqzGTARgxgATnR9gARZgAdaeQDRgotcDLMACLMACrN6TRzMTMxND7fopcT48JdwSiFZU6+WacajH2vXQEmoJtYRaQi2hlvCYAMXXAjP88RbYpzmVDLUWa7cW6jtnfQELsMz2Gu0AM85lxoAFWIAFWHsC2QENWIAFWIAFWL2huxnCnDOE7Hdg15erhYuuB8NiWAyLYTEshnVMgFEyypJAtHE8bT2GxbAYFsNiWAyLYfX2AOOoJ8TIz7NhWAyLYTGseQzL33Q3W2E6TOcrgexm5+Pnyl592jDT7137dYBV6gtYgLUlsMqGzm4Irm+sowEswAKsxgwLYMYAE50fYAEWYAHWnkA0YKLXAyzAAizAAqzeOzhmJoa8JYHoO7D1crVw0fVgWAyLYTEshsWwjgkwSkbJKOtUuHo+GBbDYlgMax7Dev/49dmzIXeG8TtDdC9vvbVnNep7Xl/fElZYZMMAQkngaqtiv9yzXwALsLYEHLh7DhwAjs0yAQuwAKsxEwGYMcBE5wdYgAVYgLUnEA2Y6PUAC7AAC7AAq/fk0czEzMRQu35KnA9PCbcEohXVerlmHOqxdj20hFpCLaGWUEuoJTwmQPG1wAx/vAX2aU4lQ63F2q2F+s5ZX8ACLLO9RjvAjHOZMWABFmAB1p5AdkADFmABFmABVm/oboYw5wwh+x3Y9eVq4aLrwbAYFsNiWAyLYR0TYJSMsiQQbRxPW49hMSyGxbAYFsNiWL09wDjqCTHy82wYFsNiWAxrHsPyN93NVpgO0/lKILvZ+fi5slefNsz0e9d+HWCV+gIWYG0JrLKhsxuC6xvraAALsACrMcMCmDHAROcHWIAFWIC1JxANmOj1AAuwAAuwAKv3Do6ZiSFvSSD6Dmy9XC1cdD0YFsNiWAyLYTGsYwKMklEyyjoVrp4PhsWwGBbDmsewXl7fPns25M4wfmeI7uWtt/asRn3P6+tbwgqLbBhAKAlcbVXsl3v2C2AB1paAA3fPgQPAsVkmYAEWYDVmIgAzBpjo/AALsAALsPYEogETvR5gARZgARZg9Z48mpmYmRhq10+J8+Ep4ZZAtKJaL9eMQz3WroeWUEuoJdQSagm1hMcEKL4WmOGPt8A+zalkqLVYu7VQ3znrC1iAZbbXaAeYcS4zBizAAizA2hPIDmjAAizAAizA6g3dzRDmnCFkvwO7vlwtXHQ9GBbDYlgMi2ExrGMCjJJRlgSijeNp6zEshsWwGBbDYlgMq7cHGEc9IUZ+ng3DYlgMi2HNY1j+prvZCtNhOl8JZDc7Hz9X9urThpl+79qvA6xSX8ACrC2BVTZ0dkNwfWMdDWABFmA1ZlgAMwaY6PwAC7AAC7D2BKIBE70eYAEWYAEWYPXewTEzMeQtCUTfga2Xq4WLrgfDYlgMi2ExLIZ1TIBRMkpGWafC1fPBsBgWw2JY8xjW+8evz54NuTOM3xmie3nrrT2rUd/z+vqWsMIiGwYQSgJXWxX75Z79AliAtSXgwN1z4ABwbJYJWIAFWI2ZCMCMASY6P8ACLMACrD2BaMBErwdYgAVYgAVYvSePZiZmJoba9VPifHhKuCUQrajWyzXjUI+166El1BJqCbWEWkIt4TEBiq8FZvjjLbBPcyoZai3Wbi3Ud876AhZgme012gFmnMuMAQuwAAuw9gSyAxqwAAuwAAuwekN3M4Q5ZwjZ78CuL1cLF10PhsWwGBbDYlgM65gAo2SUJYFo43jaegyLYTEshsWwGBbD6u0BxlFPiJGfZ8OwGBbDYljzGJa/6W62wnSYzlcC2c3Ox8+Vvfq0Yabfu/brAKvUF7AAa0tglQ2d3RBc31hHA1iABViNGRbAjAEmOj/AAizAAqw9gWjARK8HWIAFWIAFWL13cMxMDHlLAtF3YOvlauGi68GwGBbDYlgMi2EdE2CUjJJR1qlw9XwwLIbFsBjWPIb18vr22bMhd4bxO0N0L2+9tWc16nteX98SVlhkwwBCSeBqq2K/3LNfAAuwtgQcuHsOHACOzTIBC7AAqzETAZgxwETnB1iABViAtScQDZjo9QALsAALsACr9+TRzMTMxFC7fkqcD08JtwSiFdV6uWYc6rF2PbSEWkItoZZQS6glPCZA8bXADH+8BfZpTiVDrcXarYX6zllfwAIss71GO8CMc5kxYAEWYAHWnkB2QAMWYAEWYAFWb+huhjDnDCH7Hdj15WrhouvBsBgWw2JYDIthHRNglIyyJBBtHE9bj2ExLIbFsBgWw2JYvT3AOOoJMfLzbBgWw2JYDGsew/I33c1WmA7T+Uogu9n5+LmyV582zPR7134dYJX6AhZgbQmssqGzG4LrG+toAAuwAKsxwwKYMcBE5wdYgAVYgLUnEA2Y6PUAC7AAC7AAq/cOjpmJIW9JIPoObL1cLVx0PRgWw2JYDIthMaxjAoySUTLKOhWung+GxbAYFsOaxrD+BcWLn2k4xR8jAAAAAElFTkSuQmCC"
     const bandage_image = "{{BANDAGE}}"
     const colorable = "{{COLORABLE}}";
 
@@ -78,7 +122,6 @@
             width: 300,
             height: 300,
             pixelRatio: 1,
-            renderPaused: true,
             fov: 65
         });
 
@@ -99,13 +142,27 @@
         );
 
         await skinViewer.loadSkin(result);
-
         skinViewer.render();
-        window.__RENDER_RESULT__ = skinViewer.canvas.toDataURL();
+
+        const renderImg = await asyncImage(skinViewer.canvas.toDataURL());
+        const backgroundImg = await asyncImage(background);
+
+        const canv = document.createElement('canvas');
+        canv.width = backgroundImg.width;
+        canv.height = backgroundImg.height;
+        const ctx = canv.getContext('2d');
+
+        ctx.drawImage(backgroundImg, 0, 0);
+
+        const x = (canv.width - renderImg.width) / 2;
+        const y = (canv.height - renderImg.height) / 2;
+        ctx.drawImage(renderImg, x, y);
+
+        window.__RENDER_RESULT__ = canv.toDataURL();
         window.__RENDER_DONE__ = true;
     }
 
-    void render();
+    render().then(console.log).catch(console.error);
 </script>
 
 </html>
