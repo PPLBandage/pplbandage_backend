@@ -1,10 +1,10 @@
-FROM node:20-slim
+FROM node:20-bookworm
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y ca-certificates openssl && rm -rf /var/lib/apt/lists/*
-
+# Системные зависимости для Chromium + WebGL
 RUN apt update && apt install -y \
+  chromium \
   libnss3 \
   libatk1.0-0t64 \
   libatk-bridge2.0-0t64 \
@@ -17,8 +17,11 @@ RUN apt update && apt install -y \
   libxfixes3 \
   libdrm2 \
   ca-certificates \
-  fonts-liberation
+  fonts-liberation \
+  && rm -rf /var/lib/apt/lists/*
 
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 COPY package*.json ./
 COPY prisma ./prisma
