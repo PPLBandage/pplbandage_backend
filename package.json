@@ -34,6 +34,7 @@
         "cookie-parser": "1.4.7",
         "jsonwebtoken": "9.0.3",
         "morgan": "1.10.1",
+        "puppeteer": "^24.36.0",
         "sharp": "0.34.5",
         "telegraf": "^4.16.3",
         "transliteration": "^2.6.0",

@@ -13,6 +13,7 @@ import { ConnectionsModule } from './connections/connections.module';
 import { EmotesModule } from './emotes/emotes.module';
 import { TelegramModule } from './notifications/telegram.module';
 import { AdminModule } from './admin/admin.module';
+import { ThumbnailsModule } from './thumbnails/thumbnails.module';
 
 @Module({
     providers: [{ provide: APP_GUARD, useClass: CustomThrottlerGuard }],
@@ -28,7 +29,8 @@ import { AdminModule } from './admin/admin.module';
         ConnectionsModule,
         EmotesModule,
         TelegramModule,
-        AdminModule
+        AdminModule,
+        ThumbnailsModule
     ]
 })
 export class AppModule {}

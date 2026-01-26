@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="https://unpkg.com/skinview3d/bundles/skinview3d.bundle.js"></script>
+</head>
+
+<body>
+    <canvas id="render_canvas">
+</body>
+<script>
+    const asyncImage = (src) =>
+        new Promise((resolve, reject) => {
+            const img = new Image();
+            img.src = src;
+
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+        });
+
+
+    const b64Prefix = 'data:image/png;base64,';
+    const randint = (min, max) => {
+        return Math.random() * (max - min) + min;
+    };
+
+    const generateSkin = async (
+        b64,
+        base_skin,
+        color
+    ) => {
+        const bandage = await asyncImage(b64Prefix + b64);
+        const base_skin_img = await asyncImage(b64Prefix + base_skin);
+
+        const height = Math.floor(bandage.height / 2);
+        const position = 6 - Math.ceil(height / 2);
+
+        const skin_canvas = document.createElement('canvas');
+        const skin_context = skin_canvas.getContext('2d');
+        skin_canvas.width = 64;
+        skin_canvas.height = 64;
+
+        const bandage_new = !!color ? fillPepe(bandage, color) : bandage;
+        skin_context.drawImage(base_skin_img, 0, 0);
+        skin_context.drawImage(
+            bandage_new,
+            0,
+            0,
+            16,
+            height,
+            48,
+            52 + position,
+            16,
+            height
+        );
+        skin_context.drawImage(
+            bandage_new,
+            0,
+            height,
+            16,
+            height,
+            32,
+            52 + position,
+            16,
+            height
+        );
+
+        return skin_canvas;
+    };
+    const base_skin = "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAAAsTAAALEwEAmpwYAAABaElEQVR4nO2aUQ6CMBBEXeMxegi4/yHgENwDv0y0Ktuy1CfpvMSPYmnGke62ZW1d18sW8zxvd3AYhsFq+ptVdXfxft+tZJCU0sfry7IUff/PXGkBNDKAFkAjA2gBNEVZwIvmZ4j237BpmkJ5Pkq+TkDWAdE8f+Z1QvcxQAbQAmhkAC2Apvs0aHkHb//v7e+j5wfjOG6O7/1h+f27zgMeeTvP46V5u/W6IKrvme5jwMcnIHey1tnWe4eovmfwINgaL2a97AW+zam97Zyj+5e2t+g+BsgAWgCNDKAF0MgAWgCNDKAF0HS/FH47D6D59YFI91NABtACaGQALYBGBtACaGQALYBGBtACaGQALYBGBtACaIoKJWuI1hfUvv+P0uQJSCm9vO/L263vr0FToMWgR9cXtKwoDZ8JRmuCongx4Sdngt6cbd2O0H0MkAFmdol8zo6eAFoAjQygBdDIAFoATTiP0fUF0aXwHQ6IwY3Gtf6jAAAAAElFTkSuQmCC"
+    const bandage_image = "{{BANDAGE}}"
+    const colorable = "{{COLORABLE}}";
+
+    const render = async () => {
+        const canvas = document.getElementById('render_canvas');
+        const skinViewer = new skinview3d.SkinViewer({
+            canvas: canvas,
+            width: 300,
+            height: 300,
+            pixelRatio: 1,
+            renderPaused: true,
+            fov: 65
+        });
+
+        skinViewer.camera.position.set(13.89, 3.9, 10.37);
+        skinViewer.controls.target.set(3.18, 1.28, -3);
+        skinViewer.controls.update();
+
+        const random_color = [
+            randint(0, 255),
+            randint(0, 255),
+            randint(0, 255)
+        ];
+
+        const result = await generateSkin(
+            bandage_image,
+            base_skin,
+            colorable ? random_color : undefined
+        );
+
+        await skinViewer.loadSkin(result);
+
+        skinViewer.render();
+        window.__RENDER_RESULT__ = skinViewer.canvas.toDataURL();
+        window.__RENDER_DONE__ = true;
+    }
+
+    void render();
+</script>
+
+</html>
