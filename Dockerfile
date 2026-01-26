@@ -2,8 +2,7 @@ FROM node:20-bookworm
 
 WORKDIR /app
 
-# Chromium + зависимости для WebGL (Debian 12)
-RUN apt update && apt install -y \
+RUN apt-get update && apt-get install -y \
   chromium \
   libnss3 \
   libatk1.0-0 \
