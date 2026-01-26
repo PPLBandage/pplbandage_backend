@@ -56,7 +56,7 @@ export class ThumbnailsService {
         try {
             return await Promise.race([
                 this._render(index, b64, colorable),
-                new Promise<never>((_, reject) => setTimeout(reject, 80000))
+                new Promise<never>((_, reject) => setTimeout(reject, 8000))
             ]);
         } catch (e) {
             throw e;
