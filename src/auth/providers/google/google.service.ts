@@ -7,8 +7,7 @@ import responses_users from 'src/localization/users.localization';
 import { decode } from 'jsonwebtoken';
 import { randomUUID } from 'crypto';
 import { mkdir, rm, writeFile } from 'fs/promises';
-
-const cache_folder = process.env.CACHE_FOLDER + 'google/';
+import { join } from 'path';
 
 type TokenResponse = {
     access_token: string;
@@ -72,7 +71,11 @@ export class GoogleAuthService {
 
         if (avatar_response.status !== 200) return null;
         const avatar = Buffer.from(avatar_response.data);
-        const filename = cache_folder + randomUUID();
+        const filename = join(
+            process.env.CACHE_FOLDER!,
+            'google',
+            randomUUID()
+        );
 
         await writeFile(filename, avatar);
         return filename;
@@ -84,7 +87,9 @@ export class GoogleAuthService {
 
     /** Create cache folders for avatars */
     async initCacheFolders() {
-        await mkdir(cache_folder, { recursive: true });
+        await mkdir(join(process.env.CACHE_FOLDER!, 'google'), {
+            recursive: true
+        });
     }
 
     /** Get account name */

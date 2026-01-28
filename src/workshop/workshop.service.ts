@@ -871,8 +871,11 @@ export class WorkshopService {
         );
 
         if (!bandage.thumbnail_asset) return null;
-        const path =
-            process.env.CACHE_FOLDER + 'thumbnails/' + bandage.thumbnail_asset;
+        const path = join(
+            process.env.CACHE_FOLDER!,
+            'thumbnails',
+            bandage.thumbnail_asset
+        );
         try {
             await access(path, constants.F_OK);
             return bandage.thumbnail_asset;

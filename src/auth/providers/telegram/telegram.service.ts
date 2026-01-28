@@ -6,8 +6,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { AuthService } from 'src/auth/auth.service';
 import { mkdir, rm, writeFile } from 'fs/promises';
 import * as crypto from 'crypto';
-
-const cache_folder = process.env.CACHE_FOLDER + 'telegram/';
+import { join } from 'path';
 
 interface TelegramUser {
     id: number;
@@ -71,7 +70,11 @@ export class TelegramAuthService {
 
         if (avatar_response.status !== 200) return null;
         const avatar = Buffer.from(avatar_response.data);
-        const filename = cache_folder + crypto.randomUUID();
+        const filename = join(
+            process.env.CACHE_FOLDER!,
+            'telegram',
+            crypto.randomUUID()
+        );
 
         await writeFile(filename, avatar);
         return filename;
@@ -83,7 +86,9 @@ export class TelegramAuthService {
 
     /** Create cache folders for avatars */
     async initCacheFolders() {
-        await mkdir(cache_folder, { recursive: true });
+        await mkdir(join(process.env.CACHE_FOLDER!, 'telegram'), {
+            recursive: true
+        });
     }
 
     /** Create session for telegram user */

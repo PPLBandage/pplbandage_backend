@@ -12,6 +12,7 @@ import {
     SearchParams,
     Session
 } from 'src/interfaces/interfaces';
+import { join } from 'path';
 
 @Injectable()
 export class MinecraftService {
@@ -385,7 +386,7 @@ export class MinecraftService {
             };
         }
 
-        const target = process.env.CACHE_FOLDER + 'main_page_skins';
+        const target = join(process.env.CACHE_FOLDER!, 'main_page_skins');
         const contents = await readdir(target, {
             withFileTypes: true
         });

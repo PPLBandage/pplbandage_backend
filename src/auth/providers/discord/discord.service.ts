@@ -6,9 +6,9 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { mkdir, writeFile, rm } from 'fs/promises';
 import { randomUUID } from 'crypto';
 import { AuthService } from 'src/auth/auth.service';
+import { join } from 'path';
 
 const discord_url = process.env.DISCORD_URL;
-const cache_folder = process.env.CACHE_FOLDER + 'discord/';
 
 interface DiscordResponse {
     token_type: string;
@@ -96,7 +96,11 @@ export class DiscordAuthService {
 
         if (avatar_response.status !== 200) return null;
         const avatar = Buffer.from(avatar_response.data);
-        const filename = cache_folder + randomUUID();
+        const filename = join(
+            process.env.CACHE_FOLDER!,
+            'discord',
+            randomUUID()
+        );
 
         await writeFile(filename, avatar);
         return filename;
@@ -108,7 +112,9 @@ export class DiscordAuthService {
 
     /** Create cache folders for avatars */
     async initCacheFolders() {
-        await mkdir(cache_folder, { recursive: true });
+        await mkdir(join(process.env.CACHE_FOLDER!, 'discord'), {
+            recursive: true
+        });
     }
 
     /** Create session for discord user */

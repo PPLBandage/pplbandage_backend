@@ -6,8 +6,7 @@ import { LocaleException } from 'src/interceptors/localization.interceptor';
 import responses_users from 'src/localization/users.localization';
 import { randomUUID } from 'crypto';
 import { mkdir, rm, writeFile } from 'fs/promises';
-
-const cache_folder = process.env.CACHE_FOLDER + 'twitch/';
+import { join } from 'path';
 
 type TokenResponse = {
     access_token: string;
@@ -80,7 +79,11 @@ export class TwitchAuthService {
 
         if (avatar_response.status !== 200) return null;
         const avatar = Buffer.from(avatar_response.data);
-        const filename = cache_folder + randomUUID();
+        const filename = join(
+            process.env.CACHE_FOLDER!,
+            'twitch',
+            randomUUID()
+        );
 
         await writeFile(filename, avatar);
         return filename;
@@ -93,7 +96,9 @@ export class TwitchAuthService {
 
     /** Create cache folders for avatars */
     async initCacheFolders() {
-        await mkdir(cache_folder, { recursive: true });
+        await mkdir(join(process.env.CACHE_FOLDER!, 'twitch'), {
+            recursive: true
+        });
     }
 
     /** Create session for twitch user */

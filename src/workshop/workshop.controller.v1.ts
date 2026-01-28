@@ -37,6 +37,7 @@ import {
     RequestSessionWeak
 } from 'src/interfaces/interfaces';
 import { createReadStream } from 'fs';
+import { join } from 'path';
 
 @Controller({ path: 'workshop', version: '1' })
 @UseGuards(AuthGuard, RolesGuard)
@@ -114,7 +115,7 @@ export class WorkshopController {
         if (!thumbnail) throw new NotFoundException();
         return new StreamableFile(
             createReadStream(
-                process.env.CACHE_FOLDER + 'thumbnails/' + thumbnail
+                join(process.env.CACHE_FOLDER!, 'thumbnails', thumbnail)
             ),
             { type: 'image/png' }
         );
