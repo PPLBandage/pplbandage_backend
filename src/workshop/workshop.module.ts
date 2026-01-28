@@ -11,6 +11,7 @@ import { TelegramModule } from 'src/notifications/telegram.module';
 import { KVDataBase } from 'src/prisma/kv.service';
 import { EventsModule } from './events/events.module';
 import { ThumbnailsModule } from 'src/thumbnails/thumbnails.module';
+import { WorkshopSchedulers } from './schedulers.service';
 
 @Module({
     controllers: [WorkshopController],
@@ -18,7 +19,8 @@ import { ThumbnailsModule } from 'src/thumbnails/thumbnails.module';
         WorkshopService,
         PrismaService,
         NotificationService,
-        KVDataBase
+        KVDataBase,
+        WorkshopSchedulers
     ],
     imports: [
         CacheModule.register(),

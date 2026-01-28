@@ -14,12 +14,14 @@ import { EmotesModule } from './emotes/emotes.module';
 import { TelegramModule } from './notifications/telegram.module';
 import { AdminModule } from './admin/admin.module';
 import { ThumbnailsModule } from './thumbnails/thumbnails.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
     providers: [{ provide: APP_GUARD, useClass: CustomThrottlerGuard }],
     imports: [
         ThrottlerModule.forRoot([{ ttl: 120000, limit: 150 }]),
         CacheModule.register(),
+        ScheduleModule.forRoot(),
         RootModule,
         AuthModule,
         MinecraftModule,
