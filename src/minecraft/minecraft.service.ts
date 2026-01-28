@@ -1,7 +1,7 @@
 import axios from 'axios';
 import * as sharp from 'sharp';
 import { PrismaService } from '../prisma/prisma.service';
-import { HttpException, Injectable } from '@nestjs/common';
+import { HttpException, Injectable, Logger } from '@nestjs/common';
 import { Buffer } from 'buffer';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import responses from 'src/localization/minecraft.localization';
@@ -16,6 +16,7 @@ import { join } from 'path';
 
 @Injectable()
 export class MinecraftService {
+    private readonly logger = new Logger(MinecraftService.name);
     constructor(private prisma: PrismaService) {}
 
     async getUserData(uuid: string): Promise<Profile> {
@@ -235,13 +236,14 @@ export class MinecraftService {
                         });
                     }
                 }
-                console.error(
-                    `Cannot revalidate skin cache for ${skin.default_nick}! Cause: ${cause}`
+                this.logger.error(
+                    `Cannot revalidate skin cache for ${skin.default_nick}! Cause:`,
+                    cause
                 );
             }
         }
 
-        console.info(
+        this.logger.log(
             `Finished revalidating ${skins_for_revalidate.length} skins`
         );
     }
