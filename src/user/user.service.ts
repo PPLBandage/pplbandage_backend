@@ -1,4 +1,10 @@
-import { HttpException, Injectable, Logger } from '@nestjs/common';
+import {
+    forwardRef,
+    HttpException,
+    Inject,
+    Injectable,
+    Logger
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { hasAccess } from 'src/auth/auth.service';
 import { Session } from 'src/interfaces/interfaces';
@@ -10,11 +16,16 @@ import { LocaleException } from 'src/interceptors/localization.interceptor';
 import responses from 'src/localization/users.localization';
 import responses_common from 'src/localization/common.localization';
 import { UserBadges } from '@prisma/client';
+import { MinecraftService } from 'src/minecraft/minecraft.service';
 
 @Injectable()
 export class UserService {
     private readonly logger = new Logger(UserService.name);
-    constructor(private prisma: PrismaService) {}
+    constructor(
+        private prisma: PrismaService,
+        @Inject(forwardRef(() => MinecraftService))
+        private minecraftService: MinecraftService
+    ) {}
 
     buildUserBadges(badges: UserBadges[], offset: number) {
         return badges.reduce(
@@ -493,10 +504,13 @@ export class UserService {
     }
 
     /** Get minecraft skin for workshop skin autoload */
-    getSkinForAutoload(session?: Session) {
+    async getSkinForAutoload(session?: Session) {
         if (!session) return null;
         if (session.user.UserSettings?.autoload && session.user.profile) {
-            return Buffer.from(session.user.profile.data, 'base64');
+            const skin_data = await this.minecraftService.updateSkinCache(
+                session.user.profile.uuid
+            );
+            return Buffer.from(skin_data.data, 'base64');
         }
 
         return null;

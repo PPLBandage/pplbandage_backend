@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { ConnectionsService } from './connections.service';
 import { MinecraftModule } from 'src/minecraft/minecraft.module';
 import { ConnectionsController } from './connections.controller.v1';
@@ -11,7 +10,7 @@ import { TelegramAuthModule } from 'src/auth/providers/telegram/telegram.module'
 
 @Module({
     controllers: [ConnectionsController],
-    providers: [ConnectionsService, PrismaService],
+    providers: [ConnectionsService],
     imports: [
         MinecraftModule,
         AuthModule,

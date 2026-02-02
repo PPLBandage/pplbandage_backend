@@ -171,7 +171,7 @@ export class UserController {
     @Get('@me/autoload-skin')
     @Auth(AuthEnum.Weak)
     async getAutoloadSkin(@Req() request: RequestSessionWeak) {
-        const data = this.userService.getSkinForAutoload(request.session);
+        const data = await this.userService.getSkinForAutoload(request.session);
         if (!data) throw new HttpException('', 204);
         return new StreamableFile(data, { type: 'image/png' });
     }

@@ -1,7 +1,6 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { WorkshopController } from './workshop.controller.v1';
 import { WorkshopService } from './workshop.service';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { CacheModule } from '@nestjs/cache-manager';
 import { NotificationService } from 'src/notifications/notifications.service';
 import { AuthModule } from 'src/auth/auth.module';
@@ -17,7 +16,6 @@ import { WorkshopSchedulers } from './schedulers.service';
     controllers: [WorkshopController],
     providers: [
         WorkshopService,
-        PrismaService,
         NotificationService,
         KVDataBase,
         WorkshopSchedulers
