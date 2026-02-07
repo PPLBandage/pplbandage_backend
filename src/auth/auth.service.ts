@@ -6,6 +6,7 @@ import { RolesEnum } from 'src/interfaces/types';
 import { UAParser } from 'ua-parser-js';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import responses from 'src/localization/common.localization';
+import responses_user from 'src/localization/users.localization';
 import { slugify } from 'transliteration';
 import {
     Session,
@@ -80,27 +81,35 @@ export class AuthService {
         // THIS CREATING TOO MANY DB REQUESTS
 
         // Normalize username
-        let finalUsername =
+        const slugged_username =
             slugify(username, {
                 lowercase: true,
                 separator: '_'
             }) || '_';
 
+        let final_username = slugged_username;
+
         let attempt = 0;
         while (
             await this.prisma.user.findFirst({
-                where: { username: finalUsername }
+                where: { username: final_username }
             })
         ) {
             attempt++;
-            finalUsername = username + '_'.repeat(attempt);
+
+            if (attempt > 8)
+                throw new LocaleException(
+                    responses_user.USERNAME_ALREADY_TAKEN,
+                    409
+                );
+            final_username = slugged_username + '_'.repeat(attempt);
         }
 
         const users_count = await this.prisma.user.count();
         const data = await this.prisma.user.create({
             data: {
                 id: this.generateSnowflake(BigInt(users_count)),
-                username: this.filterUsername(finalUsername),
+                username: this.filterUsername(final_username),
                 name,
                 UserSettings: { create: {} },
                 AccessRoles: {

@@ -38,8 +38,11 @@ const responses = {
     USER_NO_NAME: {
         en: 'На вашем аккаунте не установлено имя. Установите имя и попробуйте снова',
         ru: 'No name found on your account. Please set your name and form.'
+    },
+    USERNAME_ALREADY_TAKEN: {
+        en: 'This username already taken',
+        ru: 'Аккаунт с таким именем пользователя уже зарегистрирован. Выбор имени будет доступен позже. Обратитесь в поддержку.'
     }
 };
 
 export default responses;
-
