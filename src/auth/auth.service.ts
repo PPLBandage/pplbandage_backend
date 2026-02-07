@@ -80,10 +80,11 @@ export class AuthService {
         // THIS CREATING TOO MANY DB REQUESTS
 
         // Normalize username
-        let finalUsername = slugify(username, {
-            lowercase: true,
-            separator: '_'
-        });
+        let finalUsername =
+            slugify(username, {
+                lowercase: true,
+                separator: '_'
+            }) || '_';
 
         let attempt = 0;
         while (

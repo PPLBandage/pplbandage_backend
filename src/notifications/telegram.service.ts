@@ -26,7 +26,7 @@ export class TelegramService implements OnModuleInit {
     async onModuleInit() {
         this.bot.command('ping', ctx => ctx.reply('pong'));
 
-        this.bot.launch();
+        void this.bot.launch();
         this.logger.log('Telegram bot started');
     }
 
