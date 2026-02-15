@@ -42,7 +42,7 @@
         "uuid": "^13.0.0"
     },
     "devDependencies": {
-        "@nestjs/cli": "11.0.14",
+        "@nestjs/cli": "11.0.16",
         "@types/cookie-parser": "1.4.10",
         "@types/cron": "2.4.3",
         "@types/express": "5.0.6",
