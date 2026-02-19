@@ -1,6 +1,6 @@
 import { HttpException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { AccessRoles, Prisma } from '@prisma/client';
+import { AccessRoles, Prisma, User, UserSettings } from '@prisma/client';
 import { sign, verify } from 'jsonwebtoken';
 import { RolesEnum } from 'src/interfaces/types';
 import { UAParser } from 'ua-parser-js';
@@ -76,7 +76,9 @@ export class AuthService {
     }: {
         name: string;
         username: string;
-    } & Omit<Prisma.UserCreateInput, 'name' | 'username' | 'id'>) {
+    } & Omit<Prisma.UserCreateInput, 'name' | 'username' | 'id'>): Promise<
+        User & { UserSettings: UserSettings | null }
+    > {
         // NOT FOR PRODUCTION!!!
         // THIS CREATING TOO MANY DB REQUESTS
 
@@ -129,13 +131,22 @@ export class AuthService {
         return data;
     }
 
+    generateToken(user: User, roles: AccessRoles[]) {
+        return sign(
+            {
+                userId: user.id,
+                username: user.name,
+                access: this.generateAccessBitSet(roles)
+            },
+            'ppl_super_secret',
+            {
+                expiresIn: Number(process.env.SESSION_TTL)
+            }
+        );
+    }
+
     async createSession(
-        user: {
-            id: string;
-            UserSettings: { banned: boolean } | null;
-            name: string;
-            username: string;
-        },
+        user: User & { UserSettings: UserSettings | null },
         user_agent: string,
         roles: AccessRoles[],
         provider?: string
@@ -148,18 +159,7 @@ export class AuthService {
             throw new LocaleException(responses.FORBIDDEN, 403);
         }
 
-        const sessionId = sign(
-            {
-                userId: user.id,
-                username: user.name,
-                access: this.generateAccessBitSet(roles)
-            },
-            'ppl_super_secret',
-            {
-                expiresIn: Number(process.env.SESSION_TTL)
-            }
-        );
-
+        const sessionId = this.generateToken(user, roles);
         const token_record = await this.prisma.sessions.create({
             data: {
                 sessionId: sessionId,
@@ -234,15 +234,9 @@ export class AuthService {
                 decoded.iat + (decoded.exp - decoded.iat) / 2 < now ||
                 !accessMatch // Если переданный юзером токен содержит старые роли - ревалидируем токен
             ) {
-                const sessionId = sign(
-                    {
-                        userId: sessionDB.userId,
-                        access: this.generateAccessBitSet(
-                            sessionDB.User.AccessRoles
-                        )
-                    },
-                    'ppl_super_secret',
-                    { expiresIn: Number(process.env.SESSION_TTL) }
+                const sessionId = this.generateToken(
+                    sessionDB.User,
+                    sessionDB.User.AccessRoles
                 );
 
                 this.logger.debug('Updating session');
