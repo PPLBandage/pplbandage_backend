@@ -36,8 +36,8 @@ const responses = {
         ru: 'Запрашиваемый аватар не найден'
     },
     USER_NO_NAME: {
-        en: 'На вашем аккаунте не установлено имя. Установите имя и попробуйте снова',
-        ru: 'No name found on your account. Please set your name and form.'
+        en: 'No name found on your account. Please set your name and form.',
+        ru: 'На вашем аккаунте не установлено имя. Установите имя и попробуйте снова'
     },
     USERNAME_ALREADY_TAKEN: {
         en: 'This username already taken',
