@@ -176,6 +176,14 @@ export class UserController {
         return new StreamableFile(data, { type: 'image/png' });
     }
 
+    @Post('@me/fisherman-badge')
+    @Auth(AuthEnum.Strict)
+    async setFishermanBadge(@Req() request: RequestSession) {
+        await this.userService.setFishermanBadge(request.session);
+
+        return {};
+    }
+
     @Get(':username')
     @Auth(AuthEnum.Weak)
     @UseGuards(LocalAccessThrottlerGuard)

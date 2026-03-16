@@ -515,4 +515,12 @@ export class UserService {
 
         return null;
     }
+
+    /** Acquire fisherman badge for user session */
+    async setFishermanBadge(session: Session) {
+        await this.prisma.user.update({
+            where: { id: session.user.id },
+            data: { badges: { connect: { internal_id: 7 } } }
+        });
+    }
 }
