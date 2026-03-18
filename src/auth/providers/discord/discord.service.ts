@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import axios from 'axios';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import responses_users from 'src/localization/users.localization';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -7,6 +6,7 @@ import { mkdir, writeFile, rm } from 'fs/promises';
 import { randomUUID } from 'crypto';
 import { AuthService } from 'src/auth/auth.service';
 import { join } from 'path';
+import { ProxyService } from 'src/proxy/proxy.service';
 
 const discord_url = process.env.DISCORD_URL;
 
@@ -40,45 +40,49 @@ interface DiscordUser {
 export class DiscordAuthService {
     constructor(
         private prisma: PrismaService,
-        private authService: AuthService
+        private authService: AuthService,
+        private proxyService: ProxyService
     ) {}
 
     /** Get user data by code */
     async getData(code: string, redirect_uri: string): Promise<DiscordUser> {
         // ----------------------- Get access token -------------------------------
-        const discord_tokens = await axios.post(
+        const discord_tokens = await this.proxyService.makeRequest(
             discord_url + '/oauth2/token',
-            {
+            'POST',
+            new URLSearchParams({
                 grant_type: 'authorization_code',
-                code: code,
+                code,
                 redirect_uri
-            },
+            }).toString(),
             {
-                headers: {
-                    Authorization: `Basic ${process.env.BASIC_AUTH}`,
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                validateStatus: () => true
+                Authorization: `Basic ${process.env.BASIC_AUTH}`,
+                'Content-Type': 'application/x-www-form-urlencoded'
             }
         );
+
         if (discord_tokens.status !== 200)
             throw new LocaleException(responses_users.INVALID_OAUTH_CODE, 404);
 
-        const tokens_data = discord_tokens.data as DiscordResponse;
+        const tokens_data = this.proxyService.getJSON(
+            discord_tokens.data
+        ) as DiscordResponse;
 
         // ----------------------- Get discord user data --------------------------
 
-        const discord_user = await axios.get(discord_url + '/users/@me', {
-            headers: {
+        const discord_user = await this.proxyService.makeRequest(
+            discord_url + '/users/@me',
+            'GET',
+            {},
+            {
                 Authorization: `${tokens_data.token_type} ${tokens_data.access_token}`
-            },
-            validateStatus: () => true
-        });
+            }
+        );
 
         if (discord_user.status !== 200)
             throw new LocaleException(responses_users.PROFILE_FETCH_ERROR, 500);
 
-        return discord_user.data;
+        return this.proxyService.getJSON(discord_user.data) as DiscordUser;
     }
 
     /** Update avatar cache */
@@ -89,20 +93,19 @@ export class DiscordAuthService {
         if (!avatar_hash) return null;
         await this.initCacheFolders();
 
-        const avatar_response = await axios.get(
+        const avatar_response = await this.proxyService.makeRequest(
             `${process.env.DISCORD_AVATAR}/${user_id}/${avatar_hash}.png?size=512`,
-            { responseType: 'arraybuffer', validateStatus: () => true }
+            'GET'
         );
 
         if (avatar_response.status !== 200) return null;
-        const avatar = Buffer.from(avatar_response.data);
         const filename = join(
             process.env.CACHE_FOLDER!,
             'discord',
             randomUUID()
         );
 
-        await writeFile(filename, avatar);
+        await writeFile(filename, avatar_response.data);
         return filename;
     }
 

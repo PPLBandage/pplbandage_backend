@@ -16,6 +16,7 @@ import { AdminModule } from './admin/admin.module';
 import { ThumbnailsModule } from './thumbnails/thumbnails.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { PrismaModule } from './prisma/prisma.module';
+import { ProxyModule } from './proxy/proxy.module';
 
 @Module({
     providers: [{ provide: APP_GUARD, useClass: CustomThrottlerGuard }],
@@ -34,7 +35,8 @@ import { PrismaModule } from './prisma/prisma.module';
         EmotesModule,
         TelegramModule,
         AdminModule,
-        ThumbnailsModule
+        ThumbnailsModule,
+        ProxyModule
     ]
 })
 export class AppModule {}

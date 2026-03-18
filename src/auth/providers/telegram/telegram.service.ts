@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import axios from 'axios';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import responses_users from 'src/localization/users.localization';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -7,6 +6,7 @@ import { AuthService } from 'src/auth/auth.service';
 import { mkdir, rm, writeFile } from 'fs/promises';
 import * as crypto from 'crypto';
 import { join } from 'path';
+import { ProxyService } from 'src/proxy/proxy.service';
 
 interface TelegramUser {
     id: number;
@@ -22,7 +22,8 @@ export class TelegramAuthService {
     private readonly logger = new Logger(TelegramAuthService.name);
     constructor(
         private prisma: PrismaService,
-        private authService: AuthService
+        private authService: AuthService,
+        private proxyService: ProxyService
     ) {}
 
     /** Get user data by code */
@@ -69,23 +70,17 @@ export class TelegramAuthService {
         this.logger.log(`Avatar start: ${url}`);
         await this.initCacheFolders();
 
-        const avatar_response = await axios.get(url, {
-            responseType: 'arraybuffer',
-            validateStatus: () => true,
-            timeout: 15000
-        });
-
-        if (avatar_response.status !== 200) return null;
+        const avatar_bytes = await this.proxyService.makeRequest(url, 'GET');
+        if (avatar_bytes.status !== 200) return null;
 
         this.logger.log(`Avatar fetched`);
-        const avatar = Buffer.from(avatar_response.data);
         const filename = join(
             process.env.CACHE_FOLDER!,
             'telegram',
             crypto.randomUUID()
         );
 
-        await writeFile(filename, avatar);
+        await writeFile(filename, avatar_bytes.data);
 
         this.logger.log(`Avatar saved`);
         return filename;
