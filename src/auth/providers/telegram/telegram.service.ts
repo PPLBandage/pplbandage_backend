@@ -66,12 +66,13 @@ export class TelegramAuthService {
     async updateAvatar(url?: string): Promise<string | null> {
         if (!url) return null;
 
-        this.logger.log(`Avatar start`);
+        this.logger.log(`Avatar start: ${url}`);
         await this.initCacheFolders();
 
         const avatar_response = await axios.get(url, {
             responseType: 'arraybuffer',
-            validateStatus: () => true
+            validateStatus: () => true,
+            timeout: 15000
         });
 
         if (avatar_response.status !== 200) return null;
