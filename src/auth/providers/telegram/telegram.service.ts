@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import responses_users from 'src/localization/users.localization';
@@ -19,6 +19,7 @@ interface TelegramUser {
 
 @Injectable()
 export class TelegramAuthService {
+    private readonly logger = new Logger(TelegramAuthService.name);
     constructor(
         private prisma: PrismaService,
         private authService: AuthService
@@ -28,6 +29,8 @@ export class TelegramAuthService {
     async getData(code: string): Promise<TelegramUser> {
         const decoded = Buffer.from(code, 'base64');
         const user_data: TelegramUser = JSON.parse(decoded.toString('utf-8'));
+
+        this.logger.log(`Decoded user hash: ${user_data.username}`);
 
         const data_check = (Object.keys(user_data) as Array<keyof TelegramUser>)
             .filter(
@@ -55,12 +58,15 @@ export class TelegramAuthService {
         if (now - authDate > 86400)
             throw new LocaleException(responses_users.PROFILE_FETCH_ERROR, 400);
 
+        this.logger.log(`User successfully validated`);
         return user_data;
     }
 
     /** Update avatar cache */
     async updateAvatar(url?: string): Promise<string | null> {
         if (!url) return null;
+
+        this.logger.log(`Avatar start`);
         await this.initCacheFolders();
 
         const avatar_response = await axios.get(url, {
@@ -69,6 +75,8 @@ export class TelegramAuthService {
         });
 
         if (avatar_response.status !== 200) return null;
+
+        this.logger.log(`Avatar fetched`);
         const avatar = Buffer.from(avatar_response.data);
         const filename = join(
             process.env.CACHE_FOLDER!,
@@ -77,6 +85,8 @@ export class TelegramAuthService {
         );
 
         await writeFile(filename, avatar);
+
+        this.logger.log(`Avatar saved`);
         return filename;
     }
 
@@ -136,6 +146,8 @@ export class TelegramAuthService {
         const user_roles = await this.prisma.accessRoles.findMany({
             where: { users: { some: { id: user.id } } }
         });
+
+        this.logger.log(`user logged in: ${user.username}`);
         return await this.authService.createSession(
             user,
             user_agent,
