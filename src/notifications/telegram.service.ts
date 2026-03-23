@@ -1,7 +1,6 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { BandageFull } from 'src/interfaces/interfaces';
-import { Telegraf } from 'telegraf';
-import { InputFile } from 'telegraf/typings/core/types/typegram';
+import { ProxyService } from 'src/proxy/proxy.service';
 
 export const ThreadType = {
     General: 1,
@@ -11,23 +10,31 @@ export const ThreadType = {
 };
 
 @Injectable()
-export class TelegramService implements OnModuleInit {
+export class TelegramService {
     private readonly logger = new Logger(TelegramService.name);
-    private bot: Telegraf;
+    private readonly baseUrl = `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}`;
 
-    constructor() {
-        this.bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN!);
-    }
-
+    constructor(private readonly proxy: ProxyService) {}
     escapeMd(text: string) {
         return text.replace(/([_*\[\]()~`>#+\-=|{}.!])/g, '\\$1');
     }
 
-    async onModuleInit() {
-        this.bot.command('ping', ctx => ctx.reply('pong'));
+    private async callTelegram(method: string, body: unknown) {
+        const url = `${this.baseUrl}/${method}`;
 
-        void this.bot.launch();
-        this.logger.log('Telegram bot started');
+        const res = await this.proxy.makeRequest(url, 'POST', body, {
+            'Content-Type': 'application/json'
+        });
+
+        if (res.status < 200 || res.status >= 300) {
+            this.logger.error(
+                `Telegram API error: ${res.status}: `,
+                this.proxy.getJSON(res.data)
+            );
+            throw new Error(`Telegram API error: ${res.status}`);
+        }
+
+        return this.proxy.getJSON(res.data);
     }
 
     async sendToThread(
@@ -35,7 +42,9 @@ export class TelegramService implements OnModuleInit {
         threadId: number,
         text: string
     ) {
-        return this.bot.telegram.sendMessage(chatId, text, {
+        return this.callTelegram('sendMessage', {
+            chat_id: chatId,
+            text,
             message_thread_id: threadId,
             parse_mode: 'Markdown'
         });
@@ -44,10 +53,12 @@ export class TelegramService implements OnModuleInit {
     async sendPhotoToThread(
         chatId: number | string,
         threadId: number,
-        photo: string | InputFile,
+        photo: string,
         caption?: string
     ) {
-        return this.bot.telegram.sendPhoto(chatId, photo, {
+        return this.callTelegram('sendPhoto', {
+            chat_id: chatId,
+            photo, // URL
             caption,
             message_thread_id: threadId,
             parse_mode: 'Markdown'
@@ -73,11 +84,8 @@ export class TelegramService implements OnModuleInit {
             if (bandage.thumbnail_asset !== null) {
                 await this.sendPhotoToThread(
                     process.env.GROUP_ID!,
-                    2,
-                    {
-                        url: `${process.env.DOMAIN}/api/v1/workshop/${bandage.externalId}/og?token=${process.env.WORKSHOP_TOKEN}`,
-                        filename: 'Bandage'
-                    },
+                    ThreadType.Moderation,
+                    `${process.env.DOMAIN}/api/v1/workshop/${bandage.externalId}/og?token=${process.env.WORKSHOP_TOKEN}`,
                     text
                 );
             } else {
