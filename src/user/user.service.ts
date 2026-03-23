@@ -516,11 +516,19 @@ export class UserService {
         return null;
     }
 
-    /** Acquire fisherman badge for user session */
+    /* 
+    Acquire fisherman badge for user session 
+    
+    Это история, которую мы будем помнить всегда.
+    Рыбалка навсегда останется в сердцах её преданных фанатов!
+
+    RIP, Рыбалка 17.03.2026 — 24.03.2026
+
     async setFishermanBadge(session: Session) {
         await this.prisma.user.update({
             where: { id: session.user.id },
             data: { badges: { connect: { internal_id: 7 } } }
         });
     }
+    */
 }
