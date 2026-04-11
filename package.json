@@ -19,7 +19,7 @@
     "dependencies": {
         "@nestjs/cache-manager": "3.0.1",
         "@nestjs/common": "11.1.18",
-        "@nestjs/config": "4.0.3",
+        "@nestjs/config": "4.0.4",
         "@nestjs/core": "11.1.18",
         "@nestjs/platform-express": "11.1.18",
         "@nestjs/schedule": "6.1.0",
