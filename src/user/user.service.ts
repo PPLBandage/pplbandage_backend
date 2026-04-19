@@ -402,6 +402,13 @@ export class UserService {
                 minecraft_main_page_skin: body.minecraft_main_page_skin
             }
         });
+
+        this.logger.log(
+            `Updated user [${session.user.name}](${process.env.DOMAIN}/users/${session.user.username}):\n` +
+                `\`\`\`${JSON.stringify(body)}\`\`\``,
+            UserService.name,
+            true
+        );
     }
 
     /** Subscribe to user by nickname */

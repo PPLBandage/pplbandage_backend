@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { AuthService } from 'src/auth/auth.service';
 import { DiscordAuthService } from 'src/auth/providers/discord/discord.service';
 import { GoogleAuthService } from 'src/auth/providers/google/google.service';
 import { TelegramAuthService } from 'src/auth/providers/telegram/telegram.service';
@@ -11,6 +12,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class ConnectionsService {
+    private readonly logger = new Logger(ConnectionsService.name);
     constructor(
         private prisma: PrismaService,
         public minecraftService: MinecraftService,
@@ -118,6 +120,12 @@ export class ConnectionsService {
             data: { profile: { connect: { id: skin_data.id } } }
         });
 
+        this.logger.log(
+            `Connected minecraft account ${skin_data.default_nick} to user ` +
+                `[${session.user.name}](${process.env.DOMAIN}/users/${session.user.username})`,
+            AuthService.name,
+            true
+        );
         return { uuid: skin_data.uuid };
     }
 
@@ -133,6 +141,13 @@ export class ConnectionsService {
             where: { id: session.user.id },
             data: { profile: { disconnect: { id: session.user.profile.id } } }
         });
+
+        this.logger.log(
+            `Disconnected minecraft account ${session.user.profile.default_nick} from user ` +
+                `[${session.user.name}](${process.env.DOMAIN}/users/${session.user.username})`,
+            AuthService.name,
+            true
+        );
     }
 
     /** Connect discord account */
@@ -165,6 +180,13 @@ export class ConnectionsService {
                 user: { connect: { id: session.user.id } }
             }
         });
+
+        this.logger.log(
+            `Connected discord account ${data.global_name} to user ` +
+                `[${session.user.name}](${process.env.DOMAIN}/users/${session.user.username})`,
+            AuthService.name,
+            true
+        );
     }
 
     /** Disconnect discord account */
@@ -182,6 +204,13 @@ export class ConnectionsService {
         await this.prisma.discordAuth.delete({ where: { id: record.id } });
         if (record.avatar_id)
             this.discordAuthService.deleteAvatar(record.avatar_id);
+
+        this.logger.log(
+            `Disconnected discord account ${record.name} from user ` +
+                `[${session.user.name}](${process.env.DOMAIN}/users/${session.user.username})`,
+            AuthService.name,
+            true
+        );
     }
 
     /** Connect google account */
@@ -213,6 +242,13 @@ export class ConnectionsService {
                 user: { connect: { id: session.user.id } }
             }
         });
+
+        this.logger.log(
+            `Connected google account ${name} to user ` +
+                `[${session.user.name}](${process.env.DOMAIN}/users/${session.user.username})`,
+            AuthService.name,
+            true
+        );
     }
 
     /** Disconnect google account */
@@ -230,6 +266,13 @@ export class ConnectionsService {
         await this.prisma.googleAuth.delete({ where: { id: record.id } });
         if (record.avatar_id)
             this.googleAuthService.deleteAvatar(record.avatar_id);
+
+        this.logger.log(
+            `Disconnected google account ${record.name} from user ` +
+                `[${session.user.name}](${process.env.DOMAIN}/users/${session.user.username})`,
+            AuthService.name,
+            true
+        );
     }
 
     /** Connect twitch account */
@@ -262,6 +305,13 @@ export class ConnectionsService {
                 user: { connect: { id: session.user.id } }
             }
         });
+
+        this.logger.log(
+            `Connected twitch account ${data.display_name || data.login} to user ` +
+                `[${session.user.name}](${process.env.DOMAIN}/users/${session.user.username})`,
+            AuthService.name,
+            true
+        );
     }
 
     /** Disconnect twitch account */
@@ -279,6 +329,13 @@ export class ConnectionsService {
         await this.prisma.twitchAuth.delete({ where: { id: record.id } });
         if (record.avatar_id)
             this.twitchAuthService.deleteAvatar(record.avatar_id);
+
+        this.logger.log(
+            `Disconnected twitch account ${record.name} from user ` +
+                `[${session.user.name}](${process.env.DOMAIN}/users/${session.user.username})`,
+            AuthService.name,
+            true
+        );
     }
 
     /** Connect telegram account */
@@ -307,6 +364,13 @@ export class ConnectionsService {
                 user: { connect: { id: session.user.id } }
             }
         });
+
+        this.logger.log(
+            `Connected telegram account ${name} to user ` +
+                `[${session.user.name}](${process.env.DOMAIN}/users/${session.user.username})`,
+            AuthService.name,
+            true
+        );
     }
 
     /** Disconnect telegram account */
@@ -324,5 +388,12 @@ export class ConnectionsService {
         await this.prisma.telegramAuth.delete({ where: { id: record.id } });
         if (record.avatar_id)
             this.telegramAuthService.deleteAvatar(record.avatar_id);
+
+        this.logger.log(
+            `Disconnected telegram account ${record.name} from user ` +
+                `[${session.user.name}](${process.env.DOMAIN}/users/${session.user.username})`,
+            AuthService.name,
+            true
+        );
     }
 }
