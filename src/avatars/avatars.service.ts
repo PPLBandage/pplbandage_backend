@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
 import responses from 'src/localization/users.localization';
 import { readFile } from 'fs/promises';
-import * as sharp from 'sharp';
+import sharp from 'sharp';
 
 export const avatar_providers = [
     'discord',

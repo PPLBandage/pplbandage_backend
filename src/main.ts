@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
-import * as cookieParser from 'cookie-parser';
+import cookieParser from 'cookie-parser';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import * as morgan from 'morgan';
+import morgan from 'morgan';
 import { AppModule } from './app.module';
 import { HttpException, ValidationPipe, VersioningType } from '@nestjs/common';
 import { LocaleInterceptor } from './interceptors/localization.interceptor';

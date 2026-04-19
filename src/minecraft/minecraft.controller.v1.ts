@@ -10,7 +10,7 @@ import {
     Res
 } from '@nestjs/common';
 import { MinecraftService } from 'src/minecraft/minecraft.service';
-import * as sharp from 'sharp';
+import sharp from 'sharp';
 import { PageTakeQueryDTO, PixelWidthQueryDTO } from './dto/queries.dto';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import responses from 'src/localization/minecraft.localization';

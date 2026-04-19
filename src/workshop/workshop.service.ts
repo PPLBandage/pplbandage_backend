@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
-import * as sharp from 'sharp';
+import sharp from 'sharp';
 import { NotificationService } from '../notifications/notifications.service';
 import { hasAccess } from 'src/auth/auth.service';
 import { RolesEnum } from 'src/interfaces/types';

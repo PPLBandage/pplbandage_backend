@@ -1,5 +1,5 @@
 import axios from 'axios';
-import * as sharp from 'sharp';
+import sharp from 'sharp';
 import { PrismaService } from '../prisma/prisma.service';
 import { HttpException, Injectable, Logger } from '@nestjs/common';
 import { Buffer } from 'buffer';
