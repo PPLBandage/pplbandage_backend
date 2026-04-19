@@ -28,8 +28,9 @@ export class TelegramService {
 
         if (res.status < 200 || res.status >= 300) {
             this.logger.error(
-                `Telegram API error: ${res.status}: `,
-                this.proxy.getJSON(res.data)
+                `Telegram API error: ${res.status}: \`\`\``,
+                JSON.stringify(this.proxy.getJSON(res.data), () => {}, 4),
+                '```'
             );
             throw new Error(`Telegram API error: ${res.status}`);
         }
@@ -44,7 +45,7 @@ export class TelegramService {
     ) {
         return this.callTelegram('sendMessage', {
             chat_id: chatId,
-            text,
+            text: this.escapeMd(text),
             message_thread_id: threadId,
             parse_mode: 'Markdown'
         });
@@ -59,7 +60,7 @@ export class TelegramService {
         return this.callTelegram('sendPhoto', {
             chat_id: chatId,
             photo, // URL
-            caption,
+            caption: caption ? this.escapeMd(caption) : undefined,
             message_thread_id: threadId,
             parse_mode: 'Markdown'
         });
