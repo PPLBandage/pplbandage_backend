@@ -47,7 +47,7 @@ export class TelegramService {
             chat_id: chatId,
             text: this.escapeMd(text),
             message_thread_id: threadId,
-            parse_mode: 'Markdown'
+            parse_mode: 'MarkdownV2'
         });
     }
 
@@ -62,7 +62,7 @@ export class TelegramService {
             photo, // URL
             caption: caption ? this.escapeMd(caption) : undefined,
             message_thread_id: threadId,
-            parse_mode: 'Markdown'
+            parse_mode: 'MarkdownV2'
         });
     }
 
@@ -86,7 +86,7 @@ export class TelegramService {
                 await this.sendPhotoToThread(
                     process.env.GROUP_ID!,
                     ThreadType.Moderation,
-                    `${process.env.DOMAIN}/api/v1/workshop/${bandage.externalId}/og?token=${process.env.WORKSHOP_TOKEN}`,
+                    `${process.env.OG_CDN_URL}/api/v1/workshop/${bandage.externalId}/og?token=${process.env.WORKSHOP_TOKEN}`,
                     text
                 );
             } else {

@@ -96,9 +96,10 @@ export class WorkshopController {
         return await this.bandageService.getDataForOg(id, request.session);
     }
 
-    @Get(':id/og')
+    @Get([':id/og', ':id/og.png'])
     @Auth(AuthEnum.Weak)
     @Header('Cache-Control', 'public, max-age=86400')
+    @Header('Content-Type', 'image/png')
     async getBandageImage(
         @Param('id') id: string,
         @Req() request: RequestSessionWeak,
