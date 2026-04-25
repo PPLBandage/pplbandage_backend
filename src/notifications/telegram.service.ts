@@ -45,7 +45,7 @@ export class TelegramService {
     ) {
         return this.callTelegram('sendMessage', {
             chat_id: chatId,
-            text: this.escapeMd(text),
+            text,
             message_thread_id: threadId,
             parse_mode: 'MarkdownV2'
         });
@@ -60,7 +60,7 @@ export class TelegramService {
         return this.callTelegram('sendPhoto', {
             chat_id: chatId,
             photo, // URL
-            caption: caption ? this.escapeMd(caption) : undefined,
+            caption,
             message_thread_id: threadId,
             parse_mode: 'MarkdownV2'
         });
