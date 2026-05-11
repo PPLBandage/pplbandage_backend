@@ -173,7 +173,8 @@ export class RootController {
         await this.telegramService.sendToThread(
             process.env.GROUP_ID!,
             ThreadType.Feedback,
-            `New feedback from ${user}:\n${body.content}`
+            `New feedback from ${this.telegramService.escapeMd(user)}:\n` +
+                `${this.telegramService.escapeMd(body.content)}`
         );
     }
 
