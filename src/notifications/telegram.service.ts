@@ -29,7 +29,7 @@ export class TelegramService {
         if (res.status < 200 || res.status >= 300) {
             this.logger.error(
                 `Telegram API error: ${res.status}: \`\`\`` +
-                    `${JSON.stringify(new TextDecoder().decode(res.data), () => {}, 4)}\`\`\``
+                    `${new TextDecoder().decode(res.data)}\`\`\``
             );
             throw new Error(`Telegram API error: ${res.status}`);
         }
