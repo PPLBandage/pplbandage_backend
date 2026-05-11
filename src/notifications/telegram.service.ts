@@ -31,7 +31,6 @@ export class TelegramService {
                 `Telegram API error: ${res.status}: \`\`\`` +
                     `${new TextDecoder().decode(res.data)}\`\`\``
             );
-            throw new Error(`Telegram API error: ${res.status}`);
         }
 
         return this.proxy.getJSON(res.data);
