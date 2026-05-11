@@ -192,8 +192,8 @@ export class RootController {
         await this.telegramService.sendToThread(
             process.env.GROUP_ID!,
             ThreadType.Errors,
-            `Client received client-side error:\n${body.content}\n\n` +
-                `User agent: ${ua}`
+            `Client received client-side error:\n${this.telegramService.escapeMd(body.content)}\n\n` +
+                `User agent: ${this.telegramService.escapeMd(ua)}`
         );
     }
 }
