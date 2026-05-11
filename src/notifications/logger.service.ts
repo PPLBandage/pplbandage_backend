@@ -11,7 +11,7 @@ export class TelegramLogger implements LoggerService {
             await this.telegramService.sendToThread(
                 process.env.GROUP_ID!,
                 ThreadType.Errors,
-                message.slice(0, 4000)
+                this.telegramService.escapeMd(message.slice(0, 4000))
             );
         } catch (e) {
             this.consoleLogger.error('Ошибка при отправке лога в Telegram:', e);

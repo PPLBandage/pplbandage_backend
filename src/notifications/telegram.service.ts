@@ -16,7 +16,7 @@ export class TelegramService {
 
     constructor(private readonly proxy: ProxyService) {}
     escapeMd(text: string) {
-        return text.replace(/([\\_*\[\]()~`>#+\-=|{}.!])/g, '\\$1');
+        return text.replace(/[_*\[\]()~`>#+\-=|{}.!\\]/g, c => `\\${c}`);
     }
 
     private async callTelegram(method: string, body: unknown) {
