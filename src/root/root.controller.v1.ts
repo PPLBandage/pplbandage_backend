@@ -190,11 +190,16 @@ export class RootController {
             return;
         }
 
+        console.log(
+            `Client received client\\-side error\\:\n${this.telegramService.escapeMd(body.content)}\n\n` +
+                `User\\-agent\\: ${this.telegramService.escapeMd(ua)}`
+        );
+
         await this.telegramService.sendToThread(
             process.env.GROUP_ID!,
             ThreadType.Errors,
-            `Client received client\-side error\:\n${this.telegramService.escapeMd(body.content)}\n\n` +
-                `User\-agent\: ${this.telegramService.escapeMd(ua)}`
+            `Client received client\\-side error\\:\n${this.telegramService.escapeMd(body.content)}\n\n` +
+                `User\\-agent\\: ${this.telegramService.escapeMd(ua)}`
         );
     }
 }
