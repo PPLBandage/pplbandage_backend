@@ -1,11 +1,14 @@
 import { HttpException, Inject, Injectable } from '@nestjs/common';
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
-import axios from 'axios';
 import { GQLResponse } from './types';
+import { ProxyService } from 'src/proxy/proxy.service';
 
 @Injectable()
 export class EmotesService {
-    constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
+    constructor(
+        @Inject(CACHE_MANAGER) private cacheManager: Cache,
+        private readonly proxy: ProxyService
+    ) {}
     ttl: number = 1000 * 60 * 60 * 24;
 
     async searchEmote(
@@ -14,8 +17,11 @@ export class EmotesService {
         const cache = await this.cacheManager.get(`emote-search-${q}`);
         if (cache && cache !== '404') return JSON.parse(cache as string);
 
-        const search_result = await axios.post('https://7tv.io/v3/gql', {
-            query: `
+        const search_result = await this.proxy.makeRequest(
+            'https://7tv.io/v3/gql',
+            'POST',
+            {
+                query: `
                 query ($query: String!) {
                     emotes(query: $query, limit: 1, filter: { exact_match: true }) {
                         items {
@@ -27,8 +33,9 @@ export class EmotesService {
                     }
                 }
             }`,
-            variables: { query: q }
-        });
+                variables: { query: q }
+            }
+        );
 
         if (search_result.status !== 200)
             throw new HttpException(
@@ -36,7 +43,7 @@ export class EmotesService {
                 search_result.status
             );
 
-        const data = search_result.data as GQLResponse;
+        const data = this.proxy.getJSON(search_result.data) as GQLResponse;
         if (!data.data || data.data.emotes.items.length === 0) {
             await this.cacheManager.set(`emote-search-${q}`, '404', this.ttl);
             throw new HttpException(`Emote \`${q}\` not found`, 404);
@@ -57,11 +64,9 @@ export class EmotesService {
             await this.cacheManager.get(cache_key);
         if (cache && cache !== '404') return cache;
 
-        const image = await axios.get(
+        const image = await this.proxy.makeRequest(
             `https://cdn.7tv.app/emote/${id}/1x.webp`,
-            {
-                responseType: 'arraybuffer'
-            }
+            'GET'
         );
 
         if (image.status !== 200) {
@@ -69,7 +74,7 @@ export class EmotesService {
             throw new HttpException('Cannot fetch emote image', image.status);
         }
 
-        const base64 = Buffer.from(image.data, 'binary').toString('base64');
+        const base64 = Buffer.from(image.data).toString('base64');
         await this.cacheManager.set(cache_key, base64, this.ttl);
 
         return base64;
