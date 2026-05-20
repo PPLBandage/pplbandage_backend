@@ -239,7 +239,7 @@ export class MinecraftService {
                     }
                 }
                 this.logger.error(
-                    `Cannot revalidate skin cache for ${skin.default_nick}! Cause: ${cause} (${code})`
+                    `Cannot revalidate skin cache for ${skin.default_nick}\\! Cause\\: ${cause} (${code})`
                 );
             }
         }
