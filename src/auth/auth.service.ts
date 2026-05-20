@@ -207,7 +207,7 @@ export class AuthService {
                 });
             } finally {
                 this.logger.warn(
-                    `Kicked user ${sessionDB.User.name} from account due user-agent mismatch`,
+                    `Kicked user ${sessionDB.User.name} from account due user\\-agent mismatch`,
                     AuthService.name,
                     true
                 );

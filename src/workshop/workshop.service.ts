@@ -639,6 +639,13 @@ export class WorkshopService {
             include: { User: true, tags: true }
         });
 
+        this.logger.log(
+            `Bandage [${bandage.title}](${process.env.DOMAIN}/workshop/${bandage.externalId}) updated:\n` +
+                `\`\`\`json\n${JSON.stringify(update_data, undefined, 4)}\n\`\`\``,
+            WorkshopService.name,
+            true
+        );
+
         const remoderation_fields = ['title', 'description', 'tags'];
         let needs_to_remoderate = Object.keys(dirty_data).some(val =>
             remoderation_fields.includes(val as string)
@@ -761,11 +768,17 @@ export class WorkshopService {
     }
 
     /** Remove moderation from bandage */
-    async approveBandage(bandage: BandageFull) {
+    async approveBandage(bandage: BandageFull, session: Session) {
         try {
             await this.prisma.bandageModeration.delete({
                 where: { bandageId: bandage.id }
             });
+
+            this.logger.log(
+                `*${session.user.name}* approved bandage [${bandage.title}](${process.env.DOMAIN}/workshop/${bandage.externalId})`,
+                WorkshopService.name,
+                true
+            );
         } catch {
             console.debug('Cannot approve approved bandage');
         }
@@ -796,7 +809,7 @@ export class WorkshopService {
         }
 
         if (type === 'none') {
-            this.approveBandage(bandage);
+            this.approveBandage(bandage, session);
             return;
         }
 
@@ -818,6 +831,13 @@ export class WorkshopService {
                 is_final: is_final
             }
         });
+
+        this.logger.log(
+            `Changed moderation state for bandage [${bandage.title}](${process.env.DOMAIN}/workshop/${bandage.externalId}):\n` +
+                `\`\`\`json\n${JSON.stringify({ type, message, is_hides, is_final }, undefined, 4)}\n\`\`\``,
+            WorkshopService.name,
+            true
+        );
     }
 
     /** Get under moderation bandages */

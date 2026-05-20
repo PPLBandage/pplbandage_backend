@@ -405,7 +405,7 @@ export class UserService {
 
         this.logger.log(
             `Updated user [${session.user.name}](${process.env.DOMAIN}/users/${session.user.username}):\n` +
-                `\`\`\`${JSON.stringify(body)}\`\`\``,
+                `\`\`\`json\n${JSON.stringify(body)}\n\`\`\``,
             UserService.name,
             true
         );
