@@ -3,7 +3,12 @@ import cookieParser from 'cookie-parser';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import morgan from 'morgan';
 import { AppModule } from './app.module';
-import { HttpException, ValidationPipe, VersioningType } from '@nestjs/common';
+import {
+    HttpException,
+    Logger,
+    ValidationPipe,
+    VersioningType
+} from '@nestjs/common';
 import { LocaleInterceptor } from './interceptors/localization.interceptor';
 import { TelegramLogger } from './notifications/logger.service';
 
@@ -41,6 +46,14 @@ async function bootstrap() {
     );
 
     app.use(cookieParser());
+
+    const logger = new Logger();
+    logger.log(
+        'Application configured and awaiting for startup',
+        'Bootstrap',
+        true
+    );
+
     await app.listen(8001);
 }
 bootstrap();

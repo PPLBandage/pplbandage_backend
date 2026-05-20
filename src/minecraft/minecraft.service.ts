@@ -226,8 +226,10 @@ export class MinecraftService {
                 //console.log(`Revalidated cache for ${skin.default_nick}`);
             } catch (e: LocaleException | unknown) {
                 let cause = e;
+                let code = 0;
                 if (e instanceof LocaleException) {
                     cause = JSON.stringify(e.getResponse());
+                    code = e.getStatus();
 
                     // Delete record if profile not exists
                     if (e.getStatus() === 404) {
@@ -237,8 +239,7 @@ export class MinecraftService {
                     }
                 }
                 this.logger.error(
-                    `Cannot revalidate skin cache for ${skin.default_nick}! Cause:`,
-                    cause
+                    `Cannot revalidate skin cache for ${skin.default_nick}! Cause: ${cause} (${code})`
                 );
             }
         }
