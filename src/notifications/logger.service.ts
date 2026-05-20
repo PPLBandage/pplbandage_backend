@@ -23,7 +23,7 @@ export class TelegramLogger implements LoggerService {
 
     send_format(level: string, message: string, context?: string) {
         this.send(
-            `*\\[${level}\\]${context ? `\\[${this.escapeMd(context)}\\]` : ''}* ${this.escapeMd(message)}`
+            `*\\[${level}\\]${context ? `\\[${context}\\]` : ''}* ${message}`
         );
     }
 
