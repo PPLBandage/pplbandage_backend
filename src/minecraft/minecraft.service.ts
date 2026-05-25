@@ -31,7 +31,10 @@ export class MinecraftService {
                 throw new LocaleException(responses.PROFILE_NOT_FOUND, 404);
 
             throw new LocaleException(
-                responses.MOJANG_ERROR,
+                {
+                    ...responses.MOJANG_ERROR,
+                    response: response_skin.data
+                },
                 response_skin.status
             );
         }
@@ -52,7 +55,10 @@ export class MinecraftService {
                 throw new LocaleException(
                     response_uuid.status === 404
                         ? responses.PROFILE_NOT_FOUND
-                        : responses.MOJANG_ERROR,
+                        : {
+                              ...responses.MOJANG_ERROR,
+                              response: response_uuid.data
+                          },
                     response_uuid.status
                 );
             }
@@ -169,7 +175,10 @@ export class MinecraftService {
                 throw new LocaleException(
                     skin_response.status === 404
                         ? responses.PROFILE_NOT_FOUND
-                        : responses.MOJANG_ERROR,
+                        : {
+                              ...responses.MOJANG_ERROR,
+                              response: skin_response.data
+                          },
                     skin_response.status
                 );
             }
@@ -239,7 +248,7 @@ export class MinecraftService {
                     }
                 }
                 this.logger.error(
-                    `Cannot revalidate skin cache for ${skin.default_nick}\\! Cause\\:\n \`\`\`json\n${cause}\n\`\`\`\n (${code})`
+                    `Cannot revalidate skin cache for ${skin.default_nick}\\! Cause\\:\n \`\`\`json\n${cause}\n\`\`\`\n \\(${code}\\)`
                 );
             }
         }
