@@ -828,7 +828,8 @@ export class WorkshopService {
                 message: message,
                 userId: session.user.id,
                 is_hides: is_hides,
-                is_final: is_final
+                is_final: is_final,
+                created: new Date()
             }
         });
 
