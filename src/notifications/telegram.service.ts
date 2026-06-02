@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { ConsoleLogger, Injectable, Logger } from '@nestjs/common';
 import { BandageFull } from 'src/interfaces/interfaces';
 import { ProxyService } from 'src/proxy/proxy.service';
 
@@ -12,6 +12,7 @@ export const ThreadType = {
 @Injectable()
 export class TelegramService {
     private readonly logger = new Logger(TelegramService.name);
+    private readonly consoleLogger = new ConsoleLogger();
     private readonly baseUrl = `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}`;
 
     constructor(private readonly proxy: ProxyService) {}
@@ -27,9 +28,14 @@ export class TelegramService {
         });
 
         if (res.status < 200 || res.status >= 300) {
+            const mess = new TextDecoder().decode(res.data);
             this.logger.error(
                 `Telegram API error: ${res.status}: \`\`\`` +
                     `${new TextDecoder().decode(res.data)}\`\`\``
+            );
+
+            this.consoleLogger.error(
+                `Telegram API error: ${mess}, Body: ${JSON.stringify(body)}`
             );
         }
 

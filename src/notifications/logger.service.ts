@@ -4,10 +4,7 @@ import { TelegramService, ThreadType } from './telegram.service';
 @Injectable()
 export class TelegramLogger implements LoggerService {
     private readonly consoleLogger = new ConsoleLogger();
-    private escapeMd;
-    constructor(private readonly telegramService: TelegramService) {
-        this.escapeMd = this.telegramService.escapeMd;
-    }
+    constructor(private readonly telegramService: TelegramService) {}
 
     private async send(message: string) {
         try {
@@ -17,7 +14,9 @@ export class TelegramLogger implements LoggerService {
                 message.slice(0, 4000)
             );
         } catch (e) {
-            this.consoleLogger.error('Ошибка при отправке лога в Telegram:', e);
+            this.consoleLogger.error(
+                `Ошибка при отправке лога в Telegram: ${e}, Message: ${message}`
+            );
         }
     }
 
