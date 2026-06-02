@@ -4,6 +4,7 @@ import { DiscordAuthService } from 'src/auth/providers/discord/discord.service';
 import { GoogleAuthService } from 'src/auth/providers/google/google.service';
 import { TelegramAuthService } from 'src/auth/providers/telegram/telegram.service';
 import { TwitchAuthService } from 'src/auth/providers/twitch/twitch.service';
+import { escapeMd, makeLink } from 'src/common/telegram_markdown_utils';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import { Session } from 'src/interfaces/interfaces';
 import responses_minecraft from 'src/localization/minecraft.localization';
@@ -121,8 +122,8 @@ export class ConnectionsService {
         });
 
         this.logger.log(
-            `Connected minecraft account ${skin_data.default_nick} to user ` +
-                `[${session.user.name}](${process.env.DOMAIN}/users/${session.user.username})`,
+            `Connected minecraft account ${escapeMd(skin_data.default_nick)} to user ` +
+                `${makeLink(session.user.name, `${process.env.DOMAIN}/users/${session.user.username}`)}`,
             AuthService.name,
             true
         );
@@ -144,7 +145,7 @@ export class ConnectionsService {
 
         this.logger.log(
             `Disconnected minecraft account ${session.user.profile.default_nick} from user ` +
-                `[${session.user.name}](${process.env.DOMAIN}/users/${session.user.username})`,
+                `${makeLink(session.user.name, `${process.env.DOMAIN}/users/${session.user.username}`)}`,
             AuthService.name,
             true
         );
@@ -183,7 +184,7 @@ export class ConnectionsService {
 
         this.logger.log(
             `Connected discord account ${data.global_name} to user ` +
-                `[${session.user.name}](${process.env.DOMAIN}/users/${session.user.username})`,
+                `${makeLink(session.user.name, `${process.env.DOMAIN}/users/${session.user.username}`)}`,
             AuthService.name,
             true
         );
@@ -207,7 +208,7 @@ export class ConnectionsService {
 
         this.logger.log(
             `Disconnected discord account ${record.name} from user ` +
-                `[${session.user.name}](${process.env.DOMAIN}/users/${session.user.username})`,
+                `${makeLink(session.user.name, `${process.env.DOMAIN}/users/${session.user.username}`)}`,
             AuthService.name,
             true
         );
@@ -245,7 +246,7 @@ export class ConnectionsService {
 
         this.logger.log(
             `Connected google account ${name} to user ` +
-                `[${session.user.name}](${process.env.DOMAIN}/users/${session.user.username})`,
+                `${makeLink(session.user.name, `${process.env.DOMAIN}/users/${session.user.username}`)}`,
             AuthService.name,
             true
         );
@@ -269,7 +270,7 @@ export class ConnectionsService {
 
         this.logger.log(
             `Disconnected google account ${record.name} from user ` +
-                `[${session.user.name}](${process.env.DOMAIN}/users/${session.user.username})`,
+                `${makeLink(session.user.name, `${process.env.DOMAIN}/users/${session.user.username}`)}`,
             AuthService.name,
             true
         );
@@ -308,7 +309,7 @@ export class ConnectionsService {
 
         this.logger.log(
             `Connected twitch account ${data.display_name || data.login} to user ` +
-                `[${session.user.name}](${process.env.DOMAIN}/users/${session.user.username})`,
+                `${makeLink(session.user.name, `${process.env.DOMAIN}/users/${session.user.username}`)}`,
             AuthService.name,
             true
         );
@@ -332,7 +333,7 @@ export class ConnectionsService {
 
         this.logger.log(
             `Disconnected twitch account ${record.name} from user ` +
-                `[${session.user.name}](${process.env.DOMAIN}/users/${session.user.username})`,
+                `${makeLink(session.user.name, `${process.env.DOMAIN}/users/${session.user.username}`)}`,
             AuthService.name,
             true
         );
@@ -367,7 +368,7 @@ export class ConnectionsService {
 
         this.logger.log(
             `Connected telegram account ${name} to user ` +
-                `[${session.user.name}](${process.env.DOMAIN}/users/${session.user.username})`,
+                `${makeLink(session.user.name, `${process.env.DOMAIN}/users/${session.user.username}`)}`,
             AuthService.name,
             true
         );
@@ -391,7 +392,7 @@ export class ConnectionsService {
 
         this.logger.log(
             `Disconnected telegram account ${record.name} from user ` +
-                `[${session.user.name}](${process.env.DOMAIN}/users/${session.user.username})`,
+                `${makeLink(session.user.name, `${process.env.DOMAIN}/users/${session.user.username}`)}`,
             AuthService.name,
             true
         );

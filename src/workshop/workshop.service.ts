@@ -23,6 +23,7 @@ import { access, constants, writeFile } from 'fs/promises';
 import { ThumbnailsService } from 'src/thumbnails/thumbnails.service';
 import { v4 } from 'uuid';
 import { join } from 'path';
+import { escapeMd, makeLink } from 'src/common/telegram_markdown_utils';
 
 export const sort_keys = ['popular_up', 'date_up', 'name_up', 'relevant_up'];
 
@@ -640,7 +641,7 @@ export class WorkshopService {
         });
 
         this.logger.log(
-            `Bandage [${bandage.title}](${process.env.DOMAIN}/workshop/${bandage.externalId}) updated:\n` +
+            `Bandage ${makeLink(bandage.title, `${process.env.DOMAIN}/workshop/${bandage.externalId}`)} updated:\n` +
                 `\`\`\`json\n${JSON.stringify(update_data, undefined, 4)}\n\`\`\``,
             WorkshopService.name,
             true
@@ -694,7 +695,7 @@ export class WorkshopService {
 
         await this.prisma.bandage.delete({ where: { id: bandage.id } });
         this.logger.log(
-            `Bandage *${bandage.title}* with external id ${bandage.externalId} deleted by ${session.user.name}`,
+            `Bandage *${escapeMd(bandage.title)}* with external id ${bandage.externalId} deleted by ${escapeMd(session.user.name)}`,
             WorkshopService.name,
             true
         );
@@ -752,7 +753,7 @@ export class WorkshopService {
         });
 
         this.logger.log(
-            `Bandage *${bandage.title}* with external id ${bandage.externalId} archived by ${session.user.name}`,
+            `Bandage *${escapeMd(bandage.title)}* with external id ${bandage.externalId} archived by ${escapeMd(session.user.name)}`,
             WorkshopService.name,
             true
         );
@@ -775,7 +776,7 @@ export class WorkshopService {
             });
 
             this.logger.log(
-                `*${session.user.name}* approved bandage [${bandage.title}](${process.env.DOMAIN}/workshop/${bandage.externalId})`,
+                `*${escapeMd(session.user.name)}* approved bandage ${makeLink(bandage.title, `${process.env.DOMAIN}/workshop/${bandage.externalId}`)}`,
                 WorkshopService.name,
                 true
             );
@@ -834,7 +835,7 @@ export class WorkshopService {
         });
 
         this.logger.log(
-            `Changed moderation state for bandage [${bandage.title}](${process.env.DOMAIN}/workshop/${bandage.externalId}):\n` +
+            `Changed moderation state for bandage ${makeLink(bandage.title, `${process.env.DOMAIN}/workshop/${bandage.externalId}`)}:\n` +
                 `\`\`\`json\n${JSON.stringify({ type, message, is_hides, is_final }, undefined, 4)}\n\`\`\``,
             WorkshopService.name,
             true

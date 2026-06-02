@@ -17,6 +17,7 @@ import responses from 'src/localization/users.localization';
 import responses_common from 'src/localization/common.localization';
 import { UserBadges } from '@prisma/client';
 import { MinecraftService } from 'src/minecraft/minecraft.service';
+import { escapeMd, makeLink } from 'src/common/telegram_markdown_utils';
 
 @Injectable()
 export class UserService {
@@ -364,7 +365,7 @@ export class UserService {
             throw new LocaleException(responses.SELFBAN, 400);
 
         this.logger.log(
-            `Admin *${session.user.username}* updated user *${username}*:\n` +
+            `Admin *${escapeMd(session.user.username)}* updated user *${escapeMd(username)}*:\n` +
                 `   *banned*: ${data.banned}`,
             UserService.name,
             true
@@ -404,7 +405,7 @@ export class UserService {
         });
 
         this.logger.log(
-            `Updated user [${session.user.name}](${process.env.DOMAIN}/users/${session.user.username}):\n` +
+            `Updated user ${makeLink(session.user.name, `${process.env.DOMAIN}/users/${session.user.username}`)}:\n` +
                 `\`\`\`json\n${JSON.stringify(body)}\n\`\`\``,
             UserService.name,
             true
@@ -472,7 +473,7 @@ export class UserService {
         });
 
         this.logger.log(
-            `User deleted: ${session.user.name}`,
+            `User deleted: ${escapeMd(session.user.name)}`,
             UserService.name,
             true
         );

@@ -14,6 +14,7 @@ import {
     UserAccess,
     UserFull
 } from 'src/interfaces/interfaces';
+import { escapeMd, makeLink } from 'src/common/telegram_markdown_utils';
 
 const EPOCH = 1672531200000n;
 
@@ -123,7 +124,7 @@ export class AuthService {
         });
 
         this.logger.log(
-            `Registered new user: [${data.name}](${process.env.DOMAIN}/users/${data.username}) with id ${data.id}\n` +
+            `Registered new user: ${makeLink(data.name, `${process.env.DOMAIN}/users/${data.username}`)} with id ${data.id}\n` +
                 `Total users count: ${users_count + 1}`,
             AuthService.name,
             true
@@ -169,7 +170,7 @@ export class AuthService {
         });
 
         this.logger.log(
-            `User [${user.name}](${process.env.DOMAIN}/users/${user.username}) logged in through *${provider}*`,
+            `User ${makeLink(user.name, `${process.env.DOMAIN}/users/${user.username}`)} logged in through *${provider}*`,
             AuthService.name,
             true
         );
@@ -207,7 +208,7 @@ export class AuthService {
                 });
             } finally {
                 this.logger.warn(
-                    `Kicked user ${sessionDB.User.name} from account due user\\-agent mismatch`,
+                    `Kicked user ${escapeMd(sessionDB.User.name)} from account due user\\-agent mismatch`,
                     AuthService.name,
                     true
                 );
@@ -276,7 +277,7 @@ export class AuthService {
         });
 
         this.logger.log(
-            `User [${session.user.name}](${process.env.DOMAIN}/users/${session.user.username}) logged out`,
+            `User ${makeLink(session.user.name, `${process.env.DOMAIN}/users/${session.user.username}`)} logged out`,
             AuthService.name,
             true
         );
