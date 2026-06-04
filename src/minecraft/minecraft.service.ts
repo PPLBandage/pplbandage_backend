@@ -229,9 +229,11 @@ export class MinecraftService {
             take: count
         });
 
+        let success_revalidated = 0;
         for (const skin of skins_for_revalidate) {
             try {
                 await this.updateSkinCache(skin.uuid, true);
+                success_revalidated++;
                 //console.log(`Revalidated cache for ${skin.default_nick}`);
             } catch (e: LocaleException | unknown) {
                 let cause = e;
@@ -254,7 +256,7 @@ export class MinecraftService {
         }
 
         this.logger.log(
-            `Finished revalidating ${skins_for_revalidate.length} skins`
+            `Successfully revalidated ${success_revalidated} skins`
         );
     }
 
