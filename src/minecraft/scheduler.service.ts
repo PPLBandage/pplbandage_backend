@@ -11,6 +11,6 @@ export class MinecraftScheduler {
     async scheduleSkinRevalidate() {
         this.logger.log('Skin revalidating started');
 
-        await this.minecraftService.revalidateSkins(180);
+        await this.minecraftService.revalidateSkins(100);
     }
 }
