@@ -38,6 +38,8 @@ model User {
     AccessRoles                AccessRoles[]
     BandageModeration          BandageModeration[]
 
+    name_conflict Boolean @default(false)
+
     subscriptions User[] @relation("UserSubs")
     subscribers   User[] @relation("UserSubs")
 

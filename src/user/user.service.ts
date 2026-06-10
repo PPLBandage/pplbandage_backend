@@ -65,7 +65,8 @@ export class UserService {
             has_unreaded_notifications: session.user.has_unreaded_notifications,
             stars_count: stars_count,
             subscribers_count: session.user.subscribers.length,
-            badges: this.buildUserBadges(session.user.badges, 0)
+            badges: this.buildUserBadges(session.user.badges, 0),
+            name_conflict: session.user.name_conflict
         };
     }
 
@@ -365,7 +366,7 @@ export class UserService {
             throw new LocaleException(responses.SELFBAN, 400);
 
         this.logger.log(
-            `Admin *${escapeMd(session.user.username)}* updated user *${escapeMd(username)}*:\n` +
+            `Admin *${escapeMd(session.user.username || '')}* updated user *${escapeMd(username)}*:\n` +
                 `   *banned*: ${data.banned}`,
             UserService.name,
             true
@@ -524,6 +525,30 @@ export class UserService {
         return null;
     }
 
+    /** Set user username if there is a conflict */
+    async setUsername(session: Session, name: string) {
+        if (!session.user.name_conflict)
+            throw new LocaleException(responses.USERNAME_ALREADY_SET, 400);
+
+        const lowered = name.toLowerCase();
+        const existing_name = await this.prisma.user.findFirst({
+            where: { username: lowered }
+        });
+
+        if (!!existing_name)
+            throw new LocaleException(responses.USERNAME_ALREADY_TAKEN, 409);
+
+        await this.prisma.user.update({
+            where: { id: session.user.id },
+            data: { username: lowered, name_conflict: false }
+        });
+
+        this.logger.log(
+            `User ${makeLink(session.user.name, `${process.env.DOMAIN}/users/${session.user.username}`)} updated username: ${escapeMd(lowered)}`,
+            UserService.name,
+            true
+        );
+    }
     /* 
     Acquire fisherman badge for user session 
     

@@ -67,3 +67,10 @@ export class ErrorReportDTO {
     @MaxLength(1500)
     content!: string;
 }
+
+export class NameChangeDTO {
+    @IsString()
+    @IsNotEmpty()
+    @MaxLength(30)
+    name!: string;
+}

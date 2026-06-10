@@ -41,7 +41,11 @@ const responses = {
     },
     USERNAME_ALREADY_TAKEN: {
         en: 'This username already taken',
-        ru: 'Аккаунт с таким именем пользователя уже зарегистрирован. Выбор имени будет доступен позже. Обратитесь в поддержку.'
+        ru: 'Аккаунт с таким именем пользователя уже зарегистрирован.'
+    },
+    USERNAME_ALREADY_SET: {
+        en: 'Username at this account already set.',
+        ru: 'Имя пользователя для этого аккаунта уже установлено'
     }
 };
 

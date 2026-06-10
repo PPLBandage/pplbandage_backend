@@ -6,7 +6,6 @@ import { RolesEnum } from 'src/interfaces/types';
 import { UAParser } from 'ua-parser-js';
 import { LocaleException } from 'src/interceptors/localization.interceptor';
 import responses from 'src/localization/common.localization';
-import responses_user from 'src/localization/users.localization';
 import { slugify } from 'transliteration';
 import {
     Session,
@@ -80,40 +79,26 @@ export class AuthService {
     } & Omit<Prisma.UserCreateInput, 'name' | 'username' | 'id'>): Promise<
         User & { UserSettings: UserSettings | null }
     > {
-        // NOT FOR PRODUCTION!!!
-        // THIS CREATING TOO MANY DB REQUESTS
-
-        // Normalize username
         const slugged_username =
             slugify(username, {
                 lowercase: true,
                 separator: '_'
             }) || '_';
 
-        let final_username = slugged_username;
-
-        let attempt = 0;
-        while (
-            await this.prisma.user.findFirst({
-                where: { username: final_username }
-            })
-        ) {
-            attempt++;
-
-            if (attempt > 8)
-                throw new LocaleException(
-                    responses_user.USERNAME_ALREADY_TAKEN,
-                    409
-                );
-            final_username = slugged_username + '_'.repeat(attempt);
-        }
+        const existing_user = await this.prisma.user.findFirst({
+            where: { username: slugged_username }
+        });
 
         const users_count = await this.prisma.user.count();
+        const id = this.generateSnowflake(BigInt(users_count));
         const data = await this.prisma.user.create({
             data: {
-                id: this.generateSnowflake(BigInt(users_count)),
-                username: this.filterUsername(final_username),
+                id,
+                username: !existing_user
+                    ? this.filterUsername(slugged_username)
+                    : id,
                 name,
+                name_conflict: !!existing_user,
                 UserSettings: { create: {} },
                 AccessRoles: {
                     connect: { level: 0 }

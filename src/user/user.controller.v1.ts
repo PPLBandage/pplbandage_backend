@@ -19,7 +19,11 @@ import { RolesGuard } from 'src/guards/roles.guard';
 import { AuthEnum, RolesEnum } from 'src/interfaces/types';
 import { Auth } from 'src/decorators/auth.decorator';
 import { Roles } from 'src/decorators/access.decorator';
-import { UpdateSelfUserDto, UpdateUsersDto } from './dto/body.dto';
+import {
+    NameChangeDTO,
+    UpdateSelfUserDto,
+    UpdateUsersDto
+} from './dto/body.dto';
 import { PageTakeDTO, PageTakeQueryDTO } from './dto/queries.dto';
 import { AuthService } from 'src/auth/auth.service';
 import { LocalAccessThrottlerGuard } from 'src/guards/throttlerLocalAccess.guard';
@@ -174,6 +178,15 @@ export class UserController {
         const data = await this.userService.getSkinForAutoload(request.session);
         if (!data) throw new HttpException('', 204);
         return new StreamableFile(data, { type: 'image/png' });
+    }
+
+    @Patch('@me/username')
+    @Auth(AuthEnum.Strict)
+    async setUsername(
+        @Req() request: RequestSession,
+        @Body() body: NameChangeDTO
+    ) {
+        await this.userService.setUsername(request.session, body.name);
     }
 
     @Get(':username')
