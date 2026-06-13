@@ -13,6 +13,7 @@ import {
     Session
 } from 'src/interfaces/interfaces';
 import { join } from 'path';
+import { escapeMd } from 'src/common/telegram_markdown_utils';
 
 @Injectable()
 export class MinecraftService {
@@ -250,7 +251,8 @@ export class MinecraftService {
                     }
                 }
                 this.logger.error(
-                    `Cannot revalidate skin cache for ${skin.default_nick}\\! Cause\\:\n \`\`\`json\n${cause}\n\`\`\`\n \\(${code}\\)`
+                    `Cannot revalidate skin cache for ${escapeMd(skin.default_nick)}\\! ` +
+                        `Cause\\:\n \`\`\`json\n${cause}\n\`\`\`\n \\(${code}\\)`
                 );
             }
         }
