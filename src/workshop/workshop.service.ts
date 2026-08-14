@@ -404,7 +404,7 @@ export class WorkshopService {
             false
         );
 
-        await this.notifications.createBandageCreationNotification(
+        this.notifications.createBandageCreationNotification(
             result as BandageFull
         );
 
@@ -796,7 +796,7 @@ export class WorkshopService {
     ) {
         const last_type = bandage.BandageModeration?.type ?? '';
         if (last_type !== 'denied' && type === 'denied') {
-            await this.notifications.createDenyNotification(bandage);
+            this.notifications.createDenyNotification(bandage);
         }
 
         if (['review', 'denied'].includes(last_type) && type === 'none') {
@@ -806,7 +806,7 @@ export class WorkshopService {
                 data: { verified: true }
             });
 
-            await this.notifications.createApproveNotification(bandage);
+            this.notifications.createApproveNotification(bandage);
         }
 
         if (type === 'none') {
