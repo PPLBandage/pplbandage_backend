@@ -1,5 +1,5 @@
 import axios from 'axios';
-import sharp from 'sharp';
+import sharp, { type Sharp } from 'sharp';
 import { PrismaService } from '../prisma/prisma.service';
 import { HttpException, Injectable, Logger } from '@nestjs/common';
 import { Buffer } from 'buffer';
@@ -313,7 +313,7 @@ export class MinecraftService {
         return response.data as { nickname: string; UUID: string };
     }
 
-    async generateSvg(image: sharp.Sharp, pixelWidth: number): Promise<string> {
+    async generateSvg(image: Sharp, pixelWidth: number): Promise<string> {
         const { data, info } = await image
             .raw()
             .ensureAlpha()
