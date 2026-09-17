@@ -35,7 +35,7 @@
         "jsonwebtoken": "9.0.3",
         "morgan": "1.11.0",
         "puppeteer": "^25.7.0",
-        "sharp": "0.35.3",
+        "sharp": "0.35.4",
         "transliteration": "^2.6.1",
         "ua-parser-js": "2.0.10",
         "uuid": "^14.0.1"
