@@ -16,11 +16,17 @@ jobs:
             - name: Checkout repository
               uses: actions/checkout@v4
 
-            - name: Execute remote commands
+            - name: Setup SSH
+              uses: webfactory/ssh-agent@v0.9.0
+              with:
+                ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+            
+            - name: Deploy
               env:
-                  SSHPASS: ${{ secrets.ROOT_SSH_PASSWORD }}
+                SERVER_IP: ${{ secrets.SERVER_IP }}
+                COMMIT_SHA: ${{ github.sha }}
               run: |
-                  sshpass -e ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
+                ssh -o StrictHostKeyChecking=no root@"$SERVER_IP" << EOF
                     set -e
                     cd /home/andcoolsystems/pplbandage_backend
                     git fetch
