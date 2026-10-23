@@ -40,6 +40,10 @@ export class EditBandageDto {
     @IsOptional()
     @IsBoolean({ message: 'Поле `colorable` должно иметь тип boolean' })
     colorable?: boolean;
+
+    @IsOptional()
+    @IsBoolean({ message: 'Поле `dark_preview` должно иметь тип boolean' })
+    dark_preview?: boolean;
 }
 
 export class BandageModerationDto {

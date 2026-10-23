@@ -382,6 +382,7 @@ export class WorkshopService {
                 split_type: body.split_type ?? false,
                 User: { connect: { id: session.user.id } },
                 accent_color: rgbToHex(r, g, b),
+                workshop_base_dark: body.dark_preview ?? false,
                 BandageModeration: !is_moderator
                     ? {
                           create: {
@@ -577,7 +578,8 @@ export class WorkshopService {
                 accent_color: bandage.accent_color,
                 moderation: generateModerationState(bandage),
                 star_type: bandage.star_type,
-                views: bandage.views
+                views: bandage.views,
+                dark_preview: bandage.workshop_base_dark
             }
         };
     }
@@ -603,14 +605,16 @@ export class WorkshopService {
             title: body.title,
             description: body.description,
             access_level: body.access_level,
-            colorable: body.colorable
+            colorable: body.colorable,
+            workshop_base_dark: body.dark_preview
         };
 
         const prev_data: Record<string, unknown> = {
             title: bandage.title,
             description: bandage.description,
             access_level: bandage.access_level,
-            colorable: bandage.colorable
+            colorable: bandage.colorable,
+            dark_preview: bandage.workshop_base_dark
         };
 
         const dirty_data: Record<string, unknown> = Object.entries(prev_data)

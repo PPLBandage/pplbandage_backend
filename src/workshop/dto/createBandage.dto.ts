@@ -49,4 +49,8 @@ export class CreateBandageDto {
     @IsNotEmpty({ message: 'Поле `colorable` обязательно' })
     @IsBoolean({ message: 'Поле `colorable` должно иметь тип boolean' })
     colorable?: boolean;
+
+
+    @IsBoolean({ message: 'Поле `dark_preview` должно иметь тип boolean' })
+    dark_preview?: boolean;
 }

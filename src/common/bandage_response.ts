@@ -70,7 +70,8 @@ export const generateResponse = (
             },
             access_level: el.access_level,
             star_type: el.star_type,
-            moderation: generateModerationState(el)
+            moderation: generateModerationState(el),
+            dark_preview: el.workshop_base_dark
         });
 
         return acc;
