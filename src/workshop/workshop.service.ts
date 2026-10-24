@@ -429,7 +429,8 @@ export class WorkshopService {
     async renderAndSetThumbnail(data: BandageFull) {
         const render_res = await this.thumbnailsService.render(
             data.base64,
-            data.colorable
+            data.colorable,
+            data.workshop_base_dark
         );
         const uuid = v4();
         await writeFile(

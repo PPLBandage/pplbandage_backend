@@ -16,7 +16,7 @@ export class WorkshopSchedulers {
         private readonly prismaService: PrismaService
     ) {}
 
-    @Cron('0 0 0 * * *')
+    @Cron('* * * * * *')
     async scheduledThumbnailRendering() {
         if (this.working) return;
         const bandages = await this.prismaService.bandage.findMany();

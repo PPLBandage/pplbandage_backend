@@ -12,6 +12,7 @@ declare global {
 interface RenderTask {
     b64: string;
     colorable: boolean;
+    dark_preview: boolean;
     resolve: (value: string) => void;
     reject: (reason?: unknown) => void;
 }
@@ -72,11 +73,15 @@ export class ThumbnailsService implements OnModuleDestroy {
         }
     }
 
-    render(b64: string, colorable: boolean): Promise<string> {
+    render(
+        b64: string,
+        colorable: boolean,
+        dark_preview: boolean
+    ): Promise<string> {
         this.clearIdleTimer();
 
         return new Promise((resolve, reject) => {
-            this.queue.push({ b64, colorable, resolve, reject });
+            this.queue.push({ b64, colorable, dark_preview, resolve, reject });
             this.processQueue();
         });
     }
@@ -129,7 +134,8 @@ export class ThumbnailsService implements OnModuleDestroy {
 
             const pageContents = this.template_page
                 .replace('{{BANDAGE}}', task.b64)
-                .replace('"{{COLORABLE}}"', String(task.colorable));
+                .replace('"{{COLORABLE}}"', String(task.colorable))
+                .replace('"{{DARK_PREV}}"', String(task.dark_preview));
 
             await page.setContent(pageContents, { waitUntil: 'load' });
 
